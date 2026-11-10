@@ -54,7 +54,7 @@
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-primary/20">M</div>
         <div>
           <h1 class="font-bold text-sm tracking-wide">MASTER LIGA FC</h1>
-          <span class="text-[10px] text-primary uppercase font-semibold tracking-widest">Base Real & Multa em Dinheiro</span>
+          <span class="text-[10px] text-primary uppercase font-semibold tracking-widest">Busca Online API EA FC</span>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -67,15 +67,13 @@
   <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:py-8 space-y-6">
     <div id="global-msg" class="hidden p-4 rounded-xl text-sm font-bold shadow-lg text-center z-50"></div>
 
-    <!-- MURAL DE NOTÍCIAS AO VIVO -->
     <div class="bg-cardBg border border-cardBorder px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 overflow-hidden">
       <span class="bg-primary/20 text-primary px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider shrink-0">📰 Mercado da Bola</span>
       <div id="news-ticker" class="text-xs text-txtMuted truncate">
-        Época de Contratações Aberta! Multas rescisórias são pagas somente em dinheiro.
+        Pesquise qualquer atleta da base de dados EA FC online em tempo real!
       </div>
     </div>
 
-    <!-- HOME / LIGAS -->
     <section id="home-view" class="space-y-6">
       <div class="grid md:grid-cols-2 gap-6">
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
@@ -98,12 +96,11 @@
       </div>
     </section>
 
-    <!-- DASHBOARD DO JOGO -->
     <section id="dashboard-view" class="hidden space-y-6">
       <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 id="dash-title" class="text-2xl font-black tracking-tight">Super Liga Master</h1>
-          <p class="text-txtMuted text-xs mt-0.5">Mercado Real | Multa em Dinheiro & Troca + Volta para Negociações</p>
+          <p class="text-txtMuted text-xs mt-0.5">Pesquisa Online de Atletas EA FC & Multa em Dinheiro Vivo</p>
         </div>
         <button onclick="showView('home-view')" class="bg-bgDark border border-cardBorder px-4 py-2.5 rounded-xl text-xs font-bold transition-all">Voltar ao Início</button>
       </div>
@@ -117,16 +114,14 @@
         <button onclick="toggleCardSize()" id="btn-toggle-size" class="bg-bgDark border border-cardBorder hover:border-primary text-xs font-bold px-3 py-2 rounded-xl transition-all text-txtMuted">📐 Modo Compacto: Desativado</button>
       </div>
 
-      <!-- MERCADO -->
       <div id="tab-market" class="tab-content space-y-6">
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="font-bold text-sm">Pesquisar Atletas Reais do Banco de Dados</h2>
+            <h2 class="font-bold text-sm">Pesquisar na Base Online EA FC (16.266 Jogadores)</h2>
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <select id="league-filter" onchange="filterMarket()" class="bg-bgDark border border-cardBorder rounded-xl px-3 py-2 text-xs outline-none focus:border-primary text-txtMain">
                 <option value="ALL">Todas as Ligas</option>
                 <option value="Premier League">Premier League</option>
-                <option value="EFL Championship">EFL Championship</option>
                 <option value="LALIGA EA SPORTS">LALIGA EA SPORTS</option>
                 <option value="Bundesliga">Bundesliga</option>
                 <option value="Serie A Enilive">Serie A Enilive</option>
@@ -134,14 +129,13 @@
                 <option value="Eredivisie">Eredivisie</option>
                 <option value="Liga Portugal">Liga Portugal</option>
               </select>
-              <input id="market-search" type="text" oninput="filterMarket()" placeholder="Digite o nome correto do jogador..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-60">
+              <input id="market-search" type="text" oninput="filterMarket()" placeholder="Digite o nome real do jogador..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-60">
             </div>
           </div>
           <div id="market-list" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
         </div>
       </div>
 
-      <!-- MEU PLANTEL -->
       <div id="tab-squad" class="tab-content hidden space-y-6">
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <h2 class="font-bold text-sm">Jogadores do Seu Clube (Blindagem & Simulação)</h2>
@@ -149,7 +143,6 @@
         </div>
       </div>
 
-      <!-- PROPOSTAS E LEILÃO SECRETO -->
       <div id="tab-proposals" class="tab-content hidden space-y-6">
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <div class="flex items-center justify-between">
@@ -162,21 +155,17 @@
       </div>
     </section>
   </main>
-
-  <!-- MODAL DE NEGOCIAÇÃO -->
-  <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-cardBg border border-cardBorder max-w-md w-full p-6 rounded-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 id="modal-player-title" class="font-bold text-base">Oferta por Atleta</h3>
       <p id="modal-player-info" class="text-xs text-txtMuted"></p>
       
       <div class="space-y-3">
-        <!-- SEÇÃO DE TIPO DE AÇÃO (MULTA vs NEGOCIAÇÃO) -->
         <div id="action-type-selector" class="hidden grid grid-cols-2 gap-2 bg-bgDark p-1 rounded-xl border border-cardBorder">
           <button id="btn-mode-negotiate" onclick="setNegotiationMode('negotiate')" class="py-2 text-xs font-bold rounded-lg bg-primary text-bgDark transition-all">Proposta / Troca</button>
           <button id="btn-mode-buyout" onclick="setNegotiationMode('buyout')" class="py-2 text-xs font-bold rounded-lg bg-bgDark text-txtMuted hover:text-txtMain transition-all">⚡ Multa (Só Cash)</button>
         </div>
 
-        <!-- ÁREA DE TROCA DE JOGADORES (BLOQUEADA SE FOR MULTA) -->
         <div id="trade-box-section" class="border border-cardBorder bg-bgDark/60 p-3 rounded-xl space-y-2">
           <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
             <input type="checkbox" id="enable-trade-check" onchange="toggleTradeBox()" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0">
@@ -190,7 +179,6 @@
           </div>
         </div>
 
-        <!-- VALOR COMPLEMENTAR / VALOR EM DINHEIRO -->
         <div>
           <label id="modal-offer-label" class="block text-xs font-bold uppercase text-txtMuted mb-1">Valor em Dinheiro (R$)</label>
           <input id="modal-offer-val" type="number" class="w-full bg-bgDark border border-cardBorder rounded-xl px-4 py-3 text-sm outline-none focus:border-primary font-mono" placeholder="0">
@@ -205,7 +193,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE BLINDAGEM -->
   <div id="shield-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-cardBg border border-cardBorder max-w-md w-full p-6 rounded-2xl shadow-2xl space-y-4">
       <h3 class="font-bold text-base text-goldBadge">🛡️ Blindar Atleta (Aumentar Multa)</h3>
@@ -233,16 +220,7 @@
       { id: 3, name: "Vinícius Jr.", league: "LALIGA EA SPORTS", position: "EI", rating: 90, price: 150000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Vinicius_Jr_2021.jpg/500px-Vinicius_Jr_2021.jpg" },
       { id: 4, name: "Jude Bellingham", league: "LALIGA EA SPORTS", position: "MEI", rating: 90, price: 140000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Jude_Bellingham_2023.jpg/500px-Jude_Bellingham_2023.jpg" },
       { id: 5, name: "Rodri", league: "Premier League", position: "VOL", rating: 91, price: 130000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Rodri_2023.jpg/500px-Rodri_2023.jpg" },
-      { id: 6, name: "Lamine Yamal", league: "LALIGA EA SPORTS", position: "ED", rating: 87, price: 120000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Lamine_Yamal_2024.jpg/500px-Lamine_Yamal_2024.jpg" },
-      { id: 7, name: "Kevin De Bruyne", league: "Premier League", position: "MC", rating: 90, price: 100000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Kevin_De_Bruyne_2018.jpg/500px-Kevin_De_Bruyne_2018.jpg" },
-      { id: 8, name: "Mohamed Salah", league: "Premier League", position: "ED", rating: 89, price: 95000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Mohamed_Salah_2018.jpg/500px-Mohamed_Salah_2018.jpg" },
-      { id: 9, name: "Harry Kane", league: "Bundesliga", position: "ATA", rating: 90, price: 90000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Harry_Kane_2018.jpg/500px-Harry_Kane_2018.jpg" },
-      { id: 10, name: "Fede Valverde", league: "LALIGA EA SPORTS", position: "MC", rating: 88, price: 90000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Federico_Valverde_2019.jpg/500px-Federico_Valverde_2019.jpg" },
-      { id: 11, name: "Jamie Vardy", league: "EFL Championship", position: "ATA", rating: 78, price: 5000000, owner: null, photo_url: NO_PHOTO_IMG },
-      { id: 12, name: "Lautaro Martínez", league: "Serie A Enilive", position: "ATA", rating: 89, price: 110000000, owner: null, photo_url: NO_PHOTO_IMG },
-      { id: 13, name: "Ousmane Dembélé", league: "Ligue 1 McDonald's", position: "ED", rating: 86, price: 60000000, owner: null, photo_url: NO_PHOTO_IMG },
-      { id: 14, name: "Luuk de Jong", league: "Eredivisie", position: "ATA", rating: 81, price: 12000000, owner: null, photo_url: NO_PHOTO_IMG },
-      { id: 15, name: "Viktor Gyökeres", league: "Liga Portugal", position: "ATA", rating: 84, price: 65000000, owner: null, photo_url: NO_PHOTO_IMG }
+      { id: 6, name: "Lamine Yamal", league: "LALIGA EA SPORTS", position: "ED", rating: 87, price: 120000000, owner: null, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Lamine_Yamal_2024.jpg/500px-Lamine_Yamal_2024.jpg" }
     ];
 
     let myUserClub = "Meu Clube FC";
@@ -253,7 +231,8 @@
     let shieldPlayerId = null;
     let isCompactMode = false;
     let chosenSponsors = [];
-    let activeModalMode = 'negotiate'; // 'negotiate' ou 'buyout'
+    let activeModalMode = 'negotiate';
+    let searchDebounceTimeout = null;
 
     function showMsg(text, isError = false) {
       const el = document.getElementById('global-msg');
@@ -331,8 +310,47 @@
       renderProposals();
       pushNews(`🚀 ${myUserClub} entrou na Master Liga FC!`);
     }
+        function filterMarket() {
+      clearTimeout(searchDebounceTimeout);
+      searchDebounceTimeout = setTimeout(() => {
+        const query = document.getElementById('market-search').value.trim();
+        if(query.length >= 3) {
+          fetchEAAtletasOnline(query);
+        } else {
+          loadMarket();
+        }
+      }, 400);
+    }
 
-    function filterMarket() {
+    async function fetchEAAtletasOnline(query) {
+      const mList = document.getElementById('market-list');
+      if(!mList) return;
+      mList.innerHTML = '<p class="text-xs text-primary col-span-full py-6 text-center font-bold animate-pulse">🔎 Buscando atleta na base de dados online EA FC...</p>';
+
+      try {
+        const res = await fetch(`https://futdb.app/api/players?name=${encodeURIComponent(query)}`, {
+          headers: { 'X-AUTH-TOKEN': '45749f9d-1662-4364-839e-d30f40d6bfec' }
+        });
+        const data = await res.json();
+        if(data && data.items && data.items.length > 0) {
+          data.items.forEach(p => {
+            if(!FULL_PLAYERS_DATABASE.some(existing => existing.id === p.id)) {
+              FULL_PLAYERS_DATABASE.push({
+                id: p.id,
+                name: p.name || p.common_name,
+                league: "EA FC Global",
+                position: p.position || "ATA",
+                rating: p.rating || 75,
+                price: (p.rating || 75) * 500000,
+                owner: null,
+                photo_url: p.color ? `https://futdb.app/api/players/${p.id}/image` : NO_PHOTO_IMG
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.log("Modo offline ativo para busca:", err);
+      }
       loadMarket();
     }
 
@@ -342,7 +360,6 @@
       if(!p) return;
 
       const selectorBox = document.getElementById('action-type-selector');
-      
       if(p.owner) {
         selectorBox.classList.remove('hidden');
         setNegotiationMode('negotiate');
@@ -390,11 +407,10 @@
         submitBtn.textContent = "Pagar Multa em Dinheiro";
         offerInput.value = currentBuyout;
         
-        // BLOQUEIA E ESCONDE A TROCA DE JOGADORES NA MULTA
         document.getElementById('enable-trade-check').checked = false;
         toggleTradeBox();
         tradeSection.classList.add('hidden');
-      } else { // negotiate
+      } else {
         btnNeg.className = "py-2 text-xs font-bold rounded-lg bg-primary text-bgDark transition-all";
         btnBuy.className = "py-2 text-xs font-bold rounded-lg bg-bgDark text-txtMuted hover:text-txtMain transition-all";
 
@@ -463,7 +479,6 @@
         return;
       }
 
-      // SE FOR PAGAMENTO DE MULTA RESCISÓRIA (SOMENTE DINHEIRO)
       if(activeModalMode === 'buyout') {
         const currentBuyout = p.buyout || (p.price * 2.5);
         if(moneyVal < currentBuyout) {
@@ -485,7 +500,6 @@
         return;
       }
 
-      // SE FOR PROPOSTA / TROCA OU ATLETA LIVRE
       let tradedPlayer = null;
       let tradeValuation = 0;
       if(useTrade && tradePlayerId) {
@@ -519,7 +533,6 @@
         return;
       }
 
-      // PROPOSTA PARA CLUBE RIVAL
       secretBids.push({
         id: Date.now(),
         playerId: p.id,
@@ -726,3 +739,4 @@
   </script>
 </body>
 </html>
+  
