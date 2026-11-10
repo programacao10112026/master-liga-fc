@@ -54,7 +54,7 @@
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-primary/20">M</div>
         <div>
           <h1 class="font-bold text-sm tracking-wide">MASTER LIGA FC</h1>
-          <span class="text-[10px] text-primary uppercase font-semibold tracking-widest">Busca Mundial Online em Tempo Real</span>
+          <span class="text-[10px] text-primary uppercase font-semibold tracking-widest">Busca Global (33 Ligas & Brasil A/B/C/D)</span>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -68,9 +68,9 @@
     <div id="global-msg" class="hidden p-4 rounded-xl text-sm font-bold shadow-lg text-center z-50"></div>
 
     <div class="bg-cardBg border border-cardBorder px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 overflow-hidden">
-      <span class="bg-primary/20 text-primary px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider shrink-0">📰 Mercado da Bola</span>
+      <span class="bg-primary/20 text-primary px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider shrink-0">📰 Mercado Global</span>
       <div id="news-ticker" class="text-xs text-txtMuted truncate">
-        Pesquisa mundial ativa! Digite Messi, Neymar, Cristiano Ronaldo ou qualquer jogador do planeta.
+        Pesquise por qualquer atleta de ligas mundiais e do Brasileirão (Séries A, B, C, D)...
       </div>
     </div>
 
@@ -79,18 +79,17 @@
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <h2 class="text-base font-bold flex items-center gap-2"><span>✨</span> Configurar seu Clube</h2>
           <div class="space-y-3">
-            <input id="new-club-name" placeholder="Nome do seu Clube (Ex: Real Madrid)" value="Meu Clube FC" class="w-full bg-bgDark border border-cardBorder rounded-xl px-4 py-3 text-sm outline-none focus:border-primary">
+            <input id="new-club-name" placeholder="Nome do seu Clube" value="Meu Clube FC" class="w-full bg-bgDark border border-cardBorder rounded-xl px-4 py-3 text-sm outline-none focus:border-primary">
             <button onclick="enterManager()" class="w-full bg-primary hover:bg-primaryHover text-bgDark font-bold py-3 rounded-xl text-sm transition-all shadow-md shadow-primary/20">Entrar no Mercado e Plantel</button>
           </div>
         </div>
         
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <h2 class="text-base font-bold flex items-center gap-2"><span>🤝</span> Patrocínios Oficiais (Escolha exatamente 3)</h2>
-          <p class="text-[11px] text-txtMuted">Selecione suas marcas parceiras:</p>
           <div id="sponsors-list" class="space-y-2 text-xs max-h-72 overflow-y-auto pr-2 border border-cardBorder/50 p-2 rounded-xl bg-bgDark/40">
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="1" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Adibas <span class="text-[10px] text-success font-mono">(R$ 4.0M/rodada)</span></div><div class="text-[10px] text-primary mt-0.5"><b>Meta:</b> Manter pelo menos 3 atletas com rating 85+.</div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="2" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Mike <span class="text-[10px] text-success font-mono">(R$ 4.5M/rodada)</span></div><div class="text-[10px] text-primary mt-0.5"><b>Meta:</b> Não sofrer nenhuma venda por multa rescisória.</div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="3" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Pumba <span class="text-[10px] text-success font-mono">(R$ 3.5M/rodada)</span></div><div class="text-[10px] text-primary mt-0.5"><b>Meta:</b> Realizar ao menos 2 trocas bem-sucedidas.</div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="1" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Adibas <span class="text-[10px] text-success font-mono">(R$ 4.0M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="2" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Mike <span class="text-[10px] text-success font-mono">(R$ 4.5M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="3" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Pumba <span class="text-[10px] text-success font-mono">(R$ 3.5M/rodada)</span></div></div></div></label>
           </div>
         </div>
       </div>
@@ -100,7 +99,7 @@
       <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 id="dash-title" class="text-2xl font-black tracking-tight">Super Liga Master</h1>
-          <p class="text-txtMuted text-xs mt-0.5">Busca Global Direct-Search & Multa Rescisória em Dinheiro Vivo</p>
+          <p class="text-txtMuted text-xs mt-0.5">Gestão Completa de Plantel & Multa Rescisória em Dinheiro</p>
         </div>
         <button onclick="showView('home-view')" class="bg-bgDark border border-cardBorder px-4 py-2.5 rounded-xl text-xs font-bold transition-all">Voltar ao Início</button>
       </div>
@@ -109,7 +108,7 @@
         <div class="flex gap-2 overflow-x-auto">
           <button onclick="switchTab('tab-market')" id="btn-tab-market" class="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-bgDark transition-all">Mercado de Atletas</button>
           <button onclick="switchTab('tab-squad')" id="btn-tab-squad" class="px-4 py-2 rounded-xl text-xs font-bold bg-cardBorder text-txtMuted hover:text-txtMain transition-all">Meu Plantel</button>
-          <button onclick="switchTab('tab-proposals')" id="btn-tab-proposals" class="px-4 py-2 rounded-xl text-xs font-bold bg-cardBorder text-txtMuted hover:text-txtMain transition-all">Propostas & Leilões Secretos</button>
+          <button onclick="switchTab('tab-proposals')" id="btn-tab-proposals" class="px-4 py-2 rounded-xl text-xs font-bold bg-cardBorder text-txtMuted hover:text-txtMain transition-all">Propostas & Leilões</button>
         </div>
         <button onclick="toggleCardSize()" id="btn-toggle-size" class="bg-bgDark border border-cardBorder hover:border-primary text-xs font-bold px-3 py-2 rounded-xl transition-all text-txtMuted">📐 Modo Compacto: Desativado</button>
       </div>
@@ -117,9 +116,9 @@
       <div id="tab-market" class="tab-content space-y-6">
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="font-bold text-sm">Pesquisar Qualquer Atleta do Mundo em Tempo Real</h2>
+            <h2 class="font-bold text-sm">Pesquisa Global (Premier League, La Liga, Brasileirão A/B/C/D...)</h2>
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <input id="market-search" type="text" oninput="filterMarket()" placeholder="Ex: Neymar, Messi, Haaland, Endrick..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-80">
+              <input id="market-search" type="text" oninput="filterMarket()" placeholder="Digite o nome do jogador..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-80">
             </div>
           </div>
           <div id="market-list" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
@@ -137,15 +136,14 @@
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="font-bold text-sm">Ofertas Secretas & Propostas de Troca</h2>
-            <button onclick="resolveSecretBids()" class="bg-goldBadge/20 text-goldBadge border border-goldBadge/30 hover:bg-goldBadge/30 px-3 py-1.5 rounded-xl text-xs font-bold transition-all">🏆 Fechar Época & Revelar Vencedores</button>
+            <button onclick="resolveSecretBids()" class="bg-goldBadge/20 text-goldBadge border border-goldBadge/30 hover:bg-goldBadge/30 px-3 py-1.5 rounded-xl text-xs font-bold transition-all">🏆 Fechar Época & Revelar</button>
           </div>
-          <p class="text-[11px] text-txtMuted">Propostas enviadas por jogadores livres ou trocas com volta para clubes rivais:</p>
           <div id="sent-proposals-list" class="text-xs text-txtMuted">Nenhuma proposta ativa no momento.</div>
         </div>
       </div>
     </section>
   </main>
-  <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-cardBg border border-cardBorder max-w-md w-full p-6 rounded-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 id="modal-player-title" class="font-bold text-base">Oferta por Atleta</h3>
       <p id="modal-player-info" class="text-xs text-txtMuted"></p>
@@ -159,7 +157,7 @@
         <div id="trade-box-section" class="border border-cardBorder bg-bgDark/60 p-3 rounded-xl space-y-2">
           <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
             <input type="checkbox" id="enable-trade-check" onchange="toggleTradeBox()" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0">
-            <span>Incluir Jogador do Seu Plantel na Troca</span>
+            <span>Incluir Jogador do Seu Plantel na Troca (Apenas Clubes Rivais)</span>
           </label>
           <div id="trade-player-select-box" class="hidden space-y-2 pt-1">
             <select id="trade-my-player" onchange="updateTradeValuation()" class="w-full bg-bgDark border border-cardBorder rounded-xl px-3 py-2 text-xs outline-none focus:border-primary text-txtMain">
@@ -200,16 +198,13 @@
       </div>
     </div>
   </div>
-
-  <script>
+    <script>
     const NO_PHOTO_IMG = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
     
     let FULL_PLAYERS_DATABASE = [
       { id: "101", name: "Neymar Jr", league: "Saudi Pro League", position: "MEI", rating: 89, price: 90000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/124712/image" },
       { id: "102", name: "Lionel Messi", league: "MLS", position: "ATA", rating: 90, price: 85000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/12994/image" },
-      { id: "103", name: "Cristiano Ronaldo", league: "Saudi Pro League", position: "ATA", rating: 88, price: 50000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/750/image" },
-      { id: "104", name: "Kylian Mbappé", league: "LALIGA EA SPORTS", position: "ATA", rating: 91, price: 180000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/826430/image" },
-      { id: "105", name: "Vinícius Jr.", league: "LALIGA EA SPORTS", position: "EI", rating: 90, price: 150000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/868812/image" }
+      { id: "103", name: "Hulk", league: "Brasileirao Serie A", position: "ATA", rating: 83, price: 30000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/132456/image" }
     ];
 
     let myUserClub = "Meu Clube FC";
@@ -289,7 +284,7 @@
       if(cInput) myUserClub = cInput;
       
       if(chosenSponsors.length !== 3) {
-        showMsg("Você precisa escolher exatamente 3 patrocinadores para o seu clube!", true);
+        showMsg("Você precisa escolher exatamente 3 patrocinadores!", true);
         return;
       }
 
@@ -316,7 +311,7 @@
     async function fetchOnlineGlobalPlayers(query) {
       const mList = document.getElementById('market-list');
       if(!mList) return;
-      mList.innerHTML = '<p class="text-xs text-primary col-span-full py-8 text-center font-bold animate-pulse">🔎 Buscando atletas no banco de dados mundial...</p>';
+      mList.innerHTML = '<p class="text-xs text-primary col-span-full py-8 text-center font-bold animate-pulse">🔎 Buscando em 33 ligas mundiais e divisões do Brasil...</p>';
 
       try {
         const res = await fetch(`https://api.sofascore.com/api/v1/search/all?q=${encodeURIComponent(query)}`);
@@ -327,21 +322,21 @@
 
           if(players.length > 0) {
             players.forEach(p => {
-              const
-                playerId = "sofa_" + pData.id;
+              const pData = p.entity;
+              const playerId = "sofa_" + pData.id;
 
               if(!FULL_PLAYERS_DATABASE.some(existing => existing.id == playerId)) {
-                const calculatedRating = pData.userCount ? Math.min(92, Math.max(72, Math.round(70 + Math.log10(pData.userCount + 10) * 4))) : 75;
+                const calculatedRating = pData.userCount ? Math.min(93, Math.max(70, Math.round(70 + Math.log10(pData.userCount + 10) * 4))) : 75;
                 const marketVal = calculatedRating * 1200000;
 
                 FULL_PLAYERS_DATABASE.push({
                   id: playerId,
                   name: pData.name || pData.shortName,
-                  league: pData.team ? pData.team.name : "Clube Global",
+                  league: pData.team ? pData.team.name : "Futebol Global",
                   position: pData.position || "ATA",
                   rating: calculatedRating,
                   price: marketVal,
-                  owner: null,
+                  owner: Math.random() > 0.5 ? "Clube Rival" : null, // Dinâmico: alguns livres, outros com dono
                   photo_url: `https://api.sofascore.app/api/v1/player/${pData.id}/image`
                 });
               }
@@ -349,7 +344,7 @@
           }
         }
       } catch (err) {
-        console.log("Erro na requisição online:", err);
+        console.log("Erro na busca online:", err);
       }
 
       loadMarket();
@@ -361,11 +356,15 @@
       if(!p) return;
 
       const selectorBox = document.getElementById('action-type-selector');
+      const tradeSection = document.getElementById('trade-box-section');
+
       if(p.owner) {
         selectorBox.classList.remove('hidden');
+        tradeSection.classList.remove('hidden'); // Troca permitida apenas com clubes rivais
         setNegotiationMode('negotiate');
       } else {
         selectorBox.classList.add('hidden');
+        tradeSection.classList.add('hidden'); // Jogadores livres compram-se APENAS com dinheiro
         setNegotiationMode('free');
       }
 
@@ -388,41 +387,34 @@
       const btnBuy = document.getElementById('btn-mode-buyout');
 
       if(mode === 'free') {
-        titleEl.textContent = `Oferta Secreta por Atleta Livre: ${p.name}`;
-        infoEl.textContent = `Atleta sem clube. Preço base de mercado: R$ ${p.price.toLocaleString()}`;
-        offerTip.textContent = "🔒 Esse lance em dinheiro (mais eventual jogador trocado) ficará oculto até o final da época.";
-        submitBtn.textContent = "Confirmar Lance Secreto";
+        titleEl.textContent = `Lance por Atleta Livre: ${p.name}`;
+        infoEl.textContent = `Atleta sem clube. Preço base: R$ ${p.price.toLocaleString()}`;
+        offerTip.textContent = "🔒 Atletas livres são adquiridos exclusivamente com dinheiro vivo.";
+        submitBtn.textContent = "Confirmar Lance em Dinheiro";
         offerInput.value = p.price;
-        tradeSection.classList.remove('hidden');
-        document.getElementById('enable-trade-check').checked = false;
-        toggleTradeBox();
-        populateTradeSelect();
+        tradeSection.classList.add('hidden');
       } else if(mode === 'buyout') {
         btnBuy.className = "py-2 text-xs font-bold rounded-lg bg-goldBadge text-bgDark transition-all";
         btnNeg.className = "py-2 text-xs font-bold rounded-lg bg-bgDark text-txtMuted hover:text-txtMain transition-all";
 
         titleEl.textContent = `⚡ Pagar Multa Rescisória: ${p.name}`;
         const currentBuyout = p.buyout || (p.price * 2.5);
-        infoEl.textContent = `Pertence a: ${p.owner} | Multa Rescisória: R$ ${currentBuyout.toLocaleString()}`;
-        offerTip.textContent = "💵 A multa é paga EXCLUSIVAMENTE em dinheiro vivo do caixa.";
+        infoEl.textContent = `Pertence a: ${p.owner} | Multa: R$ ${currentBuyout.toLocaleString()}`;
+        offerTip.textContent = "💵 A multa rescisória é paga exclusivamente em dinheiro do caixa.";
         submitBtn.textContent = "Pagar Multa em Dinheiro";
         offerInput.value = currentBuyout;
-        
-        document.getElementById('enable-trade-check').checked = false;
-        toggleTradeBox();
         tradeSection.classList.add('hidden');
       } else {
         btnNeg.className = "py-2 text-xs font-bold rounded-lg bg-primary text-bgDark transition-all";
         btnBuy.className = "py-2 text-xs font-bold rounded-lg bg-bgDark text-txtMuted hover:text-txtMain transition-all";
 
-        titleEl.textContent = `Proposta / Troca por: ${p.name}`;
-        infoEl.textContent = `Pertence a: ${p.owner}. Envie uma oferta com jogador em troca e/ou dinheiro em volta.`;
-        offerTip.textContent = "💡 Proposta enviada para análise e aceite do clube rival.";
+        titleEl.textContent = `Proposta de Troca com Clube Rival: ${p.name}`;
+        infoEl.textContent = `Pertence a: ${p.owner}. Troque um jogador seu (+ volta em dinheiro opcional).`;
+        offerTip.textContent = "💡 Envolva um atleta do plantel + dinheiro para equalizar.";
         submitBtn.textContent = "Enviar Proposta ao Rival";
         offerInput.value = 0;
-        
         tradeSection.classList.remove('hidden');
-        document.getElementById('enable-trade-check').checked = false;
+        document.getElementById('enable-trade-check').checked = true;
         toggleTradeBox();
         populateTradeSelect();
       }
@@ -442,18 +434,17 @@
     function populateTradeSelect() {
       const select = document.getElementById('trade-my-player');
       if(mySquad.length === 0) {
-        select.innerHTML = '<option value="">Você não possui jogadores para troca no plantel</option>';
+        select.innerHTML = '<option value="">Você não possui jogadores no plantel para troca</option>';
         return;
       }
-      select.innerHTML = '<option value="">Selecione um jogador do seu time para entrar na troca</option>' + 
+      select.innerHTML = '<option value="">Selecione um jogador do seu time</option>' + 
         mySquad.map(s => `<option value="${s.id}">${s.name} (${s.position}) - Mercado: R$ ${s.price.toLocaleString()}</option>`).join('');
     }
 
     function updateTradeValuation() {
-      const isChecked = document.getElementById('enable-trade-check').checked;
       const select = document.getElementById('trade-my-player');
       const textEl = document.getElementById('trade-valuation-text');
-      if(!isChecked || !select.value) {
+      if(!select.value) {
         textEl.textContent = "";
         return;
       }
@@ -470,69 +461,44 @@
       const useTrade = document.getElementById('enable-trade-check').checked;
       const tradePlayerId = document.getElementById('trade-my-player').value;
 
-      if(moneyVal < 0) {
-        showMsg("Digite um valor em dinheiro válido.", true);
+      if(moneyVal < 0 || (userBalance - moneyVal) < 0) {
+        showMsg("Valor inválido ou saldo insuficiente em caixa!", true);
         return;
       }
 
-      if((userBalance - moneyVal) < 0) {
-        showMsg("Saldo insuficiente em caixa para oferecer essa quantia em dinheiro!", true);
+      if(!p.owner && useTrade) {
+        showMsg("Atletas livres só podem ser comprados com dinheiro! Não é permitido usar jogadores na troca por atletas livres.", true);
         return;
       }
 
       if(activeModalMode === 'buyout') {
         const currentBuyout = p.buyout || (p.price * 2.5);
         if(moneyVal < currentBuyout) {
-          showMsg(`Para pagar a multa rescisória é necessário o valor total em dinheiro de R$ ${currentBuyout.toLocaleString()}!`, true);
+          showMsg(`Necessário R$ ${currentBuyout.toLocaleString()} para pagar a multa!`, true);
           return;
         }
 
         userBalance -= currentBuyout;
         document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
-
         p.owner = myUserClub;
         mySquad.push(p);
 
         closeModal();
         loadMarket();
         loadSquad();
-        pushNews(`⚡ MULTA PAGA EM DINHEIRO! ${myUserClub} pagou R$ ${currentBuyout.toLocaleString()} e contratou ${p.name}!`);
-        showMsg(`⚡ Multa paga em dinheiro com sucesso! ${p.name} veio para o seu time!`);
+        showMsg(`⚡ Multa paga! ${p.name} veio para o seu clube!`);
         return;
       }
 
       let tradedPlayer = null;
       let tradeValuation = 0;
-      if(useTrade && tradePlayerId) {
+      if(p.owner && useTrade && tradePlayerId) {
         tradedPlayer = mySquad.find(s => s.id == tradePlayerId);
-        if(tradedPlayer) {
-          tradeValuation = Math.round(tradedPlayer.price * 0.85);
-        }
+        if(tradedPlayer) tradeValuation = Math.round(tradedPlayer.price * 0.85);
       }
 
       const totalOfferValue = moneyVal + tradeValuation;
-      if(totalOfferValue <= 0) {
-        showMsg("Especifique ao menos um jogador para troca ou uma quantia em dinheiro!", true);
-        return;
-      }
-
       closeModal();
-
-      if(!p.owner) {
-        secretBids.push({
-          id: Date.now(),
-          playerId: p.id,
-          playerName: p.name,
-          club: myUserClub,
-          offerMoney: moneyVal,
-          tradedPlayer: tradedPlayer,
-          totalValuation: totalOfferValue
-        });
-        showMsg(`🔒 Oferta secreta enviada! Total em proposta: R$ ${totalOfferValue.toLocaleString()}`);
-        pushNews(`🤫 ${myUserClub} enviou um lance secreto por um atleta livre!`);
-        renderProposals();
-        return;
-      }
 
       secretBids.push({
         id: Date.now(),
@@ -544,14 +510,14 @@
         tradedPlayer: tradedPlayer,
         totalValuation: totalOfferValue
       });
-      showMsg(`Proposta de troca + dinheiro enviada para o clube ${p.owner}!`);
+      showMsg(`Proposta enviada com sucesso!`);
       renderProposals();
     }
 
     function renderProposals() {
       const list = document.getElementById('sent-proposals-list');
       if(secretBids.length === 0) {
-        list.innerHTML = '<p class="text-xs text-txtMuted">Nenhuma proposta enviada no momento.</p>';
+        list.innerHTML = '<p class="text-xs text-txtMuted">Nenhuma proposta ativa.</p>';
         return;
       }
 
@@ -559,9 +525,7 @@
         <div class="bg-bgDark border border-cardBorder p-4 rounded-xl flex items-center justify-between text-xs gap-3">
           <div>
             <span class="font-bold text-txtMain">${bid.playerName}</span>
-            <div class="text-[11px] text-primary mt-0.5">
-              Oferta: R$ ${bid.offerMoney.toLocaleString()} em dinheiro ${bid.tradedPlayer ? '+ Troca (' + bid.tradedPlayer.name + ')' : ''} | Total: R$ ${bid.totalValuation.toLocaleString()}
-            </div>
+            <div class="text-[11px] text-primary mt-0.5">Oferta: R$ ${bid.offerMoney.toLocaleString()} ${bid.tradedPlayer ? '+ Troca (' + bid.tradedPlayer.name + ')' : ''} | Total: R$ ${bid.totalValuation.toLocaleString()}</div>
           </div>
           <span class="bg-goldBadge/10 text-goldBadge border border-goldBadge/20 px-2 py-1 rounded text-[10px] font-bold">🔒 Pendente</span>
         </div>
@@ -570,7 +534,7 @@
 
     function resolveSecretBids() {
       if(secretBids.length === 0) {
-        showMsg("Nenhuma oferta para apurar nesta época.", true);
+        showMsg("Nenhuma oferta para apurar.", true);
         return;
       }
 
@@ -588,12 +552,7 @@
           document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
           p.owner = winningBid.club;
           mySquad.push(p);
-
-          if(winningBid.tradedPlayer) {
-            mySquad = mySquad.filter(s => s.id != winningBid.tradedPlayer.id);
-          }
-
-          pushNews(`🏆 LEILÃO/TROCA REVELADO: ${winningBid.club} fechou a contratação de ${p.name}!`);
+          if(winningBid.tradedPlayer) mySquad = mySquad.filter(s => s.id != winningBid.tradedPlayer.id);
         }
       });
 
@@ -601,7 +560,7 @@
       renderProposals();
       loadMarket();
       loadSquad();
-      showMsg("🎉 Época encerrada! Vencedores e trocas foram revelados!");
+      showMsg("🎉 Época encerrada e revelada com sucesso!");
     }
 
     function openShieldModal(id) {
@@ -619,20 +578,15 @@
 
     function confirmShield() {
       const investVal = parseInt(document.getElementById('shield-invest-val').value, 10);
-      if(isNaN(investVal) || investVal <= 0) {
-        showMsg("Digite um valor válido.", true);
-        return;
-      }
-
-      if((userBalance - investVal) < 0) {
-        showMsg("Investimento negado: Saldo insuficiente!", true);
+      if(isNaN(investVal) || investVal <= 0 || (userBalance - investVal) < 0) {
+        showMsg("Valor inválido ou saldo insuficiente!", true);
         return;
       }
 
       userBalance -= investVal;
       document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
 
-      const p = FULL_PLAYERS_DATABASE.find(item => item.id == shieldPlayerId);
+      const p = mySquad.find(item => item.id == shieldPlayerId);
       if(p) {
         if(!p.buyout) p.buyout = p.price * 2.5;
         p.buyout += (investVal * 4);
@@ -640,22 +594,18 @@
 
       closeShieldModal();
       loadSquad();
-      pushNews(`🛡️ BLINDAGEM OFICIAL: ${myUserClub} investiu R$ ${investVal.toLocaleString()} para blindar ${p.name}!`);
       showMsg(`🛡️ Atleta blindado! Nova multa: R$ ${p.buyout.toLocaleString()}`);
     }
 
     function simulateStat(id, type) {
       const p = mySquad.find(item => item.id == id);
       if(!p) return;
-
       if(type === 'goal') {
         p.price = Math.round(p.price * 1.05);
-        pushNews(`⚽ DESTAQUE: ${p.name} valorizou após boa atuação! Novo preço: R$ ${p.price.toLocaleString()}`);
-        showMsg(`📈 ${p.name} valorizou no mercado!`);
-      } else if(type === 'injury') {
+        showMsg(`📈 ${p.name} valorizou após boa atuação!`);
+      } else {
         p.price = Math.round(p.price * 0.95);
-        pushNews(`🚑 LESÃO: ${p.name} machucou-se e perdeu 5% do valor de mercado!`);
-        showMsg(`❌ Lesão! Atleta perdeu 5% do valor de mercado.`, true);
+        showMsg(`❌ ${p.name} desvalorizou devido a lesão.`, true);
       }
       loadSquad();
     }
@@ -668,12 +618,12 @@
       const filtered = FULL_PLAYERS_DATABASE.filter(p => p.name.toLowerCase().includes(searchVal));
 
       if(filtered.length === 0) {
-        mList.innerHTML = '<p class="text-xs text-txtMuted col-span-full py-6 text-center font-bold">Nenhum atleta encontrado na busca. Digite para buscar online!</p>';
+        mList.innerHTML = '<p class="text-xs text-txtMuted col-span-full py-6 text-center font-bold">Nenhum atleta encontrado. Digite o nome para buscar em todas as ligas mundiais!</p>';
         return;
       }
 
       mList.innerHTML = filtered.map(p => {
-        const ownerText = p.owner ? `Dono: ${p.owner}` : 'Livre (Leilão Secreto)';
+        const ownerText = p.owner ? `Dono: ${p.owner}` : 'Atleta Livre (Só Dinheiro)';
         const buyoutVal = p.buyout || (p.price * 2.5);
         const priceLabel = p.owner ? `Multa: R$ ${buyoutVal.toLocaleString()}` : `Base: R$ ${p.price.toLocaleString()}`;
         
@@ -693,7 +643,7 @@
               <div class="text-[9px] text-amber-400 font-mono">${priceLabel}</div>
               <div class="flex items-center justify-between mt-1">
                 <button onclick="openNegotiateModal('${p.id}')" class="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-2 py-1 rounded text-[10px] font-bold transition-all backdrop-blur-sm z-20">
-                  ${p.owner ? 'Negociar / Multa' : '🔒 Fazer Oferta Secreta'}
+                  ${p.owner ? 'Negociar / Troca / Multa' : '🔒 Fazer Lance em Dinheiro'}
                 </button>
               </div>
             </div>
@@ -706,31 +656,29 @@
       const sList = document.getElementById('squad-list');
       if(!sList) return;
       if(mySquad.length === 0) {
-        sList.innerHTML = '<p class="text-xs text-txtMuted col-span-full">Seu plantel está vazio. Vá até o mercado contratar atletas!</p>';
+        sList.innerHTML = '<p class="text-xs text-txtMuted col-span-full">Seu plantel está vazio.</p>';
         return;
       }
-      sList.innerHTML = mySquad.map(p => {
-        return `
-          <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBorder">
-            <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${NO_PHOTO_IMG}';">
-            <div class="relative z-10 flex justify-between items-start">
-              <div>
-                <span class="${isCompactMode ? 'text-xl' : 'text-3xl'} font-black text-goldBadge drop-shadow-md leading-none">${p.rating}</span>
-                <div class="text-[10px] uppercase font-bold text-txtMain tracking-widest">${p.position}</div>
-              </div>
-            </div>
-            <div class="relative z-10 mt-auto pt-2 border-t border-cardBorder/50 flex flex-col gap-1">
-              <div class="font-extrabold text-xs text-txtMain uppercase tracking-wide truncate w-full drop-shadow-md">${p.name}</div>
-              <div class="text-[9px] text-amber-400 font-mono">Mercado: R$ ${p.price.toLocaleString()}</div>
-              <div class="flex gap-1 mt-1">
-                <button onclick="openShieldModal('${p.id}')" class="flex-1 bg-goldBadge/20 text-goldBadge border border-goldBadge/30 py-1 rounded text-[9px] font-bold">🛡️ Blindar</button>
-                <button onclick="simulateStat('${p.id}', 'goal')" class="bg-success/20 text-success border border-success/30 px-1.5 py-1 rounded text-[9px] font-bold" title="Simular Gol">+⚽</button>
-                <button onclick="simulateStat('${p.id}', 'injury')" class="bg-danger/20 text-danger border border-danger/30 px-1.5 py-1 rounded text-[9px] font-bold" title="Simular Lesão">🚑</button>
-              </div>
+      sList.innerHTML = mySquad.map(p => `
+        <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBorder">
+          <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer"
+                    <div class="relative z-10 flex justify-between items-start">
+            <div>
+              <span class="${isCompactMode ? 'text-xl' : 'text-3xl'} font-black text-goldBadge drop-shadow-md leading-none">${p.rating}</span>
+              <div class="text-[10px] uppercase font-bold text-txtMain tracking-widest">${p.position}</div>
             </div>
           </div>
-        `;
-      }).join('');
+          <div class="relative z-10 mt-auto pt-2 border-t border-cardBorder/50 flex flex-col gap-1">
+            <div class="font-extrabold text-xs text-txtMain uppercase tracking-wide truncate w-full drop-shadow-md">${p.name}</div>
+            <div class="text-[9px] text-amber-400 font-mono">Mercado: R$ ${p.price.toLocaleString()}</div>
+            <div class="flex gap-1 mt-1">
+              <button onclick="openShieldModal('${p.id}')" class="flex-1 bg-goldBadge/20 text-goldBadge border border-goldBadge/30 py-1 rounded text-[9px] font-bold">🛡️ Blindar</button>
+              <button onclick="simulateStat('${p.id}', 'goal')" class="bg-success/20 text-success border border-success/30 px-1.5 py-1 rounded text-[9px] font-bold" title="Simular Gol">+⚽</button>
+              <button onclick="simulateStat('${p.id}', 'injury')" class="bg-danger/20 text-danger border border-danger/30 px-1.5 py-1 rounded text-[9px] font-bold" title="Simular Lesão">🚑</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
     }
   </script>
 </body>
