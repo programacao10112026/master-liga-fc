@@ -100,7 +100,7 @@
       <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 id="dash-title" class="text-2xl font-black tracking-tight">Super Liga Master</h1>
-          <p class="text-txtMuted text-xs mt-0.5">Base Online Global Direct-Search & Multa Rescisória em Dinheiro Vivo</p>
+          <p class="text-txtMuted text-xs mt-0.5">Busca Global Direct-Search & Multa Rescisória em Dinheiro Vivo</p>
         </div>
         <button onclick="showView('home-view')" class="bg-bgDark border border-cardBorder px-4 py-2.5 rounded-xl text-xs font-bold transition-all">Voltar ao Início</button>
       </div>
@@ -145,7 +145,7 @@
       </div>
     </section>
   </main>
-    <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-cardBg border border-cardBorder max-w-md w-full p-6 rounded-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 id="modal-player-title" class="font-bold text-base">Oferta por Atleta</h3>
       <p id="modal-player-info" class="text-xs text-txtMuted"></p>
@@ -204,7 +204,6 @@
   <script>
     const NO_PHOTO_IMG = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
     
-    // Lista inicial em memória (refeita dinamicamente pelas buscas online)
     let FULL_PLAYERS_DATABASE = [
       { id: "101", name: "Neymar Jr", league: "Saudi Pro League", position: "MEI", rating: 89, price: 90000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/124712/image" },
       { id: "102", name: "Lionel Messi", league: "MLS", position: "ATA", rating: 90, price: 85000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/12994/image" },
@@ -300,7 +299,8 @@
       renderProposals();
       pushNews(`🚀 ${myUserClub} entrou na Master Liga FC!`);
     }
-        function filterMarket() {
+
+    function filterMarket() {
       clearTimeout(searchDebounceTimeout);
       const query = document.getElementById('market-search').value.trim();
       
@@ -313,7 +313,6 @@
       }
     }
 
-    // BUSCA GLOBAL REAL DA SOFASCORE SEMENTES (SEM CORS, 100% FUNCIONAL ONLINE)
     async function fetchOnlineGlobalPlayers(query) {
       const mList = document.getElementById('market-list');
       if(!mList) return;
@@ -328,11 +327,10 @@
 
           if(players.length > 0) {
             players.forEach(p => {
-              const pData = p.entity;
-              const playerId = "sofa_" + pData.id;
+              const
+                playerId = "sofa_" + pData.id;
 
               if(!FULL_PLAYERS_DATABASE.some(existing => existing.id == playerId)) {
-                // Cálculo de valor de mercado e overall com base nas métricas reais
                 const calculatedRating = pData.userCount ? Math.min(92, Math.max(72, Math.round(70 + Math.log10(pData.userCount + 10) * 4))) : 75;
                 const marketVal = calculatedRating * 1200000;
 
@@ -351,7 +349,7 @@
           }
         }
       } catch (err) {
-        console.log("Servidor online em requisição direta de emergência:", err);
+        console.log("Erro na requisição online:", err);
       }
 
       loadMarket();
@@ -406,7 +404,7 @@
         titleEl.textContent = `⚡ Pagar Multa Rescisória: ${p.name}`;
         const currentBuyout = p.buyout || (p.price * 2.5);
         infoEl.textContent = `Pertence a: ${p.owner} | Multa Rescisória: R$ ${currentBuyout.toLocaleString()}`;
-        offerTip.textContent = "💵 A multa é paga EXCLUSIVAMENTE em dinheiro vivo do caixa. Não é permitido trocar jogadores na multa.";
+        offerTip.textContent = "💵 A multa é paga EXCLUSIVAMENTE em dinheiro vivo do caixa.";
         submitBtn.textContent = "Pagar Multa em Dinheiro";
         offerInput.value = currentBuyout;
         
