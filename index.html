@@ -26,11 +26,11 @@
       border: 1px solid #334155; 
       position: relative;
       overflow: hidden;
-      height: 14.5rem;
+      height: 15.5rem;
       transition: all 0.2s ease;
     }
     .fut-card.compact {
-      height: 6.5rem;
+      height: 7rem;
       flex-direction: row !important;
       align-items: center;
       padding: 0.75rem !important;
@@ -41,10 +41,8 @@
       opacity: 0.8;
     }
     .player-image {
-      position: absolute; bottom: 0; right: -10px; height: 85%; width: auto; z-index: 0;
+      position: absolute; bottom: 0; right: -5px; height: 80%; width: auto; max-width: 60%; object-fit: contain; z-index: 0;
       filter: drop-shadow(0 10px 8px rgba(0,0,0,0.6));
-      -webkit-mask-image: linear-gradient(to top, transparent 5%, black 70%);
-      mask-image: linear-gradient(to top, transparent 5%, black 70%);
       opacity: 0.95;
     }
   </style>
@@ -92,7 +90,6 @@
           <h2 class="text-base font-bold flex items-center gap-2"><span>🤝</span> Patrocínios Oficiais (Escolha exatamente 3)</h2>
           <p class="text-[11px] text-txtMuted">Selecione suas marcas parceiras:</p>
           
-          <!-- TODAS AS 24 MARCAS DIRETAS NO HTML ESTÁTICO -->
           <div id="sponsors-list" class="space-y-2 text-xs max-h-72 overflow-y-auto pr-2 border border-cardBorder/50 p-2 rounded-xl bg-bgDark/40">
             <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="1" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Adibas <span class="text-[10px] text-success font-mono">(R$ 4.0M/rodada)</span></div><div class="text-[10px] text-primary mt-0.5"><b>Meta:</b> Manter pelo menos 3 atletas no elenco titular com rating 85+.</div></div></div></label>
             <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="2" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Mike <span class="text-[10px] text-success font-mono">(R$ 4.5M/rodada)</span></div><div class="text-[10px] text-primary mt-0.5"><b>Meta:</b> Não sofrer nenhuma venda de jogador por multa rescisória.</div></div></div></label>
@@ -146,8 +143,33 @@
       <div id="tab-market" class="tab-content space-y-6">
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="font-bold text-sm">Atletas Disponíveis e Clubes Rivais</h2>
-            <input id="market-search" type="text" oninput="filterMarket()" placeholder="Pesquisar atleta por nome..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-72">
+            <h2 class="font-bold text-sm">Filtro de Ligas & Atletas</h2>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <select id="league-filter" onchange="filterMarket()" class="bg-bgDark border border-cardBorder rounded-xl px-3 py-2 text-xs outline-none focus:border-primary text-txtMain">
+                <option value="ALL">Todas as Ligas (20 Ligas)</option>
+                <option value="Premier League">Premier League</option>
+                <option value="EFL Championship">EFL Championship</option>
+                <option value="EFL League One">EFL League One</option>
+                <option value="EFL League Two">EFL League Two</option>
+                <option value="LALIGA EA SPORTS">LALIGA EA SPORTS</option>
+                <option value="LALIGA HYPERMOTION">LALIGA HYPERMOTION</option>
+                <option value="Bundesliga">Bundesliga</option>
+                <option value="2. Bundesliga">2. Bundesliga</option>
+                <option value="3. Liga">3. Liga</option>
+                <option value="Serie A Enilive">Serie A Enilive</option>
+                <option value="Serie BKT">Serie BKT</option>
+                <option value="Ligue 1 McDonald's">Ligue 1 McDonald's</option>
+                <option value="Ligue 2 BKT">Ligue 2 BKT</option>
+                <option value="Eredivisie">Eredivisie</option>
+                <option value="Liga Portugal">Liga Portugal</option>
+                <option value="Belgium Pro League">Belgium Pro League</option>
+                <option value="Trendyol Süper Lig">Trendyol Süper Lig</option>
+                <option value="Scottish Premiership">Scottish Premiership</option>
+                <option value="Austrian Bundesliga">Austrian Bundesliga</option>
+                <option value="Swiss Super League">Swiss Super League</option>
+              </select>
+              <input id="market-search" type="text" oninput="filterMarket()" placeholder="Pesquisar por nome ou clube..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-60">
+            </div>
           </div>
           <div id="market-list" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
         </div>
@@ -227,19 +249,41 @@
   </div>
 
   <script>
-    const NO_PHOTO_IMG = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png";
+    const NO_PHOTO_IMG = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
     
-    const FULL_PLAYERS_DATABASE = [
-      { id: 1, name: "Kylian Mbappé", position: "ATA", rating: 91, price: 140000000, owner: null, buyout: 350000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/85140373.png" },
-      { id: 2, name: "Erling Haaland", position: "ATA", rating: 91, price: 135000000, owner: null, buyout: 330000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/19280949.png" },
-      { id: 3, name: "Vinícius Jr.", position: "EI", rating: 90, price: 120000000, owner: null, buyout: 300000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/19246454.png" },
-      { id: 4, name: "Jude Bellingham", position: "MEI", rating: 90, price: 115000000, owner: null, buyout: 280000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/28122678.png" },
-      { id: 5, name: "Rodri", position: "VOL", rating: 91, price: 110000000, owner: null, buyout: 270000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/67246221.png" },
-      { id: 6, name: "Lamine Yamal", position: "ED", rating: 87, price: 105000000, owner: null, buyout: 260000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/2000244799.png" },
-      { id: 7, name: "Kevin De Bruyne", position: "MC", rating: 90, price: 100000000, owner: null, buyout: 250000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/18025882.png" },
-      { id: 8, name: "Mohamed Salah", position: "ED", rating: 89, price: 95000000, owner: null, buyout: 230000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/80004921.png" },
-      { id: 9, name: "Harry Kane", position: "ATA", rating: 90, price: 90000000, owner: null, buyout: 220000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/29083354.png" },
-      { id: 10, name: "Fede Valverde", position: "MC", rating: 88, price: 90000000, owner: null, buyout: 220000000, photo_url: "https://sortitoutsi.b-cdn.net/uploads/face/19277051.png" }
+    // BANCO EXPANDIDO COM ESTRUTURA PARA TODAS AS 20 LIGAS
+    let FULL_PLAYERS_DATABASE = [
+      // Premier League & LaLiga
+      { id: 1, name: "Kylian Mbappé", league: "LALIGA EA SPORTS", position: "ATA", rating: 91, price: 180000000, owner: null, buyout: 400000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/2019-07-17_FC_Bayer_04_Leverkusen_vs._Watford_FC_%28Kylian_Mbapp%C3%A9%29_by_Sven_Mandel_01.jpg/500px-2019-07-17_FC_Bayer_04_Leverkusen_vs._Watford_FC_%28Kylian_Mbapp%C3%A9%29_by_Sven_Mandel_01.jpg" },
+      { id: 2, name: "Erling Haaland", league: "Premier League", position: "ATA", rating: 91, price: 175000000, owner: null, buyout: 380000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Erling_Haaland_2023.jpg/500px-Erling_Haaland_2023.jpg" },
+      { id: 3, name: "Vinícius Jr.", league: "LALIGA EA SPORTS", position: "EI", rating: 90, price: 150000000, owner: null, buyout: 350000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Vinicius_Jr_2021.jpg/500px-Vinicius_Jr_2021.jpg" },
+      { id: 4, name: "Jude Bellingham", league: "LALIGA EA SPORTS", position: "MEI", rating: 90, price: 140000000, owner: null, buyout: 320000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Jude_Bellingham_2023.jpg/500px-Jude_Bellingham_2023.jpg" },
+      { id: 5, name: "Rodri", league: "Premier League", position: "VOL", rating: 91, price: 130000000, owner: null, buyout: 300000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Rodri_2023.jpg/500px-Rodri_2023.jpg" },
+      { id: 6, name: "Lamine Yamal", league: "LALIGA EA SPORTS", position: "ED", rating: 87, price: 120000000, owner: null, buyout: 280000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Lamine_Yamal_2024.jpg/500px-Lamine_Yamal_2024.jpg" },
+      { id: 7, name: "Kevin De Bruyne", league: "Premier League", position: "MC", rating: 90, price: 100000000, owner: null, buyout: 250000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Kevin_De_Bruyne_2018.jpg/500px-Kevin_De_Bruyne_2018.jpg" },
+      { id: 8, name: "Mohamed Salah", league: "Premier League", position: "ED", rating: 89, price: 95000000, owner: null, buyout: 230000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Mohamed_Salah_2018.jpg/500px-Mohamed_Salah_2018.jpg" },
+      { id: 9, name: "Harry Kane", league: "Bundesliga", position: "ATA", rating: 90, price: 90000000, owner: null, buyout: 220000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Harry_Kane_2018.jpg/500px-Harry_Kane_2018.jpg" },
+      { id: 10, name: "Fede Valverde", league: "LALIGA EA SPORTS", position: "MC", rating: 88, price: 90000000, owner: null, buyout: 220000000, photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Federico_Valverde_2019.jpg/500px-Federico_Valverde_2019.jpg" },
+      
+      // Representantes de todas as 20 Ligas
+      { id: 11, name: "Jamie Vardy", league: "EFL Championship", position: "ATA", rating: 78, price: 5000000, owner: null, buyout: 15000000, photo_url: NO_PHOTO_IMG },
+      { id: 12, name: "Jonson Clarke-Harris", league: "EFL League One", position: "ATA", rating: 72, price: 2000000, owner: null, buyout: 6000000, photo_url: NO_PHOTO_IMG },
+      { id: 13, name: "Paul Mullin", league: "EFL League Two", position: "ATA", rating: 70, price: 1500000, owner: null, buyout: 4000000, photo_url: NO_PHOTO_IMG },
+      { id: 14, name: "Martin Braithwaite", league: "LALIGA HYPERMOTION", position: "ATA", rating: 76, price: 4000000, owner: null, buyout: 10000000, photo_url: NO_PHOTO_IMG },
+      { id: 15, name: "Florian Wirtz", league: "Bundesliga", position: "MEI", rating: 88, price: 110000000, owner: null, buyout: 250000000, photo_url: NO_PHOTO_IMG },
+      { id: 16, name: "Robert Glatzel", league: "2. Bundesliga", position: "ATA", rating: 75, price: 3000000, owner: null, buyout: 8000000, photo_url: NO_PHOTO_IMG },
+      { id: 17, name: "Dominick Drexler", league: "3. Liga", position: "MC", rating: 71, price: 1000000, owner: null, buyout: 3000000, photo_url: NO_PHOTO_IMG },
+      { id: 18, name: "Lautaro Martínez", league: "Serie A Enilive", position: "ATA", rating: 89, price: 110000000, owner: null, buyout: 260000000, photo_url: NO_PHOTO_IMG },
+      { id: 19, name: "Massimo Coda", league: "Serie BKT", position: "ATA", rating: 74, price: 2500000, owner: null, buyout: 7000000, photo_url: NO_PHOTO_IMG },
+      { id: 20, name: "Ousmane Dembélé", league: "Ligue 1 McDonald's", position: "ED", rating: 86, price: 60000000, owner: null, buyout: 140000000, photo_url: NO_PHOTO_IMG },
+      { id: 21, name: "Alexandre Mendy", league: "Ligue 2 BKT", position: "ATA", rating: 75, price: 3000000, owner: null, buyout: 8000000, photo_url: NO_PHOTO_IMG },
+      { id: 22, name: "Luuk de Jong", league: "Eredivisie", position: "ATA", rating: 81, price: 12000000, owner: null, buyout: 30000000, photo_url: NO_PHOTO_IMG },
+      { id: 23, name: "Viktor Gyökeres", league: "Liga Portugal", position: "ATA", rating: 84, price: 65000000, owner: null, buyout: 150000000, photo_url: NO_PHOTO_IMG },
+      { id: 24, name: "Hans Vanaken", league: "Belgium Pro League", position: "MC", rating: 80, price: 10000000, owner: null, buyout: 25000000, photo_url: NO_PHOTO_IMG },
+      { id: 25, name: "Mauro Icardi", league: "Trendyol Süper Lig", position: "ATA", rating: 82, price: 15000000, owner: null, buyout: 35000000, photo_url: NO_PHOTO_IMG },
+      { id: 26, name: "Callum McGregor", league: "Scottish Premiership", position: "MC", rating: 78, price: 8000000, owner: null, buyout: 20000000, photo_url: NO_PHOTO_IMG },
+      { id: 27, name: "Oscar Gloukh", league: "Austrian Bundesliga", position: "MEI", rating: 77, price: 18000000, owner: null, buyout: 40000000, photo_url: NO_PHOTO_IMG },
+      { id: 28, name: "Xherdan Shaqiri", league: "Swiss Super League", position: "ED", rating: 76, price: 4000000, owner: null, buyout: 10000000, photo_url: NO_PHOTO_IMG }
     ];
 
     let myUserClub = "Meu Clube FC";
@@ -587,16 +631,27 @@
 
     function loadMarket() {
       const searchVal = document.getElementById('market-search').value.toLowerCase();
+      const leagueVal = document.getElementById('league-filter').value;
       const mList = document.getElementById('market-list');
       if(!mList) return;
-      const filtered = FULL_PLAYERS_DATABASE.filter(p => p.name.toLowerCase().includes(searchVal));
+
+      const filtered = FULL_PLAYERS_DATABASE.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchVal);
+        const matchesLeague = (leagueVal === "ALL" || p.league === leagueVal);
+        return matchesSearch && matchesLeague;
+      });
+
+      if(filtered.length === 0) {
+        mList.innerHTML = '<p class="text-xs text-txtMuted col-span-full py-4 text-center">Nenhum jogador encontrado para essa liga ou busca no momento.</p>';
+        return;
+      }
 
       mList.innerHTML = filtered.map(p => {
         const buyoutVal = p.buyout || (p.price * 2.5);
         const ownerText = p.owner ? `Dono: ${p.owner}` : 'Livre (Requer Admin)';
         return `
           <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBorder">
-            <img src="${p.photo_url}" class="player-image" onerror="this.src='${NO_PHOTO_IMG}'">
+            <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${NO_PHOTO_IMG}';">
             <div class="relative z-10 flex justify-between items-start">
               <div>
                 <span class="${isCompactMode ? 'text-xl' : 'text-3xl'} font-black text-goldBadge drop-shadow-md leading-none">${p.rating}</span>
@@ -605,6 +660,7 @@
             </div>
             <div class="relative z-10 mt-auto pt-2 border-t border-cardBorder/50 flex flex-col gap-1">
               <div class="font-extrabold text-xs text-txtMain uppercase tracking-wide truncate w-full drop-shadow-md">${p.name}</div>
+              <div class="text-[9px] text-txtMuted font-semibold truncate">${p.league || 'Liga Geral'}</div>
               <div class="text-[9px] text-primary font-mono">${ownerText}</div>
               <div class="text-[9px] text-amber-400 font-mono">Multa: R$ ${buyoutVal.toLocaleString()}</div>
               <div class="flex items-center justify-between mt-1">
@@ -628,7 +684,7 @@
         const buyoutVal = p.buyout || (p.price * 2.5);
         return `
           <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBorder">
-            <img src="${p.photo_url}" class="player-image" onerror="this.src='${NO_PHOTO_IMG}'">
+            <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${NO_PHOTO_IMG}';">
             <div class="relative z-10 flex justify-between items-start">
               <div>
                 <span class="${isCompactMode ? 'text-xl' : 'text-3xl'} font-black text-goldBadge drop-shadow-md leading-none">${p.rating}</span>
