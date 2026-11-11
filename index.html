@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Master Liga FC - Pro Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 1. BIBLIOTECA DO SUPABASE ADICIONADA AQUI -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -54,7 +56,7 @@
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-primary/20">M</div>
         <div>
           <h1 class="font-bold text-sm tracking-wide">MASTER LIGA FC</h1>
-          <span class="text-[10px] text-primary uppercase font-semibold tracking-widest">Busca Global (33 Ligas & Brasil A/B/C/D)</span>
+          <span class="text-[10px] text-primary uppercase font-semibold tracking-widest">Base de Dados EAFCS</span>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -63,14 +65,13 @@
       </div>
     </div>
   </header>
-
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:py-8 space-y-6">
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:py-8 space-y-6">
     <div id="global-msg" class="hidden p-4 rounded-xl text-sm font-bold shadow-lg text-center z-50"></div>
 
     <div class="bg-cardBg border border-cardBorder px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 overflow-hidden">
-      <span class="bg-primary/20 text-primary px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider shrink-0">📰 Mercado Global</span>
+      <span class="bg-primary/20 text-primary px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider shrink-0">📰 Mercado</span>
       <div id="news-ticker" class="text-xs text-txtMuted truncate">
-        Pesquise por qualquer atleta de ligas mundiais e do Brasileirão (Séries A, B, C, D)...
+        Pesquise por qualquer atleta na nossa base de dados oficial...
       </div>
     </div>
 
@@ -116,7 +117,7 @@
       <div id="tab-market" class="tab-content space-y-6">
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="font-bold text-sm">Pesquisa Global (Premier League, La Liga, Brasileirão A/B/C/D...)</h2>
+            <h2 class="font-bold text-sm">Pesquisa na Base de Dados (EAFCS)</h2>
             <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <input id="market-search" type="text" oninput="filterMarket()" placeholder="Digite o nome do jogador..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-80">
             </div>
@@ -143,7 +144,8 @@
       </div>
     </section>
   </main>
-    <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+
+  <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-cardBg border border-cardBorder max-w-md w-full p-6 rounded-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 id="modal-player-title" class="font-bold text-base">Oferta por Atleta</h3>
       <p id="modal-player-info" class="text-xs text-txtMuted"></p>
@@ -199,13 +201,15 @@
     </div>
   </div>
     <script>
+    // 2. CONFIGURAÇÃO DO SUPABASE ADICIONADA AQUI
+    const dbUrl = 'https://eidchszreuiubxqzvbwr.supabase.co';
+    const dbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpZGNoc3pyZXVpdWJ4cXp2YndyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyMzUxNTcsImV4cCI6MjEwOTgxMTE1N30.ekJ_2zRz9GXc5PDcp64O98PCQIqOCCzTZOXgluUze6o';
+    const supabase = window.supabase.createClient(dbUrl, dbKey);
+
     const NO_PHOTO_IMG = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
     
-    let FULL_PLAYERS_DATABASE = [
-      { id: "101", name: "Neymar Jr", league: "Saudi Pro League", position: "MEI", rating: 89, price: 90000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/124712/image" },
-      { id: "102", name: "Lionel Messi", league: "MLS", position: "ATA", rating: 90, price: 85000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/12994/image" },
-      { id: "103", name: "Hulk", league: "Brasileirao Serie A", position: "ATA", rating: 83, price: 30000000, owner: null, photo_url: "https://api.sofascore.app/api/v1/player/132456/image" }
-    ];
+    // Inicia a base local vazia (será populada com as buscas do Supabase)
+    let FULL_PLAYERS_DATABASE = [];
 
     let myUserClub = "Meu Clube FC";
     let userBalance = 50000000;
@@ -293,64 +297,78 @@
       loadSquad();
       renderProposals();
       pushNews(`🚀 ${myUserClub} entrou na Master Liga FC!`);
+      
+      // Carrega um top 10 inicial do Supabase só para não ficar vazio
+      fetchOnlineGlobalPlayers("");
     }
 
     function filterMarket() {
       clearTimeout(searchDebounceTimeout);
       const query = document.getElementById('market-search').value.trim();
       
-      if(query.length >= 2) {
+      // Pesquisa ao digitar pelo menos 2 letras
+      if(query.length >= 2 || query === "") {
         searchDebounceTimeout = setTimeout(() => {
           fetchOnlineGlobalPlayers(query);
-        }, 300);
-      } else {
-        loadMarket();
+        }, 400); // 400ms delay para evitar muitas chamadas
       }
     }
 
+    // 3. FUNÇÃO DE BUSCA ATUALIZADA PARA USAR O SUPABASE
     async function fetchOnlineGlobalPlayers(query) {
       const mList = document.getElementById('market-list');
       if(!mList) return;
-      mList.innerHTML = '<p class="text-xs text-primary col-span-full py-8 text-center font-bold animate-pulse">🔎 Buscando em 33 ligas mundiais e divisões do Brasil...</p>';
+      mList.innerHTML = '<p class="text-xs text-primary col-span-full py-8 text-center font-bold animate-pulse">🔎 Conectando ao Banco de Dados EAFCS...</p>';
 
       try {
-        const res = await fetch(`https://api.sofascore.com/api/v1/search/all?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
+        let queryBuilder = supabase
+            .from('Jogadoresplayer')
+            .select('short_name, overall, player_positions, club_name')
+            .order('overall', { ascending: false })
+            .limit(50); // Limite de 50 para não travar o telemóvel
 
-        if(data && data.results) {
-          const players = data.results.filter(item => item.type === 'player');
+        // Se tiver texto, filtra pelo nome
+        if (query.length > 0) {
+            queryBuilder = queryBuilder.ilike('short_name', `%${query}%`);
+        }
 
-          if(players.length > 0) {
-            players.forEach(p => {
-              const pData = p.entity;
-              const playerId = "sofa_" + pData.id;
+        const { data: jogadoresDB, error } = await queryBuilder;
 
-              if(!FULL_PLAYERS_DATABASE.some(existing => existing.id == playerId)) {
-                const calculatedRating = pData.userCount ? Math.min(93, Math.max(70, Math.round(70 + Math.log10(pData.userCount + 10) * 4))) : 75;
-                const marketVal = calculatedRating * 1200000;
+        if(error) throw error;
 
-                FULL_PLAYERS_DATABASE.push({
-                  id: playerId,
-                  name: pData.name || pData.shortName,
-                  league: pData.team ? pData.team.name : "Futebol Global",
-                  position: pData.position || "ATA",
-                  rating: calculatedRating,
-                  price: marketVal,
-                  owner: Math.random() > 0.5 ? "Clube Rival" : null, // Dinâmico: alguns livres, outros com dono
-                  photo_url: `https://api.sofascore.app/api/v1/player/${pData.id}/image`
-                });
-              }
+        if(jogadoresDB && jogadoresDB.length > 0) {
+          // Limpa a base local para atualizar só com o que pesquisou
+          FULL_PLAYERS_DATABASE = []; 
+          
+          jogadoresDB.forEach((pData, index) => {
+            // Cria um ID único
+            const playerId = "supa_" + index + "_" + (pData.short_name || '').replace(/\s/g, ''); 
+            
+            // Calcula posição principal e valor
+            const mainPosition = pData.player_positions ? pData.player_positions.split(',')[0].trim() : "ATA";
+            const rating = pData.overall || 70;
+            const marketVal = rating * 1200000;
+
+            FULL_PLAYERS_DATABASE.push({
+              id: playerId,
+              name: pData.short_name || 'Desconhecido',
+              league: pData.club_name || "Sem Clube",
+              position: mainPosition,
+              rating: rating,
+              price: marketVal,
+              owner: Math.random() > 0.5 ? "Clube Rival" : null, // 50% de chance de ter dono
+              photo_url: NO_PHOTO_IMG
             });
-          }
+          });
+        } else {
+            FULL_PLAYERS_DATABASE = []; // Limpa se não encontrou nada
         }
       } catch (err) {
-        console.log("Erro na busca online:", err);
+        console.log("Erro na busca do Supabase:", err);
       }
 
       loadMarket();
-    }
-
-    function openNegotiateModal(id) {
+    }    function openNegotiateModal(id) {
       selectedPlayerId = id;
       let p = FULL_PLAYERS_DATABASE.find(item => item.id == id);
       if(!p) return;
@@ -360,11 +378,11 @@
 
       if(p.owner) {
         selectorBox.classList.remove('hidden');
-        tradeSection.classList.remove('hidden'); // Troca permitida apenas com clubes rivais
+        tradeSection.classList.remove('hidden');
         setNegotiationMode('negotiate');
       } else {
         selectorBox.classList.add('hidden');
-        tradeSection.classList.add('hidden'); // Jogadores livres compram-se APENAS com dinheiro
+        tradeSection.classList.add('hidden');
         setNegotiationMode('free');
       }
 
@@ -611,18 +629,15 @@
     }
 
     function loadMarket() {
-      const searchVal = document.getElementById('market-search').value.toLowerCase().trim();
       const mList = document.getElementById('market-list');
       if(!mList) return;
 
-      const filtered = FULL_PLAYERS_DATABASE.filter(p => p.name.toLowerCase().includes(searchVal));
-
-      if(filtered.length === 0) {
-        mList.innerHTML = '<p class="text-xs text-txtMuted col-span-full py-6 text-center font-bold">Nenhum atleta encontrado. Digite o nome para buscar em todas as ligas mundiais!</p>';
+      if(FULL_PLAYERS_DATABASE.length === 0) {
+        mList.innerHTML = '<p class="text-xs text-txtMuted col-span-full py-6 text-center font-bold">Nenhum atleta encontrado no Supabase com este nome.</p>';
         return;
       }
 
-      mList.innerHTML = filtered.map(p => {
+      mList.innerHTML = FULL_PLAYERS_DATABASE.map(p => {
         const ownerText = p.owner ? `Dono: ${p.owner}` : 'Atleta Livre (Só Dinheiro)';
         const buyoutVal = p.buyout || (p.price * 2.5);
         const priceLabel = p.owner ? `Multa: R$ ${buyoutVal.toLocaleString()}` : `Base: R$ ${p.price.toLocaleString()}`;
@@ -661,8 +676,8 @@
       }
       sList.innerHTML = mySquad.map(p => `
         <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBorder">
-          <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer"
-                    <div class="relative z-10 flex justify-between items-start">
+          <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${NO_PHOTO_IMG}';">
+          <div class="relative z-10 flex justify-between items-start">
             <div>
               <span class="${isCompactMode ? 'text-xl' : 'text-3xl'} font-black text-goldBadge drop-shadow-md leading-none">${p.rating}</span>
               <div class="text-[10px] uppercase font-bold text-txtMain tracking-widest">${p.position}</div>
