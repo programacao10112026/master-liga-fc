@@ -1,697 +1,334 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Master Liga FC - Pro Manager</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            bgDark: '#090d16', cardBg: '#111827', cardBorder: '#1f293d',
-            txtMain: '#f9fafb', txtMuted: '#9ca3af', primary: '#38bdf8',
-            primaryHover: '#0ea5e9', goldBadge: '#fbbf24', success: '#34d399', danger: '#f87171'
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    body { background-color: #090d16; color: #f9fafb; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    .hidden { display: none !important; }
-    .fut-card { 
-      background: linear-gradient(135deg, #1e293b 0%, #090d16 100%); 
-      border: 1px solid #334155; 
-      position: relative;
-      overflow: hidden;
-      height: 15.5rem;
-      transition: all 0.2s ease;
-    }
-    .fut-card.compact {
-      height: 7rem;
-      flex-direction: row !important;
-      align-items: center;
-      padding: 0.75rem !important;
-    }
-    .fut-card.compact .player-image {
-      height: 100% !important;
-      right: 5px !important;
-      opacity: 0.8;
-    }
-    .player-image {
-      position: absolute; bottom: 0; right: -5px; height: 80%; width: auto; max-width: 60%; object-fit: contain; z-index: 0;
-      filter: drop-shadow(0 10px 8px rgba(0,0,0,0.6));
-      opacity: 0.95;
-    }
-  </style>
-</head>
-<body class="antialiased flex flex-col min-h-screen">
-  <header class="border-b border-cardBorder bg-cardBg/90 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3 cursor-pointer" onclick="showView('home-view')">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-primary/20">M</div>
-        <div>
-          <h1 class="font-bold text-sm tracking-wide">MASTER LIGA FC</h1>
-          <span class="text-[10px] text-primary uppercase font-semibold tracking-widest">Base de Dados EAFCS</span>
-        </div>
-      </div>
-      <div class="flex items-center gap-3">
-        <span id="user-balance" class="text-xs text-success font-mono font-bold bg-bgDark px-3 py-1.5 rounded-lg border border-cardBorder">R$ 50.000.000</span>
-        <button onclick="window.location.reload()" class="px-3 py-1.5 rounded-lg border border-cardBorder bg-bgDark hover:border-danger hover:text-danger text-xs font-semibold transition-all">Reiniciar</button>
-      </div>
-    </div>
-  </header>
+import React, { useState } from 'react';
+import { 
+  Shield, Wallet, Ticket, Trophy, Users, ChessBoard, 
+  Play, Award, TrendingUp, Search, Filter, UserCheck, Briefcase, Settings, CheckCircle 
+} from 'lucide-react';
 
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:py-8 space-y-6">
-    <div id="global-msg" class="hidden p-4 rounded-xl text-sm font-bold shadow-lg text-center z-50"></div>
+export default function MasterLigaApp() {
+  const [isAdmin, setIsAdmin] = useState(true);
 
-    <div class="bg-cardBg border border-cardBorder px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 overflow-hidden">
-      <span class="bg-primary/20 text-primary px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider shrink-0">📰 Mercado</span>
-      <div id="news-ticker" class="text-xs text-txtMuted truncate">
-        Pesquise por qualquer atleta na nossa base de dados oficial...
-      </div>
-    </div>
+  const [managers, setManagers] = useState([
+    { id: 1, name: "Manager 1", clubName: "Master FC", funds: 50000000, position: 2, sponsor: null },
+    { id: 2, name: "Amigo 2", clubName: "FC Amigos 2", funds: 45000000, position: 4, sponsor: null },
+    { id: 3, name: "Amigo 3", clubName: "FC Amigos 3", funds: 42000000, position: 6, sponsor: null },
+    { id: 4, name: "Amigo 4", clubName: "FC Amigos 4", funds: 40000000, position: 8, sponsor: null },
+    { id: 5, name: "Amigo 5", clubName: "FC Amigos 5", funds: 38000000, position: 10, sponsor: null },
+    { id: 6, name: "Amigo 6", clubName: "FC Amigos 6", funds: 35000000, position: 12, sponsor: null },
+  ]);
+  const [activeManagerId, setActiveManagerId] = useState(1);
+  const activeManager = managers.find(m => m.id === activeManagerId);
 
-    <section id="home-view" class="space-y-6">
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
-          <h2 class="text-base font-bold flex items-center gap-2"><span>✨</span> Configurar seu Clube</h2>
-          <div class="space-y-3">
-            <input id="new-club-name" placeholder="Nome do seu Clube" value="Meu Clube FC" class="w-full bg-bgDark border border-cardBorder rounded-xl px-4 py-3 text-sm outline-none focus:border-primary">
-            <button onclick="enterManager()" class="w-full bg-primary hover:bg-primaryHover text-bgDark font-bold py-3 rounded-xl text-sm transition-all shadow-md shadow-primary/20">Entrar no Mercado e Plantel</button>
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedFormation, setSelectedFormation] = useState('4-3-3');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDivision, setSelectedDivision] = useState('ALL');
+  const [baseTicketPrice, setBaseTicketPrice] = useState(250000);
+  const [currentRound, setCurrentRound] = useState(14);
+
+  // 18 Patrocinadores Engraçados com Nomes de Marca
+  const funnySponsors = [
+    { id: 1, name: "Gambiarra Tech & Fios", bonusPerMatch: 80000, desc: "Internet que cai mais que atacante simulando falta." },
+    { id: 2, name: "Construtora Olha o Cano", bonusPerMatch: 120000, desc: "Garantimos que a sua defesa vai vazar." },
+    { id: 3, name: "Pizzaria Joelho Roto", bonusPerMatch: 60000, desc: "Massa pesada para deixar os zagueiros lentos." },
+    { id: 4, name: "Oficina Zé do Escapamento", bonusPerMatch: 95000, desc: "Barulho igualzinho à torcida organizada." },
+    { id: 5, name: "Energético Coração Acelerado", bonusPerMatch: 150000, desc: "Dá asas... ou uma arritmia leve no segundo tempo." },
+    { id: 6, name: "Barbearia Corte Tio Patinhas", bonusPerMatch: 70000, desc: "Estilo calvície disfarçada com gel." },
+    { id: 7, name: "Açougue Boi Chorando", bonusPerMatch: 110000, desc: "Carne fresca para o churrasco pós-derrota." },
+    { id: 8, name: "Desentupidora Vai Que Cola", bonusPerMatch: 85000, desc: "Especialistas em desafogar o meio-campo." },
+    { id: 9, name: "Farmácia Boa Sorte", bonusPerMatch: 65000, desc: "Analgésicos em dobro para o departamento médico." },
+    { id: 10, name: "Seguradora Pé Quebrado", bonusPerMatch: 130000, desc: "Seguro total para o craque do time." },
+    { id: 11, name: "Lavanderia Roupa Suja", bonusPerMatch: 50000, desc: "Lave a honra do time e os uniformes." },
+    { id: 12, name: "Sorveteria Dente Doendo", bonusPerMatch: 75000, desc: "Gelado como o peito do juiz." },
+    { id: 13, name: "Tintas Cai-Cai", bonusPerMatch: 90000, desc: "A cor que desbota na primeira chuva." },
+    { id: 14, name: "Pastelaria Vento Forte", bonusPerMatch: 55000, desc: "Muito vento, pouco recheio, igual ao chute do ponta." },
+    { id: 15, name: "Mercado Pague Depois", bonusPerMatch: 100000, desc: "Fiado aprovado para diretores caloteiros." },
+    { id: 16, name: "Escola de Sogra Sem Coração", bonusPerMatch: 115000, desc: "Treinamento intensivo de pressão psicológica." },
+    { id: 17, name: "Borracharia Meia Vida", bonusPerMatch: 60000, desc: "Remendando pneus e a temporada do clube." },
+    { id: 18, name: "Agência de Fofoca Exclusiva", bonusPerMatch: 140000, desc: "Venda fofocas dos rivais para ganhar caixa extra." }
+  ];
+
+  // Base de Dados Completa (Séries A, B, C, D)
+  const [allPlayersDatabase, setAllPlayersDatabase] = useState([
+    { id: 1, name: "Pedro", club: "Flamengo", div: "Série A", pos: "ATA", ovr: 87, val: "€ 22M" },
+    { id: 2, name: "Hulk", club: "Atlético-MG", div: "Série A", pos: "ATA", ovr: 85, val: "€ 12M" },
+    { id: 3, name: "Raphael Veiga", club: "Palmeiras", div: "Série A", pos: "MEI", ovr: 86, val: "€ 18M" },
+    { id: 4, name: "Giuliano", club: "Santos", div: "Série B", pos: "MEI", ovr: 79, val: "€ 4M" },
+    { id: 5, name: "Alex Teixeira", club: "Vasco", div: "Série B", pos: "ATA", ovr: 77, val: "€ 2.5M" },
+    { id: 6, name: "Cássio", club: "Cruzeiro", div: "Série B", pos: "GOL", ovr: 82, val: "€ 5M" },
+    { id: 7, name: "Artilheiro da C", club: "Remo", div: "Série C", pos: "ATA", ovr: 73, val: "€ 1.2M" },
+    { id: 8, name: "Volante Raiz", club: "São Bernardo", div: "Série C", pos: "VOL", ovr: 71, val: "€ 800K" },
+    { id: 9, name: "Jovem Promessa D", club: "Retrô", div: "Série D", pos: "MEI", ovr: 68, val: "€ 500K" },
+    { id: 10, name: "Zagueiro Xerife D", club: "Itabaiana", div: "Série D", pos: "ZAG", ovr: 67, val: "€ 400K" },
+    { id: 11, name: "Vinicius Jr", club: "Europa", div: "Internacional", pos: "ATA", ovr: 92, val: "€ 120M" },
+    { id: 12, name: "Marquinhos", club: "Europa", div: "Internacional", pos: "ZAG", ovr: 88, val: "€ 40M" }
+  ]);
+
+  const [squads, setSquads] = useState({
+    1: [{ id: 101, name: "Alisson Becker", pos: "GOL", ovr: 89, val: "€ 25M" }, { id: 102, name: "Vinicius Jr", pos: "ATA", ovr: 92, val: "€ 120M" }],
+    2: [{ id: 103, name: "Marquinhos", pos: "ZAG", ovr: 88, val: "€ 40M" }],
+    3: [{ id: 104, name: "Casemiro", pos: "VOL", ovr: 86, val: "€ 30M" }],
+    4: [{ id: 105, name: "Pedro", pos: "ATA", ovr: 87, val: "€ 22M" }],
+    5: [{ id: 106, name: "Hulk", pos: "ATA", ovr: 85, val: "€ 12M" }],
+    6: [{ id: 107, name: "Raphael Veiga", pos: "MEI", ovr: 86, val: "€ 18M" }],
+  });
+
+  const currentSquad = squads[activeManagerId] || [];
+
+  const [leagueTable, setLeagueTable] = useState([
+    { pos: 1, name: "Dynamo SP", pts: 35, v: 11, sg: 20 },
+    { pos: 2, name: "Master FC", pts: 32, v: 10, sg: 15 },
+    { pos: 3, name: "Atlético Carioca", pts: 28, v: 8, sg: 9 },
+    { pos: 4, name: "FC Amigos 2", pts: 25, v: 7, sg: 6 },
+    { pos: 5, name: "FC Amigos 3", pts: 22, v: 6, sg: 2 },
+    { pos: 6, name: "FC Amigos 4", pts: 20, v: 5, sg: 0 },
+    { pos: 7, name: "FC Amigos 5", pts: 18, v: 4, sg: -3 },
+    { pos: 8, name: "FC Amigos 6", pts: 15, v: 3, sg: -5 }
+  ]);
+
+  const getTicketMultiplier = () => {
+    if (activeManager.position === 1) return 2.0;
+    if (activeManager.position <= 3) return 1.5;
+    return 1.2;
+  };
+
+  const sponsorBonus = activeManager.sponsor ? activeManager.sponsor.bonusPerMatch : 0;
+  const currentMatchIncome = (baseTicketPrice * getTicketMultiplier()) + sponsorBonus;
+
+  const simulateMatch = () => {
+    setManagers(prev => prev.map(m => m.id === activeManagerId ? { ...m, funds: m.funds + currentMatchIncome } : m));
+    alert(`${activeManager.clubName} entrou em campo! Renda total adicionada: € ${currentMatchIncome.toLocaleString('pt-BR')}`);
+  };
+
+  const chooseSponsor = (sponsor) => {
+    setManagers(prev => prev.map(m => m.id === activeManagerId ? { ...m, sponsor } : m));
+    alert(`Contrato assinado com "${sponsor.name}"!`);
+  };
+
+  const signPlayer = (player) => {
+    setSquads(prev => ({ ...prev, [activeManagerId]: [...prev[activeManagerId], player] }));
+    setManagers(prev => prev.map(m => m.id === activeManagerId ? { ...m, funds: m.funds - 5000000 } : m));
+    alert(`${player.name} contratado para ${activeManager.clubName}!`);
+  };
+
+  const filteredMarket = allPlayersDatabase.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.club.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDiv = selectedDivision === 'ALL' || p.div === selectedDivision;
+    return matchesSearch && matchesDiv;
+  });
+
+  const getFormationCoordinates = () => [
+    { name: 'GOL', pos: 'GOL', x: '5%', y: '45%' },
+    { name: 'LE', pos: 'LE', x: '25%', y: '15%' },
+    { name: 'ZAG 1', pos: 'ZAG', x: '22%', y: '35%' },
+    { name: 'ZAG 2', pos: 'ZAG', x: '22%', y: '60%' },
+    { name: 'LD', pos: 'LD', x: '25%', y: '85%' },
+    { name: 'VOL', pos: 'VOL', x: '45%', y: '48%' },
+    { name: 'MEI E', pos: 'MEI', x: '55%', y: '25%' },
+    { name: 'MEI D', pos: 'MEI', x: '55%', y: '75%' },
+    { name: 'PE', pos: 'PE', x: '75%', y: '15%' },
+    { name: 'ATA', pos: 'ATA', x: '80%', y: '48%' },
+    { name: 'PD', pos: 'PD', x: '75%', y: '85%' }
+  ];
+        return (
+    <div className="min-h-screen bg-[#090d16] text-gray-100 font-sans flex flex-col">
+      <header className="bg-[#111827] border-b border-gray-800 px-6 py-4 flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 gap-4">
+        <div className="flex items-center space-x-3">
+          <div className="bg-sky-400 text-gray-950 p-2.5 rounded-xl font-bold flex items-center justify-center shadow-lg">
+            <Shield className="w-6 h-6" />
           </div>
-        </div>
-        
-        <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
-          <h2 class="text-base font-bold flex items-center gap-2"><span>🤝</span> Patrocínios Oficiais (Escolha exatamente 3)</h2>
-          <div id="sponsors-list" class="space-y-2 text-xs max-h-72 overflow-y-auto pr-2 border border-cardBorder/50 p-2 rounded-xl bg-bgDark/40">
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="1" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Adibas <span class="text-[10px] text-success font-mono">(R$ 4.0M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="2" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Mike <span class="text-[10px] text-success font-mono">(R$ 4.5M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="3" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Pumba <span class="text-[10px] text-success font-mono">(R$ 3.5M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="4" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Fly Emirates <span class="text-[10px] text-success font-mono">(R$ 5.0M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="5" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Red Bull <span class="text-[10px] text-success font-mono">(R$ 4.8M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="6" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Qatar Airways <span class="text-[10px] text-success font-mono">(R$ 5.2M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="7" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Spotify <span class="text-[10px] text-success font-mono">(R$ 3.8M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="8" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Stake <span class="text-[10px] text-success font-mono">(R$ 4.6M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="9" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Amazon Prime <span class="text-[10px] text-success font-mono">(R$ 4.2M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="10" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Coca-Cola <span class="text-[10px] text-success font-mono">(R$ 3.9M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="11" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Binance <span class="text-[10px] text-success font-mono">(R$ 4.7M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="12" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Heineken <span class="text-[10px] text-success font-mono">(R$ 3.6M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="13" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">EA Sports <span class="text-[10px] text-success font-mono">(R$ 4.1M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="14" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Konami <span class="text-[10px] text-success font-mono">(R$ 3.4M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="15" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Mastercard <span class="text-[10px] text-success font-mono">(R$ 4.3M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="16" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Puma <span class="text-[10px] text-success font-mono">(R$ 3.7M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="17" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Chevrolet <span class="text-[10px] text-success font-mono">(R$ 4.0M/rodada)</span></div></div></div></label>
-            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="18" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Betano <span class="text-[10px] text-success font-mono">(R$ 4.9M/rodada)</span></div></div></div></label>
-          </div>
-        </div>
-      </div>
-    </section>
-        <section id="dashboard-view" class="hidden space-y-6">
-      <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 id="dash-title" class="text-2xl font-black tracking-tight">Super Liga Master</h1>
-          <p class="text-txtMuted text-xs mt-0.5">Gestão Completa de Plantel & Multa Rescisória em Dinheiro</p>
-        </div>
-        <button onclick="showView('home-view')" class="bg-bgDark border border-cardBorder px-4 py-2.5 rounded-xl text-xs font-bold transition-all">Voltar ao Início</button>
-      </div>
-
-      <div class="flex flex-wrap gap-2 border-b border-cardBorder pb-3 items-center justify-between">
-        <div class="flex gap-2 overflow-x-auto">
-          <button onclick="switchTab('tab-market')" id="btn-tab-market" class="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-bgDark transition-all">Mercado de Atletas</button>
-          <button onclick="switchTab('tab-squad')" id="btn-tab-squad" class="px-4 py-2 rounded-xl text-xs font-bold bg-cardBorder text-txtMuted hover:text-txtMain transition-all">Meu Plantel</button>
-          <button onclick="switchTab('tab-proposals')" id="btn-tab-proposals" class="px-4 py-2 rounded-xl text-xs font-bold bg-cardBorder text-txtMuted hover:text-txtMain transition-all">Propostas & Leilões</button>
-        </div>
-        <button onclick="toggleCardSize()" id="btn-toggle-size" class="bg-bgDark border border-cardBorder hover:border-primary text-xs font-bold px-3 py-2 rounded-xl transition-all text-txtMuted">📐 Modo Compacto: Desativado</button>
-      </div>
-
-      <div id="tab-market" class="tab-content space-y-6">
-        <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="font-bold text-sm">Pesquisa na Base de Dados (EAFCS)</h2>
-            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <input id="market-search" type="text" oninput="filterMarket()" placeholder="Digite o nome do jogador..." class="bg-bgDark border border-cardBorder rounded-xl px-4 py-2 text-xs outline-none focus:border-primary w-full sm:w-80">
-            </div>
-          </div>
-          <div id="market-list" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-        </div>
-      </div>
-
-      <div id="tab-squad" class="tab-content hidden space-y-6">
-        <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
-          <h2 class="font-bold text-sm">Jogadores do Seu Clube (Blindagem & Simulação)</h2>
-          <div id="squad-list" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-        </div>
-      </div>
-
-      <div id="tab-proposals" class="tab-content hidden space-y-6">
-        <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="font-bold text-sm">Ofertas Secretas & Propostas de Troca</h2>
-            <button onclick="resolveSecretBids()" class="bg-goldBadge/20 text-goldBadge border border-goldBadge/30 hover:bg-goldBadge/30 px-3 py-1.5 rounded-xl text-xs font-bold transition-all">🏆 Fechar Época & Renegociar Patrocínios</button>
-          </div>
-          <div id="sent-proposals-list" class="text-xs text-txtMuted">Nenhuma proposta ativa no momento.</div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <div id="negotiate-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-cardBg border border-cardBorder max-w-md w-full p-6 rounded-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-      <h3 id="modal-player-title" class="font-bold text-base">Oferta por Atleta</h3>
-      <p id="modal-player-info" class="text-xs text-txtMuted"></p>
-      
-      <div class="space-y-3">
-        <div id="action-type-selector" class="hidden grid grid-cols-2 gap-2 bg-bgDark p-1 rounded-xl border border-cardBorder">
-          <button id="btn-mode-negotiate" onclick="setNegotiationMode('negotiate')" class="py-2 text-xs font-bold rounded-lg bg-primary text-bgDark transition-all">Proposta / Troca</button>
-          <button id="btn-mode-buyout" onclick="setNegotiationMode('buyout')" class="py-2 text-xs font-bold rounded-lg bg-bgDark text-txtMuted hover:text-txtMain transition-all">⚡ Multa (Só Cash)</button>
-        </div>
-
-        <div id="trade-box-section" class="border border-cardBorder bg-bgDark/60 p-3 rounded-xl space-y-2">
-          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
-            <input type="checkbox" id="enable-trade-check" onchange="toggleTradeBox()" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0">
-            <span>Incluir Jogador do Seu Plantel na Troca (Apenas Clubes Rivais)</span>
-          </label>
-          <div id="trade-player-select-box" class="hidden space-y-2 pt-1">
-            <select id="trade-my-player" onchange="updateTradeValuation()" class="w-full bg-bgDark border border-cardBorder rounded-xl px-3 py-2 text-xs outline-none focus:border-primary text-txtMain">
-              <option value="">Selecione um jogador seu</option>
-            </select>
-            <span id="trade-valuation-text" class="text-[10px] text-success block font-mono"></span>
-          </div>
-        </div>
-
-        <div>
-          <label id="modal-offer-label" class="block text-xs font-bold uppercase text-txtMuted mb-1">Valor em Dinheiro (R$)</label>
-          <input id="modal-offer-val" type="number" class="w-full bg-bgDark border border-cardBorder rounded-xl px-4 py-3 text-sm outline-none focus:border-primary font-mono" placeholder="0">
-          <span id="modal-offer-tip" class="text-[10px] text-primary mt-1 block"></span>
-        </div>
-      </div>
-
-      <div class="flex gap-3 pt-2">
-        <button id="modal-submit-btn" onclick="submitNegotiation()" class="flex-1 bg-primary hover:bg-primaryHover text-bgDark font-bold py-2.5 rounded-xl text-xs transition-all">Confirmar Proposta</button>
-        <button onclick="closeModal()" class="bg-bgDark border border-cardBorder hover:border-txtMuted font-bold px-4 py-2.5 rounded-xl text-xs transition-all">Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="shield-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-cardBg border border-cardBorder max-w-md w-full p-6 rounded-2xl shadow-2xl space-y-4">
-      <h3 class="font-bold text-base text-goldBadge">🛡️ Blindar Atleta (Aumentar Multa)</h3>
-      <p id="shield-player-info" class="text-xs text-txtMuted"></p>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-bold uppercase text-txtMuted mb-1">Valor a Investir do Caixa (R$)</label>
-          <input id="shield-invest-val" type="number" placeholder="Ex: 5000000" class="w-full bg-bgDark border border-cardBorder rounded-xl px-4 py-3 text-sm outline-none focus:border-primary font-mono">
-          <span class="text-[10px] text-primary mt-1 block">💡 Cada R$ 1,00 investido aumenta R$ 4,00 na multa rescisória.</span>
-        </div>
-      </div>
-      <div class="flex gap-3 pt-2">
-        <button onclick="confirmShield()" class="flex-1 bg-goldBadge hover:opacity-90 text-bgDark font-bold py-2.5 rounded-xl text-xs transition-all">Confirmar Blindagem</button>
-        <button onclick="closeShieldModal()" class="bg-bgDark border border-cardBorder hover:border-txtMuted font-bold px-4 py-2.5 rounded-xl text-xs transition-all">Cancelar</button>
-      </div>
-    </div>
-  </div>
-    <script>
-    const dbUrl = 'https://eidchszreuiubxqzvbwr.supabase.co';
-    const dbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpZGNoc3pyZXVpdWJ4cXp2YndyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyMzUxNTcsImV4cCI6MjEwOTgxMTE1N30.ekJ_2zRz9GXc5PDcp64O98PCQIqOCCzTZOXgluUze6o';
-    const supabase = window.supabase.createClient(dbUrl, dbKey);
-
-    const NO_PHOTO_IMG = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
-    
-    let FULL_PLAYERS_DATABASE = [];
-
-    let myUserClub = "Meu Clube FC";
-    let userBalance = 50000000;
-    let mySquad = [];
-    let secretBids = [];
-    let selectedPlayerId = null;
-    let shieldPlayerId = null;
-    let isCompactMode = false;
-    let chosenSponsors = [];
-    let activeModalMode = 'negotiate';
-    let searchDebounceTimeout = null;
-
-    function showMsg(text, isError = false) {
-      const el = document.getElementById('global-msg');
-      if(!el) return;
-      el.textContent = text;
-      el.className = `p-4 rounded-xl text-sm font-bold shadow-lg text-center ${isError ? 'bg-danger/10 text-danger border border-danger/20' : 'bg-success/10 text-success border border-success/20'}`;
-      el.classList.remove('hidden');
-      setTimeout(() => { el.classList.add('hidden'); }, 5000);
-    }
-
-    function pushNews(text) {
-      const ticker = document.getElementById('news-ticker');
-      if(ticker) ticker.textContent = text;
-    }
-
-    function showView(viewId) {
-      ['home-view', 'dashboard-view'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.classList.add('hidden');
-      });
-      const target = document.getElementById(viewId);
-      if(target) target.classList.remove('hidden');
-    }
-
-    function switchTab(tabId) {
-      ['tab-market', 'tab-squad', 'tab-proposals'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.classList.add('hidden');
-      });
-      ['btn-tab-market', 'btn-tab-squad', 'btn-tab-proposals'].forEach(id => {
-        const btn = document.getElementById(id);
-        if(btn) btn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-cardBorder text-txtMuted hover:text-txtMain transition-all";
-      });
-      const targetTab = document.getElementById(tabId);
-      if(targetTab) targetTab.classList.remove('hidden');
-      const targetBtn = document.getElementById('btn-' + tabId);
-      if(targetBtn) targetBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-primary text-bgDark transition-all shadow-md shadow-primary/20";
-    }
-
-    function handleSponsorsChange(checkbox) {
-      const val = parseInt(checkbox.value, 10);
-      if(checkbox.checked) {
-        if(chosenSponsors.length >= 3) {
-          checkbox.checked = false;
-          showMsg("Você só pode escolher exatamente 3 patrocinadores!", true);
-          return;
-        }
-        chosenSponsors.push(val);
-      } else {
-        chosenSponsors = chosenSponsors.filter(id => id !== val);
-      }
-    }
-
-    function toggleCardSize() {
-      isCompactMode = !isCompactMode;
-      const btn = document.getElementById('btn-toggle-size');
-      btn.textContent = `📐 Modo Compacto: ${isCompactMode ? 'Ativado' : 'Desativado'}`;
-      btn.className = `bg-bgDark border ${isCompactMode ? 'border-primary text-primary' : 'border-cardBorder text-txtMuted'} text-xs font-bold px-3 py-2 rounded-xl transition-all`;
-      loadMarket();
-      loadSquad();
-    }
-
-    function enterManager() {
-      const cInput = document.getElementById('new-club-name').value.trim();
-      if(cInput) myUserClub = cInput;
-      
-      if(chosenSponsors.length !== 3) {
-        showMsg("Você precisa escolher exatamente 3 patrocinadores!", true);
-        return;
-      }
-
-      showView('dashboard-view');
-      loadMarket();
-      loadSquad();
-      renderProposals();
-      pushNews(`🚀 ${myUserClub} entrou na Master Liga FC!`);
-      
-      fetchOnlineGlobalPlayers("");
-    }
-
-    function filterMarket() {
-      clearTimeout(searchDebounceTimeout);
-      const query = document.getElementById('market-search').value.trim();
-      
-      if(query.length >= 2 || query === "") {
-        searchDebounceTimeout = setTimeout(() => {
-          fetchOnlineGlobalPlayers(query);
-        }, 400);
-      }
-    }
-
-    async function fetchOnlineGlobalPlayers(query) {
-      const mList = document.getElementById('market-list');
-      if(!mList) return;
-      mList.innerHTML = '<p class="text-xs text-primary col-span-full py-8 text-center font-bold animate-pulse">🔎 Conectando ao Banco de Dados EAFCS...</p>';
-
-      try {
-        let queryBuilder = supabase
-            .from('Jogadoresplayer')
-            .select('short_name, overall, player_positions, club_name')
-            .order('overall', { ascending: false })
-            .limit(50);
-
-        if (query.length > 0) {
-            queryBuilder = queryBuilder.ilike('short_name', `%${query}%`);
-        }
-
-        const { data: jogadoresDB, error } = await queryBuilder;
-
-        if(error) throw error;
-
-        if(jogadoresDB && jogadoresDB.length > 0) {
-          FULL_PLAYERS_DATABASE = []; 
-          
-          jogadoresDB.forEach((pData, index) => {
-            const playerId = "supa_" + index + "_" + (pData.short_name || '').replace(/\s/g, ''); 
-            const mainPosition = pData.player_positions ? pData.player_positions.split(',')[0].trim() : "ATA";
-            const rating = pData.overall || 70;
-            const marketVal = rating * 1200000;
-
-            FULL_PLAYERS_DATABASE.push({
-              id: playerId,
-              name: pData.short_name || 'Desconhecido',
-              league: pData.club_name || "Sem Clube",
-              position: mainPosition,
-              rating: rating,
-              price: marketVal,
-              owner: Math.random() > 0.5 ? "Clube Rival" : null,
-              photo_url: NO_PHOTO_IMG
-            });
-          });
-        } else {
-            FULL_PLAYERS_DATABASE = [];
-        }
-      } catch (err) {
-        console.log("Erro na busca do Supabase:", err);
-      }
-
-      loadMarket();
-    }
-
-    function openNegotiateModal(id) {
-      selectedPlayerId = id;
-      let p = FULL_PLAYERS_DATABASE.find(item => item.id == id);
-      if(!p) return;
-
-      const selectorBox = document.getElementById('action-type-selector');
-      const tradeSection = document.getElementById('trade-box-section');
-
-      if(p.owner) {
-        selectorBox.classList.remove('hidden');
-        tradeSection.classList.remove('hidden');
-        setNegotiationMode('negotiate');
-      } else {
-        selectorBox.classList.add('hidden');
-        tradeSection.classList.add('hidden');
-        setNegotiationMode('free');
-      }
-
-      document.getElementById('negotiate-modal').classList.remove('hidden');
-    }
-
-    function setNegotiationMode(mode) {
-      activeModalMode = mode;
-      let p = FULL_PLAYERS_DATABASE.find(item => item.id == selectedPlayerId);
-      if(!p) return;
-
-      const infoEl = document.getElementById('modal-player-info');
-      const titleEl = document.getElementById('modal-player-title');
-      const offerInput = document.getElementById('modal-offer-val');
-      const offerTip = document.getElementById('modal-offer-tip');
-      const submitBtn = document.getElementById('modal-submit-btn');
-      const tradeSection = document.getElementById('trade-box-section');
-
-      const btnNeg = document.getElementById('btn-mode-negotiate');
-      const btnBuy = document.getElementById('btn-mode-buyout');
-
-      if(mode === 'free') {
-        titleEl.textContent = `Lance por Atleta Livre: ${p.name}`;
-        infoEl.textContent = `Atleta sem clube. Preço base: R$ ${p.price.toLocaleString()}`;
-        offerTip.textContent = "🔒 Atletas livres são adquiridos exclusivamente com dinheiro vivo.";
-        submitBtn.textContent = "Confirmar Lance em Dinheiro";
-        offerInput.value = p.price;
-        tradeSection.classList.add('hidden');
-      } else if(mode === 'buyout') {
-        btnBuy.className = "py-2 text-xs font-bold rounded-lg bg-goldBadge text-bgDark transition-all";
-        btnNeg.className = "py-2 text-xs font-bold rounded-lg bg-bgDark text-txtMuted hover:text-txtMain transition-all";
-
-        titleEl.textContent = `⚡ Pagar Multa Rescisória: ${p.name}`;
-        const currentBuyout = p.buyout || (p.price * 2.5);
-        infoEl.textContent = `Pertence a: ${p.owner} | Multa: R$ ${currentBuyout.toLocaleString()}`;
-        offerTip.textContent = "💵 A multa rescisória é paga exclusivamente em dinheiro do caixa.";
-        submitBtn.textContent = "Pagar Multa em Dinheiro";
-        offerInput.value = currentBuyout;
-        tradeSection.classList.add('hidden');
-      } else {
-        btnNeg.className = "py-2 text-xs font-bold rounded-lg bg-primary text-bgDark transition-all";
-        btnBuy.className = "py-2 text-xs font-bold rounded-lg bg-bgDark text-txtMuted hover:text-txtMain transition-all";
-
-        titleEl.textContent = `Proposta de Troca com Clube Rival: ${p.name}`;
-        infoEl.textContent = `Pertence a: ${p.owner}. Troque um jogador seu (+ volta em dinheiro opcional).`;
-        offerTip.textContent = "💡 Envolva um atleta do plantel + dinheiro para equalizar.";
-        submitBtn.textContent = "Enviar Proposta ao Rival";
-        offerInput.value = 0;
-        tradeSection.classList.remove('hidden');
-        document.getElementById('enable-trade-check').checked = true;
-        toggleTradeBox();
-        populateTradeSelect();
-      }
-    }
-
-    function closeModal() {
-      document.getElementById('negotiate-modal').classList.add('hidden');
-    }
-
-    function toggleTradeBox() {
-      const isChecked = document.getElementById('enable-trade-check').checked;
-      const box = document.getElementById('trade-player-select-box');
-      if(isChecked) box.classList.remove('hidden'); else box.classList.add('hidden');
-      updateTradeValuation();
-    }
-
-    function populateTradeSelect() {
-      const select = document.getElementById('trade-my-player');
-      if(mySquad.length === 0) {
-        select.innerHTML = '<option value="">Você não possui jogadores no plantel para troca</option>';
-        return;
-      }
-      select.innerHTML = '<option value="">Selecione um jogador do seu time</option>' + 
-        mySquad.map(s => `<option value="${s.id}">${s.name} (${s.position}) - Mercado: R$ ${s.price.toLocaleString()}</option>`).join('');
-    }
-
-    function updateTradeValuation() {
-      const select = document.getElementById('trade-my-player');
-      const textEl = document.getElementById('trade-valuation-text');
-      if(!select.value) {
-        textEl.textContent = "";
-        return;
-      }
-      const playerToTrade = mySquad.find(s => s.id == select.value);
-      if(playerToTrade) {
-        const val = Math.round(playerToTrade.price * 0.85);
-        textEl.textContent = `➕ Valor de Troca do ${playerToTrade.name} (-15%): R$ ${val.toLocaleString()}`;
-      }
-    }
-
-    function submitNegotiation() {
-      let p = FULL_PLAYERS_DATABASE.find(item => item.id == selectedPlayerId);
-      const moneyVal = parseInt(document.getElementById('modal-offer-val').value, 10) || 0;
-      const useTrade = document.getElementById('enable-trade-check').checked;
-      const tradePlayerId = document.getElementById('trade-my-player').value;
-
-      if(moneyVal < 0 || (userBalance - moneyVal) < 0) {
-        showMsg("Valor inválido ou saldo insuficiente em caixa!", true);
-        return;
-      }
-
-      if(!p.owner && useTrade) {
-        showMsg("Atletas livres só podem ser comprados com dinheiro! Não é permitido usar jogadores na troca por atletas livres.", true);
-        return;
-      }
-
-      if(activeModalMode === 'buyout') {
-        const currentBuyout = p.buyout || (p.price * 2.5);
-        if(moneyVal < currentBuyout) {
-          showMsg(`Necessário R$ ${currentBuyout.toLocaleString()} para pagar a multa!`, true);
-          return;
-        }
-
-        userBalance -= currentBuyout;
-        document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
-        p.owner = myUserClub;
-        mySquad.push(p);
-
-        closeModal();
-        loadMarket();
-        loadSquad();
-        showMsg(`⚡ Multa paga! ${p.name} veio para o seu clube!`);
-        return;
-      }
-
-      let tradedPlayer = null;
-      let tradeValuation = 0;
-      if(p.owner && useTrade && tradePlayerId) {
-        tradedPlayer = mySquad.find(s => s.id == tradePlayerId);
-        if(tradedPlayer) tradeValuation = Math.round(tradedPlayer.price * 0.85);
-      }
-
-      const totalOfferValue = moneyVal + tradeValuation;
-      closeModal();
-
-      secretBids.push({
-        id: Date.now(),
-        playerId: p.id,
-        playerName: p.name,
-        club: myUserClub,
-        seller: p.owner,
-        offerMoney: moneyVal,
-        tradedPlayer: tradedPlayer,
-        totalValuation: totalOfferValue
-      });
-      showMsg(`Proposta enviada com sucesso!`);
-      renderProposals();
-    }
-
-    function renderProposals() {
-      const list = document.getElementById('sent-proposals-list');
-      if(secretBids.length === 0) {
-        list.innerHTML = '<p class="text-xs text-txtMuted">Nenhuma proposta ativa.</p>';
-        return;
-      }
-
-      list.innerHTML = secretBids.map(bid => `
-        <div class="bg-bgDark border border-cardBorder p-4 rounded-xl flex items-center justify-between text-xs gap-3">
           <div>
-            <span class="font-bold text-txtMain">${bid.playerName}</span>
-            <div class="text-[11px] text-primary mt-0.5">Oferta: R$ ${bid.offerMoney.toLocaleString()} ${bid.tradedPlayer ? '+ Troca (' + bid.tradedPlayer.name + ')' : ''} | Total: R$ ${bid.totalValuation.toLocaleString()}</div>
+            <h1 className="text-xl font-bold tracking-wider text-white uppercase font-mono">Master Liga <span className="text-sky-400">FC</span></h1>
+            <p className="text-xs text-gray-400">Modo Turno por Turno (6 Amigos)</p>
           </div>
-          <span class="bg-goldBadge/10 text-goldBadge border border-goldBadge/20 px-2 py-1 rounded text-[10px] font-bold">🔒 Pendente</span>
         </div>
-      `).join('');
-    }
 
-    function resolveSecretBids() {
-      if(secretBids.length === 0) {
-        showMsg("Nenhuma oferta para apurar.", true);
-        return;
-      }
+        <div className="flex items-center space-x-3 bg-gray-900 border border-gray-700 px-4 py-2 rounded-xl">
+          <Settings className="w-5 h-5 text-amber-400" />
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-gray-400 font-bold">Acesso:</span>
+            <button 
+              onClick={() => setIsAdmin(!isAdmin)}
+              className={`px-3 py-1 rounded text-xs font-bold transition ${isAdmin ? 'bg-amber-400 text-gray-950' : 'bg-gray-800 text-gray-300'}`}
+            >
+              {isAdmin ? 'Painel ADM Ativo' : 'Visão Manager'}
+            </button>
+          </div>
+        </div>
 
-      const grouped = {};
-      secretBids.forEach(bid => {
-        if(!grouped[bid.playerId] || bid.totalValuation > grouped[bid.playerId].totalValuation) {
-          grouped[bid.playerId] = bid;
-        }
-      });
+        <div className="bg-[#1f2937] px-4 py-2 rounded-xl border border-gray-700 flex items-center space-x-3">
+          <Wallet className="w-5 h-5 text-amber-400" />
+          <div>
+            <p className="text-[10px] uppercase text-gray-400 font-semibold">Caixa de {activeManager.clubName}</p>
+            <p className="text-sm font-bold text-amber-400 font-mono">€ {activeManager.funds.toLocaleString('pt-BR')}</p>
+          </div>
+        </div>
+      </header>
 
-      Object.values(grouped).forEach(winningBid => {
-        let p = FULL_PLAYERS_DATABASE.find(item => item.id == winningBid.playerId);
-        if(p) {
-          userBalance -= winningBid.offerMoney;
-          document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
-          p.owner = winningBid.club;
-          mySquad.push(p);
-          if(winningBid.tradedPlayer) mySquad = mySquad.filter(s => s.id != winningBid.tradedPlayer.id);
-        }
-      });
+      <nav className="bg-[#111827]/90 border-b border-gray-800 px-6 flex space-x-2 overflow-x-auto">
+        {[
+          { id: 'dashboard', label: 'Dashboard', icon: Play },
+          { id: 'squad', label: 'Meu Elenco', icon: Users },
+          { id: 'market', label: 'Mercado (A-D)', icon: Search },
+          { id: 'sponsors', label: 'Patrocinadores', icon: Briefcase },
+          { id: 'tactics', label: 'Prancheta Tática 2D', icon: ChessBoard },
+          { id: 'season', label: 'Classificação', icon: Trophy },
+          ...(isAdmin ? [{ id: 'adm', label: 'Painel ADM', icon: Settings }] : [])
+        ].map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-3.5 font-bold text-xs uppercase tracking-wider border-b-2 transition flex items-center space-x-2 whitespace-nowrap ${
+                isActive ? 'border-sky-400 text-sky-400 bg-sky-400/5' : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-      secretBids = [];
-      renderProposals();
-      loadMarket();
-      loadSquad();
-
-      const bonusSponsors = chosenSponsors.length * 12000000;
-      userBalance += bonusSponsors;
-      document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
-
-      showMsg(`🎉 Época encerrada! Recebeu R$ ${bonusSponsors.toLocaleString()} dos patrocinadores antigos.`);
-      
-      chosenSponsors = [];
-      document.querySelectorAll('#sponsors-list input[type="checkbox"]').forEach(cb => cb.checked = false);
-      
-      setTimeout(() => {
-        alert("A época terminou! Escolha os seus novos 3 patrocinadores para a próxima temporada.");
-        showView('home-view');
-      }, 1500);
-    }
-
-    function openShieldModal(id) {
-      shieldPlayerId = id;
-      const p = mySquad.find(item => item.id == id);
-      if(!p) return;
-      document.getElementById('shield-player-info').textContent = `Atleta: ${p.name} | Multa Atual: R$ ${(p.buyout || p.price * 2.5).toLocaleString()}`;
-      document.getElementById('shield-invest-val').value = "";
-      document.getElementById('shield-modal').classList.remove('hidden');
-    }
-
-    function closeShieldModal() {
-      document.getElementById('shield-modal').classList.add('hidden');
-    }
-
-    function confirmShield() {
-      const investVal = parseInt(document.getElementById('shield-invest-val').value, 10);
-      if(isNaN(investVal) || investVal <= 0 || (userBalance - investVal) < 0) {
-        showMsg("Valor inválido ou saldo insuficiente!", true);
-        return;
-      }
-
-      userBalance -= investVal;
-      document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
-
-      const p = mySquad.find(item => item.id == shieldPlayerId);
-      if(p) {
-        if(!p.buyout) p.buyout = p.price * 2.5;
-        p.buyout += (investVal * 4);
-      }
-
-      closeShieldModal();
-      loadSquad();
-      showMsg(`🛡️ Atleta blindado! Nova multa: R$ ${p.buyout.toLocaleString()}`);
-    }
-
-    function simulateStat(id, type) {
-      const p = mySquad.find(item => item.id == id);
-      if(!p) return;
-      if(type === 'goal') {
-        p.price = Math.round(p.price * 1.05);
-        showMsg(`📈 ${p.name} valorizou após boa atuação!`);
-      } else {
-        p.price = Math.round(p.price * 0.95);
-        showMsg(`❌ ${p.name} desvalorizou devido a lesão.`, true);
-      }
-      loadSquad();
-    }
-
-    function loadMarket() {
-      const mList = document.getElementById('market-list');
-      if(!mList) return;
-
-      if(FULL_PLAYERS_DATABASE.length === 0) {
-        mList.innerHTML = '<p class="text-xs text-txtMuted col-span-full py-6 text-center font-bold">Nenhum atleta encontrado no Supabase com este nome.</p>';
-        return;
-      }
-
-      mList.innerHTML = FULL_PLAYERS_DATABASE.map(p => {
-        const ownerText = p.owner ? `Dono: ${p.owner}` : 'Atleta Livre (Só Dinheiro)';
-        const buyoutVal = p.buyout || (p.price * 2.5);
-        const priceLabel = p.owner ? `Multa: R$ ${buyoutVal.toLocaleString()}` : `Base: R$ ${p.price.toLocaleString()}`;
-        
-        return `
-          <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBorder">
-            <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${NO_PHOTO_IMG}';">
-            <div class="relative z-10 flex justify-between items-start">
-              <div>
-                <span class="${isCompactMode ? 'text-xl' : 'text-3xl'} font-black text-goldBadge drop-shadow-md leading-none">${p.rating}</span>
-                <div class="text-[10px] uppercase font-bold text-txtMain tracking-widest">${p.position}</div>
+      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
+        {activeTab === 'dashboard' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4">
+              <h3 className="text-base font-bold text-white uppercase flex items-center"><Shield className="w-5 h-5 text-sky-400 mr-2"/> {activeManager.clubName}</h3>
+              <p className="text-xs text-gray-300">Administre seu time, contrate reforços das Séries A, B, C e D e aguarde o ADM lançar os resultados.</p>
+            </div>
+            <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4 text-center">
+              <h3 className="text-base font-bold text-white uppercase flex items-center justify-center"><Play className="w-5 h-5 text-amber-400 mr-2"/> Jogar Partida</h3>
+              <button onClick={simulateMatch} className="w-full bg-sky-400 text-gray-950 font-bold py-3 rounded-xl hover:bg-sky-300 transition text-xs uppercase">
+                Receber Bilheteria + Patrocínio
+              </button>
+            </div>
+            <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4">
+              <h3 className="text-base font-bold text-white uppercase flex items-center"><TrendingUp className="w-5 h-5 text-emerald-400 mr-2"/> Renda por Partida</h3>
+              <div className="bg-[#090d16] p-3 rounded-xl border border-gray-800 flex justify-between items-center">
+                <span className="text-xs text-gray-400">Total:</span>
+                <span className="text-emerald-400 font-bold font-mono text-base">€ {currentMatchIncome.toLocaleString('pt-BR')}</span>
               </div>
             </div>
-            <div class="relative z-10 mt-auto pt-2 border-t border-cardBorder/50 flex flex-col gap-1">
-              <div class="font-extrabold text-xs text-txtMain uppercase tracking-wide truncate w-full drop-shadow-md">${p.name}</div>
-              <div class="text-[9px] text-txtMuted font-semibold truncate">${p.league || 'Liga Geral'}</div>
-              <div class="text-[9px] text-primary font-mono">${ownerText}</div>
-              <div class="text-[9px] text-amber-400 font-mono">${priceLabel}</div>
-              <div class="flex items-center justify-between mt-1">
-                <button onclick="openNegotiateModal('${p.id}')" class="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-2 py-1 rounded text-[10px] font-bold transition-all backdrop-blur-sm z-20">
-                  ${p.owner ? 'Negociar / Troca / Multa' : '🔒 Fazer Lance em Dinheiro'}
+          </div>
+        )}
+
+        {activeTab === 'adm' && isAdmin && (
+          <div className="bg-[#111827] border border-amber-400/30 p-6 rounded-2xl space-y-6">
+            <h2 className="text-lg font-bold text-amber-400 uppercase flex items-center">
+              <Settings className="w-5 h-5 mr-2" /> Painel do Administrador (Resultados da Rodada {currentRound})
+            </h2>
+            <button onClick={() => alert('Resultados publicados com sucesso!')} className="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold py-3 rounded-xl uppercase text-xs">
+              Publicar Atualizações para os Amigos
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'squad' && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-bold text-white uppercase">Elenco de {activeManager.clubName}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {currentSquad.map((p, idx) => (
+                <div key={idx} className="bg-[#111827] border border-gray-800 p-4 rounded-2xl flex flex-col justify-between">
+                  <div className="flex justify-between">
+                    <span className="text-xs bg-sky-400/10 text-sky-400 px-2.5 py-0.5 rounded font-bold">{p.pos}</span>
+                    <span className="text-sm font-bold text-amber-400 font-mono">OVR {p.ovr}</span>
+                  </div>
+                  <div className="my-3 text-center">
+                    <p className="font-bold text-white">{p.name}</p>
+                    <p className="text-xs text-gray-400">Valor: {p.val}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'market' && (
+          <div className="space-y-6">
+            <input 
+              type="text" 
+              placeholder="Buscar jogador nas Séries A, B, C, D..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-[#111827] text-xs text-white outline-none w-full p-3 rounded-xl border border-gray-700"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {filteredMarket.map(player => (
+                <div key={player.id} className="bg-[#111827] border border-gray-800 p-4 rounded-2xl flex flex-col justify-between">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded font-bold">{player.div}</span>
+                    <span className="text-xs font-bold text-sky-400 font-mono">OVR {player.ovr}</span>
+                  </div>
+                  <div className="my-3 text-center">
+                    <p className="font-bold text-white text-base">{player.name}</p>
+                    <p className="text-xs text-gray-400">{player.club}</p>
+                  </div>
+                  <button onClick={() => signPlayer(player)} className="w-full bg-sky-400 hover:bg-sky-300 text-gray-950 font-bold text-xs uppercase py-2 rounded-xl">
+                    Contratar (€ 5M)
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'sponsors' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {funnySponsors.map(sponsor => (
+              <div key={sponsor.id} className="bg-[#111827] border border-gray-800 p-5 rounded-2xl space-y-3">
+                <span className="text-[10px] bg-emerald-400/10 text-emerald-400 px-2 py-0.5 rounded font-bold">Bônus: € {sponsor.bonusPerMatch.toLocaleString('pt-BR')}</span>
+                <h3 className="text-base font-bold text-white">{sponsor.name}</h3>
+                <p className="text-xs text-gray-400 italic">"{sponsor.desc}"</p>
+                <button onClick={() => chooseSponsor(sponsor)} className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs uppercase py-2 rounded-xl">
+                  Assinar
                 </button>
               </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'tactics' && (
+          <div className="w-full h-[500px] rounded-2xl relative shadow-2xl overflow-hidden flex items-center justify-center p-6 bg-gradient-to-br from-emerald-800 to-emerald-950 border-2 border-white/20">
+            <div className="absolute inset-0 border-4 border-white/20 m-6 rounded-xl pointer-events-none"></div>
+            <div className="absolute inset-0">
+              {getFormationCoordinates().map((p, index) => (
+                <div key={index} className="absolute flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2" style={{ left: p.x, top: p.y }}>
+                  <div className="w-9 h-9 rounded-full bg-gray-900 border-2 border-sky-400 flex items-center justify-center text-xs font-bold text-amber-400 font-mono shadow-xl">{p.pos}</div>
+                  <span className="text-[10px] bg-gray-950/90 px-2 py-0.5 rounded text-white font-bold mt-1 border border-gray-700">{p.name}</span>
+                </div>
+              ))}
             </div>
           </div>
-        `;
-      }).join('');
-    }
+        )}
 
-    function loadSquad() {
-      const sList = document.getElementById('squad-list');
-      if(!sList) return;
-      if(mySquad.length === 0) {
-        sList.innerHTML = '<p class="text-xs text-txtMuted col-span-full">Seu plantel está vazio.</p>';
-        return;
-      }
-      sList.innerHTML = mySquad.map(p => `
-        <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBord
+        {activeTab === 'season' && (
+          <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4">
+            <h3 className="text-base font-bold text-white uppercase flex items-center"><Trophy className="w-5 h-5 text-amber-400 mr-2"/> Tabela Oficial da Liga</h3>
+            <table className="w-full text-left text-xs font-mono">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400 uppercase">
+                  <th className="py-3 px-3">Pos</th>
+                  <th className="py-3 px-3 font-sans">Clube</th>
+                  <th className="py-3 px-3 text-center">Pts</th>
+                  <th className="py-3 px-3 text-center">SG</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leagueTable.map(t => (
+                  <tr key={t.pos} className="border-b border-gray-800/40 text-gray-200">
+                    <td className="py-3.5 px-3 text-amber-400">{t.pos}º</td>
+                    <td className="py-3.5 px-3 font-sans">{t.name}</td>
+                    <td className="py-3.5 px-3 text-center text-sky-400">{t.pts}</td>
+                    <td className="py-3.5 px-3 text-center text-gray-300">{t.sg}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
