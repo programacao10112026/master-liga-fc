@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Master Liga FC - Pro Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 1. BIBLIOTECA DO SUPABASE ADICIONADA AQUI -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
@@ -65,7 +64,8 @@
       </div>
     </div>
   </header>
-    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:py-8 space-y-6">
+
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:py-8 space-y-6">
     <div id="global-msg" class="hidden p-4 rounded-xl text-sm font-bold shadow-lg text-center z-50"></div>
 
     <div class="bg-cardBg border border-cardBorder px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 overflow-hidden">
@@ -91,12 +91,26 @@
             <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="1" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Adibas <span class="text-[10px] text-success font-mono">(R$ 4.0M/rodada)</span></div></div></div></label>
             <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="2" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Mike <span class="text-[10px] text-success font-mono">(R$ 4.5M/rodada)</span></div></div></div></label>
             <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="3" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Pumba <span class="text-[10px] text-success font-mono">(R$ 3.5M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="4" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Fly Emirates <span class="text-[10px] text-success font-mono">(R$ 5.0M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="5" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Red Bull <span class="text-[10px] text-success font-mono">(R$ 4.8M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="6" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Qatar Airways <span class="text-[10px] text-success font-mono">(R$ 5.2M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="7" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Spotify <span class="text-[10px] text-success font-mono">(R$ 3.8M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="8" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Stake <span class="text-[10px] text-success font-mono">(R$ 4.6M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="9" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Amazon Prime <span class="text-[10px] text-success font-mono">(R$ 4.2M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="10" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Coca-Cola <span class="text-[10px] text-success font-mono">(R$ 3.9M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="11" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Binance <span class="text-[10px] text-success font-mono">(R$ 4.7M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="12" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Heineken <span class="text-[10px] text-success font-mono">(R$ 3.6M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="13" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">EA Sports <span class="text-[10px] text-success font-mono">(R$ 4.1M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="14" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Konami <span class="text-[10px] text-success font-mono">(R$ 3.4M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="15" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Mastercard <span class="text-[10px] text-success font-mono">(R$ 4.3M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="16" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Puma <span class="text-[10px] text-success font-mono">(R$ 3.7M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="17" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Chevrolet <span class="text-[10px] text-success font-mono">(R$ 4.0M/rodada)</span></div></div></div></label>
+            <label class="flex items-center justify-between p-3 bg-bgDark border border-cardBorder rounded-xl cursor-pointer hover:border-primary/40 transition-all"><div class="flex items-center gap-3"><input type="checkbox" value="18" onchange="handleSponsorsChange(this)" class="rounded bg-bgDark border-cardBorder text-primary focus:ring-0"><div><div class="font-bold text-txtMain">Betano <span class="text-[10px] text-success font-mono">(R$ 4.9M/rodada)</span></div></div></div></label>
           </div>
         </div>
       </div>
     </section>
-
-    <section id="dashboard-view" class="hidden space-y-6">
+        <section id="dashboard-view" class="hidden space-y-6">
       <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 id="dash-title" class="text-2xl font-black tracking-tight">Super Liga Master</h1>
@@ -137,7 +151,7 @@
         <div class="bg-cardBg border border-cardBorder p-6 rounded-2xl shadow-xl space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="font-bold text-sm">Ofertas Secretas & Propostas de Troca</h2>
-            <button onclick="resolveSecretBids()" class="bg-goldBadge/20 text-goldBadge border border-goldBadge/30 hover:bg-goldBadge/30 px-3 py-1.5 rounded-xl text-xs font-bold transition-all">🏆 Fechar Época & Revelar</button>
+            <button onclick="resolveSecretBids()" class="bg-goldBadge/20 text-goldBadge border border-goldBadge/30 hover:bg-goldBadge/30 px-3 py-1.5 rounded-xl text-xs font-bold transition-all">🏆 Fechar Época & Renegociar Patrocínios</button>
           </div>
           <div id="sent-proposals-list" class="text-xs text-txtMuted">Nenhuma proposta ativa no momento.</div>
         </div>
@@ -201,14 +215,12 @@
     </div>
   </div>
     <script>
-    // 2. CONFIGURAÇÃO DO SUPABASE ADICIONADA AQUI
     const dbUrl = 'https://eidchszreuiubxqzvbwr.supabase.co';
     const dbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpZGNoc3pyZXVpdWJ4cXp2YndyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyMzUxNTcsImV4cCI6MjEwOTgxMTE1N30.ekJ_2zRz9GXc5PDcp64O98PCQIqOCCzTZOXgluUze6o';
     const supabase = window.supabase.createClient(dbUrl, dbKey);
 
     const NO_PHOTO_IMG = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
     
-    // Inicia a base local vazia (será populada com as buscas do Supabase)
     let FULL_PLAYERS_DATABASE = [];
 
     let myUserClub = "Meu Clube FC";
@@ -298,7 +310,6 @@
       renderProposals();
       pushNews(`🚀 ${myUserClub} entrou na Master Liga FC!`);
       
-      // Carrega um top 10 inicial do Supabase só para não ficar vazio
       fetchOnlineGlobalPlayers("");
     }
 
@@ -306,15 +317,13 @@
       clearTimeout(searchDebounceTimeout);
       const query = document.getElementById('market-search').value.trim();
       
-      // Pesquisa ao digitar pelo menos 2 letras
       if(query.length >= 2 || query === "") {
         searchDebounceTimeout = setTimeout(() => {
           fetchOnlineGlobalPlayers(query);
-        }, 400); // 400ms delay para evitar muitas chamadas
+        }, 400);
       }
     }
 
-    // 3. FUNÇÃO DE BUSCA ATUALIZADA PARA USAR O SUPABASE
     async function fetchOnlineGlobalPlayers(query) {
       const mList = document.getElementById('market-list');
       if(!mList) return;
@@ -325,9 +334,8 @@
             .from('Jogadoresplayer')
             .select('short_name, overall, player_positions, club_name')
             .order('overall', { ascending: false })
-            .limit(50); // Limite de 50 para não travar o telemóvel
+            .limit(50);
 
-        // Se tiver texto, filtra pelo nome
         if (query.length > 0) {
             queryBuilder = queryBuilder.ilike('short_name', `%${query}%`);
         }
@@ -337,14 +345,10 @@
         if(error) throw error;
 
         if(jogadoresDB && jogadoresDB.length > 0) {
-          // Limpa a base local para atualizar só com o que pesquisou
           FULL_PLAYERS_DATABASE = []; 
           
           jogadoresDB.forEach((pData, index) => {
-            // Cria um ID único
             const playerId = "supa_" + index + "_" + (pData.short_name || '').replace(/\s/g, ''); 
-            
-            // Calcula posição principal e valor
             const mainPosition = pData.player_positions ? pData.player_positions.split(',')[0].trim() : "ATA";
             const rating = pData.overall || 70;
             const marketVal = rating * 1200000;
@@ -356,19 +360,21 @@
               position: mainPosition,
               rating: rating,
               price: marketVal,
-              owner: Math.random() > 0.5 ? "Clube Rival" : null, // 50% de chance de ter dono
+              owner: Math.random() > 0.5 ? "Clube Rival" : null,
               photo_url: NO_PHOTO_IMG
             });
           });
         } else {
-            FULL_PLAYERS_DATABASE = []; // Limpa se não encontrou nada
+            FULL_PLAYERS_DATABASE = [];
         }
       } catch (err) {
         console.log("Erro na busca do Supabase:", err);
       }
 
       loadMarket();
-    }    function openNegotiateModal(id) {
+    }
+
+    function openNegotiateModal(id) {
       selectedPlayerId = id;
       let p = FULL_PLAYERS_DATABASE.find(item => item.id == id);
       if(!p) return;
@@ -578,7 +584,20 @@
       renderProposals();
       loadMarket();
       loadSquad();
-      showMsg("🎉 Época encerrada e revelada com sucesso!");
+
+      const bonusSponsors = chosenSponsors.length * 12000000;
+      userBalance += bonusSponsors;
+      document.getElementById('user-balance').textContent = `R$ ${userBalance.toLocaleString()}`;
+
+      showMsg(`🎉 Época encerrada! Recebeu R$ ${bonusSponsors.toLocaleString()} dos patrocinadores antigos.`);
+      
+      chosenSponsors = [];
+      document.querySelectorAll('#sponsors-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+      
+      setTimeout(() => {
+        alert("A época terminou! Escolha os seus novos 3 patrocinadores para a próxima temporada.");
+        showView('home-view');
+      }, 1500);
     }
 
     function openShieldModal(id) {
@@ -675,26 +694,4 @@
         return;
       }
       sList.innerHTML = mySquad.map(p => `
-        <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBorder">
-          <img src="${p.photo_url}" class="player-image" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${NO_PHOTO_IMG}';">
-          <div class="relative z-10 flex justify-between items-start">
-            <div>
-              <span class="${isCompactMode ? 'text-xl' : 'text-3xl'} font-black text-goldBadge drop-shadow-md leading-none">${p.rating}</span>
-              <div class="text-[10px] uppercase font-bold text-txtMain tracking-widest">${p.position}</div>
-            </div>
-          </div>
-          <div class="relative z-10 mt-auto pt-2 border-t border-cardBorder/50 flex flex-col gap-1">
-            <div class="font-extrabold text-xs text-txtMain uppercase tracking-wide truncate w-full drop-shadow-md">${p.name}</div>
-            <div class="text-[9px] text-amber-400 font-mono">Mercado: R$ ${p.price.toLocaleString()}</div>
-            <div class="flex gap-1 mt-1">
-              <button onclick="openShieldModal('${p.id}')" class="flex-1 bg-goldBadge/20 text-goldBadge border border-goldBadge/30 py-1 rounded text-[9px] font-bold">🛡️ Blindar</button>
-              <button onclick="simulateStat('${p.id}', 'goal')" class="bg-success/20 text-success border border-success/30 px-1.5 py-1 rounded text-[9px] font-bold" title="Simular Gol">+⚽</button>
-              <button onclick="simulateStat('${p.id}', 'injury')" class="bg-danger/20 text-danger border border-danger/30 px-1.5 py-1 rounded text-[9px] font-bold" title="Simular Lesão">🚑</button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-  </script>
-</body>
-</html>
+        <div class="fut-card ${isCompactMode ? 'compact' : ''} p-4 rounded-2xl flex flex-col justify-between shadow-lg border border-cardBord
