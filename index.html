@@ -1,334 +1,3205 @@
-import React, { useState } from 'react';
-import { 
-  Shield, Wallet, Ticket, Trophy, Users, ChessBoard, 
-  Play, Award, TrendingUp, Search, Filter, UserCheck, Briefcase, Settings, CheckCircle 
-} from 'lucide-react';
-
-export default function MasterLigaApp() {
-  const [isAdmin, setIsAdmin] = useState(true);
-
-  const [managers, setManagers] = useState([
-    { id: 1, name: "Manager 1", clubName: "Master FC", funds: 50000000, position: 2, sponsor: null },
-    { id: 2, name: "Amigo 2", clubName: "FC Amigos 2", funds: 45000000, position: 4, sponsor: null },
-    { id: 3, name: "Amigo 3", clubName: "FC Amigos 3", funds: 42000000, position: 6, sponsor: null },
-    { id: 4, name: "Amigo 4", clubName: "FC Amigos 4", funds: 40000000, position: 8, sponsor: null },
-    { id: 5, name: "Amigo 5", clubName: "FC Amigos 5", funds: 38000000, position: 10, sponsor: null },
-    { id: 6, name: "Amigo 6", clubName: "FC Amigos 6", funds: 35000000, position: 12, sponsor: null },
-  ]);
-  const [activeManagerId, setActiveManagerId] = useState(1);
-  const activeManager = managers.find(m => m.id === activeManagerId);
-
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedFormation, setSelectedFormation] = useState('4-3-3');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDivision, setSelectedDivision] = useState('ALL');
-  const [baseTicketPrice, setBaseTicketPrice] = useState(250000);
-  const [currentRound, setCurrentRound] = useState(14);
-
-  // 18 Patrocinadores Engraçados com Nomes de Marca
-  const funnySponsors = [
-    { id: 1, name: "Gambiarra Tech & Fios", bonusPerMatch: 80000, desc: "Internet que cai mais que atacante simulando falta." },
-    { id: 2, name: "Construtora Olha o Cano", bonusPerMatch: 120000, desc: "Garantimos que a sua defesa vai vazar." },
-    { id: 3, name: "Pizzaria Joelho Roto", bonusPerMatch: 60000, desc: "Massa pesada para deixar os zagueiros lentos." },
-    { id: 4, name: "Oficina Zé do Escapamento", bonusPerMatch: 95000, desc: "Barulho igualzinho à torcida organizada." },
-    { id: 5, name: "Energético Coração Acelerado", bonusPerMatch: 150000, desc: "Dá asas... ou uma arritmia leve no segundo tempo." },
-    { id: 6, name: "Barbearia Corte Tio Patinhas", bonusPerMatch: 70000, desc: "Estilo calvície disfarçada com gel." },
-    { id: 7, name: "Açougue Boi Chorando", bonusPerMatch: 110000, desc: "Carne fresca para o churrasco pós-derrota." },
-    { id: 8, name: "Desentupidora Vai Que Cola", bonusPerMatch: 85000, desc: "Especialistas em desafogar o meio-campo." },
-    { id: 9, name: "Farmácia Boa Sorte", bonusPerMatch: 65000, desc: "Analgésicos em dobro para o departamento médico." },
-    { id: 10, name: "Seguradora Pé Quebrado", bonusPerMatch: 130000, desc: "Seguro total para o craque do time." },
-    { id: 11, name: "Lavanderia Roupa Suja", bonusPerMatch: 50000, desc: "Lave a honra do time e os uniformes." },
-    { id: 12, name: "Sorveteria Dente Doendo", bonusPerMatch: 75000, desc: "Gelado como o peito do juiz." },
-    { id: 13, name: "Tintas Cai-Cai", bonusPerMatch: 90000, desc: "A cor que desbota na primeira chuva." },
-    { id: 14, name: "Pastelaria Vento Forte", bonusPerMatch: 55000, desc: "Muito vento, pouco recheio, igual ao chute do ponta." },
-    { id: 15, name: "Mercado Pague Depois", bonusPerMatch: 100000, desc: "Fiado aprovado para diretores caloteiros." },
-    { id: 16, name: "Escola de Sogra Sem Coração", bonusPerMatch: 115000, desc: "Treinamento intensivo de pressão psicológica." },
-    { id: 17, name: "Borracharia Meia Vida", bonusPerMatch: 60000, desc: "Remendando pneus e a temporada do clube." },
-    { id: 18, name: "Agência de Fofoca Exclusiva", bonusPerMatch: 140000, desc: "Venda fofocas dos rivais para ganhar caixa extra." }
-  ];
-
-  // Base de Dados Completa (Séries A, B, C, D)
-  const [allPlayersDatabase, setAllPlayersDatabase] = useState([
-    { id: 1, name: "Pedro", club: "Flamengo", div: "Série A", pos: "ATA", ovr: 87, val: "€ 22M" },
-    { id: 2, name: "Hulk", club: "Atlético-MG", div: "Série A", pos: "ATA", ovr: 85, val: "€ 12M" },
-    { id: 3, name: "Raphael Veiga", club: "Palmeiras", div: "Série A", pos: "MEI", ovr: 86, val: "€ 18M" },
-    { id: 4, name: "Giuliano", club: "Santos", div: "Série B", pos: "MEI", ovr: 79, val: "€ 4M" },
-    { id: 5, name: "Alex Teixeira", club: "Vasco", div: "Série B", pos: "ATA", ovr: 77, val: "€ 2.5M" },
-    { id: 6, name: "Cássio", club: "Cruzeiro", div: "Série B", pos: "GOL", ovr: 82, val: "€ 5M" },
-    { id: 7, name: "Artilheiro da C", club: "Remo", div: "Série C", pos: "ATA", ovr: 73, val: "€ 1.2M" },
-    { id: 8, name: "Volante Raiz", club: "São Bernardo", div: "Série C", pos: "VOL", ovr: 71, val: "€ 800K" },
-    { id: 9, name: "Jovem Promessa D", club: "Retrô", div: "Série D", pos: "MEI", ovr: 68, val: "€ 500K" },
-    { id: 10, name: "Zagueiro Xerife D", club: "Itabaiana", div: "Série D", pos: "ZAG", ovr: 67, val: "€ 400K" },
-    { id: 11, name: "Vinicius Jr", club: "Europa", div: "Internacional", pos: "ATA", ovr: 92, val: "€ 120M" },
-    { id: 12, name: "Marquinhos", club: "Europa", div: "Internacional", pos: "ZAG", ovr: 88, val: "€ 40M" }
-  ]);
-
-  const [squads, setSquads] = useState({
-    1: [{ id: 101, name: "Alisson Becker", pos: "GOL", ovr: 89, val: "€ 25M" }, { id: 102, name: "Vinicius Jr", pos: "ATA", ovr: 92, val: "€ 120M" }],
-    2: [{ id: 103, name: "Marquinhos", pos: "ZAG", ovr: 88, val: "€ 40M" }],
-    3: [{ id: 104, name: "Casemiro", pos: "VOL", ovr: 86, val: "€ 30M" }],
-    4: [{ id: 105, name: "Pedro", pos: "ATA", ovr: 87, val: "€ 22M" }],
-    5: [{ id: 106, name: "Hulk", pos: "ATA", ovr: 85, val: "€ 12M" }],
-    6: [{ id: 107, name: "Raphael Veiga", pos: "MEI", ovr: 86, val: "€ 18M" }],
-  });
-
-  const currentSquad = squads[activeManagerId] || [];
-
-  const [leagueTable, setLeagueTable] = useState([
-    { pos: 1, name: "Dynamo SP", pts: 35, v: 11, sg: 20 },
-    { pos: 2, name: "Master FC", pts: 32, v: 10, sg: 15 },
-    { pos: 3, name: "Atlético Carioca", pts: 28, v: 8, sg: 9 },
-    { pos: 4, name: "FC Amigos 2", pts: 25, v: 7, sg: 6 },
-    { pos: 5, name: "FC Amigos 3", pts: 22, v: 6, sg: 2 },
-    { pos: 6, name: "FC Amigos 4", pts: 20, v: 5, sg: 0 },
-    { pos: 7, name: "FC Amigos 5", pts: 18, v: 4, sg: -3 },
-    { pos: 8, name: "FC Amigos 6", pts: 15, v: 3, sg: -5 }
-  ]);
-
-  const getTicketMultiplier = () => {
-    if (activeManager.position === 1) return 2.0;
-    if (activeManager.position <= 3) return 1.5;
-    return 1.2;
-  };
-
-  const sponsorBonus = activeManager.sponsor ? activeManager.sponsor.bonusPerMatch : 0;
-  const currentMatchIncome = (baseTicketPrice * getTicketMultiplier()) + sponsorBonus;
-
-  const simulateMatch = () => {
-    setManagers(prev => prev.map(m => m.id === activeManagerId ? { ...m, funds: m.funds + currentMatchIncome } : m));
-    alert(`${activeManager.clubName} entrou em campo! Renda total adicionada: € ${currentMatchIncome.toLocaleString('pt-BR')}`);
-  };
-
-  const chooseSponsor = (sponsor) => {
-    setManagers(prev => prev.map(m => m.id === activeManagerId ? { ...m, sponsor } : m));
-    alert(`Contrato assinado com "${sponsor.name}"!`);
-  };
-
-  const signPlayer = (player) => {
-    setSquads(prev => ({ ...prev, [activeManagerId]: [...prev[activeManagerId], player] }));
-    setManagers(prev => prev.map(m => m.id === activeManagerId ? { ...m, funds: m.funds - 5000000 } : m));
-    alert(`${player.name} contratado para ${activeManager.clubName}!`);
-  };
-
-  const filteredMarket = allPlayersDatabase.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.club.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDiv = selectedDivision === 'ALL' || p.div === selectedDivision;
-    return matchesSearch && matchesDiv;
-  });
-
-  const getFormationCoordinates = () => [
-    { name: 'GOL', pos: 'GOL', x: '5%', y: '45%' },
-    { name: 'LE', pos: 'LE', x: '25%', y: '15%' },
-    { name: 'ZAG 1', pos: 'ZAG', x: '22%', y: '35%' },
-    { name: 'ZAG 2', pos: 'ZAG', x: '22%', y: '60%' },
-    { name: 'LD', pos: 'LD', x: '25%', y: '85%' },
-    { name: 'VOL', pos: 'VOL', x: '45%', y: '48%' },
-    { name: 'MEI E', pos: 'MEI', x: '55%', y: '25%' },
-    { name: 'MEI D', pos: 'MEI', x: '55%', y: '75%' },
-    { name: 'PE', pos: 'PE', x: '75%', y: '15%' },
-    { name: 'ATA', pos: 'ATA', x: '80%', y: '48%' },
-    { name: 'PD', pos: 'PD', x: '75%', y: '85%' }
-  ];
-        return (
-    <div className="min-h-screen bg-[#090d16] text-gray-100 font-sans flex flex-col">
-      <header className="bg-[#111827] border-b border-gray-800 px-6 py-4 flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="bg-sky-400 text-gray-950 p-2.5 rounded-xl font-bold flex items-center justify-center shadow-lg">
-            <Shield className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-wider text-white uppercase font-mono">Master Liga <span className="text-sky-400">FC</span></h1>
-            <p className="text-xs text-gray-400">Modo Turno por Turno (6 Amigos)</p>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3 bg-gray-900 border border-gray-700 px-4 py-2 rounded-xl">
-          <Settings className="w-5 h-5 text-amber-400" />
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-400 font-bold">Acesso:</span>
-            <button 
-              onClick={() => setIsAdmin(!isAdmin)}
-              className={`px-3 py-1 rounded text-xs font-bold transition ${isAdmin ? 'bg-amber-400 text-gray-950' : 'bg-gray-800 text-gray-300'}`}
-            >
-              {isAdmin ? 'Painel ADM Ativo' : 'Visão Manager'}
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-[#1f2937] px-4 py-2 rounded-xl border border-gray-700 flex items-center space-x-3">
-          <Wallet className="w-5 h-5 text-amber-400" />
-          <div>
-            <p className="text-[10px] uppercase text-gray-400 font-semibold">Caixa de {activeManager.clubName}</p>
-            <p className="text-sm font-bold text-amber-400 font-mono">€ {activeManager.funds.toLocaleString('pt-BR')}</p>
-          </div>
-        </div>
-      </header>
-
-      <nav className="bg-[#111827]/90 border-b border-gray-800 px-6 flex space-x-2 overflow-x-auto">
-        {[
-          { id: 'dashboard', label: 'Dashboard', icon: Play },
-          { id: 'squad', label: 'Meu Elenco', icon: Users },
-          { id: 'market', label: 'Mercado (A-D)', icon: Search },
-          { id: 'sponsors', label: 'Patrocinadores', icon: Briefcase },
-          { id: 'tactics', label: 'Prancheta Tática 2D', icon: ChessBoard },
-          { id: 'season', label: 'Classificação', icon: Trophy },
-          ...(isAdmin ? [{ id: 'adm', label: 'Painel ADM', icon: Settings }] : [])
-        ].map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-3.5 font-bold text-xs uppercase tracking-wider border-b-2 transition flex items-center space-x-2 whitespace-nowrap ${
-                isActive ? 'border-sky-400 text-sky-400 bg-sky-400/5' : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
-        {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4">
-              <h3 className="text-base font-bold text-white uppercase flex items-center"><Shield className="w-5 h-5 text-sky-400 mr-2"/> {activeManager.clubName}</h3>
-              <p className="text-xs text-gray-300">Administre seu time, contrate reforços das Séries A, B, C e D e aguarde o ADM lançar os resultados.</p>
-            </div>
-            <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4 text-center">
-              <h3 className="text-base font-bold text-white uppercase flex items-center justify-center"><Play className="w-5 h-5 text-amber-400 mr-2"/> Jogar Partida</h3>
-              <button onClick={simulateMatch} className="w-full bg-sky-400 text-gray-950 font-bold py-3 rounded-xl hover:bg-sky-300 transition text-xs uppercase">
-                Receber Bilheteria + Patrocínio
-              </button>
-            </div>
-            <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4">
-              <h3 className="text-base font-bold text-white uppercase flex items-center"><TrendingUp className="w-5 h-5 text-emerald-400 mr-2"/> Renda por Partida</h3>
-              <div className="bg-[#090d16] p-3 rounded-xl border border-gray-800 flex justify-between items-center">
-                <span className="text-xs text-gray-400">Total:</span>
-                <span className="text-emerald-400 font-bold font-mono text-base">€ {currentMatchIncome.toLocaleString('pt-BR')}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'adm' && isAdmin && (
-          <div className="bg-[#111827] border border-amber-400/30 p-6 rounded-2xl space-y-6">
-            <h2 className="text-lg font-bold text-amber-400 uppercase flex items-center">
-              <Settings className="w-5 h-5 mr-2" /> Painel do Administrador (Resultados da Rodada {currentRound})
-            </h2>
-            <button onClick={() => alert('Resultados publicados com sucesso!')} className="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold py-3 rounded-xl uppercase text-xs">
-              Publicar Atualizações para os Amigos
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'squad' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-bold text-white uppercase">Elenco de {activeManager.clubName}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {currentSquad.map((p, idx) => (
-                <div key={idx} className="bg-[#111827] border border-gray-800 p-4 rounded-2xl flex flex-col justify-between">
-                  <div className="flex justify-between">
-                    <span className="text-xs bg-sky-400/10 text-sky-400 px-2.5 py-0.5 rounded font-bold">{p.pos}</span>
-                    <span className="text-sm font-bold text-amber-400 font-mono">OVR {p.ovr}</span>
-                  </div>
-                  <div className="my-3 text-center">
-                    <p className="font-bold text-white">{p.name}</p>
-                    <p className="text-xs text-gray-400">Valor: {p.val}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'market' && (
-          <div className="space-y-6">
-            <input 
-              type="text" 
-              placeholder="Buscar jogador nas Séries A, B, C, D..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#111827] text-xs text-white outline-none w-full p-3 rounded-xl border border-gray-700"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {filteredMarket.map(player => (
-                <div key={player.id} className="bg-[#111827] border border-gray-800 p-4 rounded-2xl flex flex-col justify-between">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded font-bold">{player.div}</span>
-                    <span className="text-xs font-bold text-sky-400 font-mono">OVR {player.ovr}</span>
-                  </div>
-                  <div className="my-3 text-center">
-                    <p className="font-bold text-white text-base">{player.name}</p>
-                    <p className="text-xs text-gray-400">{player.club}</p>
-                  </div>
-                  <button onClick={() => signPlayer(player)} className="w-full bg-sky-400 hover:bg-sky-300 text-gray-950 font-bold text-xs uppercase py-2 rounded-xl">
-                    Contratar (€ 5M)
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'sponsors' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {funnySponsors.map(sponsor => (
-              <div key={sponsor.id} className="bg-[#111827] border border-gray-800 p-5 rounded-2xl space-y-3">
-                <span className="text-[10px] bg-emerald-400/10 text-emerald-400 px-2 py-0.5 rounded font-bold">Bônus: € {sponsor.bonusPerMatch.toLocaleString('pt-BR')}</span>
-                <h3 className="text-base font-bold text-white">{sponsor.name}</h3>
-                <p className="text-xs text-gray-400 italic">"{sponsor.desc}"</p>
-                <button onClick={() => chooseSponsor(sponsor)} className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs uppercase py-2 rounded-xl">
-                  Assinar
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'tactics' && (
-          <div className="w-full h-[500px] rounded-2xl relative shadow-2xl overflow-hidden flex items-center justify-center p-6 bg-gradient-to-br from-emerald-800 to-emerald-950 border-2 border-white/20">
-            <div className="absolute inset-0 border-4 border-white/20 m-6 rounded-xl pointer-events-none"></div>
-            <div className="absolute inset-0">
-              {getFormationCoordinates().map((p, index) => (
-                <div key={index} className="absolute flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2" style={{ left: p.x, top: p.y }}>
-                  <div className="w-9 h-9 rounded-full bg-gray-900 border-2 border-sky-400 flex items-center justify-center text-xs font-bold text-amber-400 font-mono shadow-xl">{p.pos}</div>
-                  <span className="text-[10px] bg-gray-950/90 px-2 py-0.5 rounded text-white font-bold mt-1 border border-gray-700">{p.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'season' && (
-          <div className="bg-[#111827] border border-gray-800 p-6 rounded-2xl space-y-4">
-            <h3 className="text-base font-bold text-white uppercase flex items-center"><Trophy className="w-5 h-5 text-amber-400 mr-2"/> Tabela Oficial da Liga</h3>
-            <table className="w-full text-left text-xs font-mono">
-              <thead>
-                <tr className="border-b border-gray-800 text-gray-400 uppercase">
-                  <th className="py-3 px-3">Pos</th>
-                  <th className="py-3 px-3 font-sans">Clube</th>
-                  <th className="py-3 px-3 text-center">Pts</th>
-                  <th className="py-3 px-3 text-center">SG</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leagueTable.map(t => (
-                  <tr key={t.pos} className="border-b border-gray-800/40 text-gray-200">
-                    <td className="py-3.5 px-3 text-amber-400">{t.pos}º</td>
-                    <td className="py-3.5 px-3 font-sans">{t.name}</td>
-                    <td className="py-3.5 px-3 text-center text-sky-400">{t.pts}</td>
-                    <td className="py-3.5 px-3 text-center text-gray-300">{t.sg}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </main>
-    </div>
-  );
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#050811">
+<meta name="description" content="Master Liga 2.0 — gerencie sua liga de EA Sports FC, clubes, elencos, mercado, partidas e temporadas.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22%23080d1a%22/%3E%3Cpath d=%22M10 12h44v40H10z%22 fill=%22none%22 stroke=%22%23f59e0b%22 stroke-width=%223%22/%3E%3Ctext x=%2232%22 y=%2240%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2224%22 font-weight=%22900%22 fill=%22%23fcd34d%22%3EM2%3C/text%3E%3C/svg%3E">
+<title>MASTER LIGA 2.0 — Champions Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Teko:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#050811;
+  --surface:rgba(14,21,38,0.82);
+  --surface-solid:#0d1425;
+  --surface-2:rgba(22,33,58,0.75);
+  --border:rgba(255,255,255,0.09);
+  --border-gold:rgba(245,158,11,0.35);
+  --border-emerald:rgba(16,185,129,0.35);
+  --text:#f8fafc;
+  --muted:#94a3b8;
+  --emerald:#10b981;
+  --lime:#a3e635;
+  --gold:#f59e0b;
+  --gold-light:#fcd34d;
+  --cyan:#38bdf8;
+  --red:#f43f5e;
 }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100%;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;font-size:14px;overflow-x:hidden}
+body{
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% -10%, rgba(16,185,129,0.18), transparent 65%),
+    radial-gradient(ellipse 60% 40% at 95% 15%, rgba(245,158,11,0.12), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 10% 95%, rgba(56,189,248,0.10), transparent 60%);
+  background-attachment:fixed;
+}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0;transition:all .18s cubic-bezier(.4,0,.2,1)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.55;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.hidden{display:none!important}
+.display-font{font-family:'Teko',sans-serif;letter-spacing:.6px;line-height:1}
+
+/* PREMIUM AUTH SCREEN */
+.authwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.auth{
+  width:min(430px,100%);
+  background:linear-gradient(165deg, rgba(18,27,48,0.92), rgba(9,14,26,0.96));
+  backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.11);
+  border-top:1px solid rgba(245,158,11,0.45);
+  border-radius:26px;
+  padding:28px 22px;
+  box-shadow:0 30px 90px rgba(0,0,0,0.8), 0 0 40px rgba(16,185,129,0.08);
+  position:relative;
+  overflow:hidden;
+}
+.auth::before{
+  content:"";position:absolute;top:-60px;right:-60px;width:160px;height:160px;
+  background:radial-gradient(circle, rgba(245,158,11,0.22), transparent 70%);pointer-events:none;
+}
+.crest-hero{
+  width:54px;height:54px;border-radius:16px;
+  background:linear-gradient(135deg, #fcd34d 0%, #f59e0b 45%, #10b981 100%);
+  padding:2px;box-shadow:0 10px 28px rgba(245,158,11,0.28);flex-shrink:0;
+}
+.crest-inner{
+  width:100%;height:100%;border-radius:14px;background:#080d1a;
+  display:grid;place-items:center;font-family:'Teko',sans-serif;font-size:28px;font-weight:700;color:#fcd34d;
+}
+.brand{display:flex;align-items:center;gap:13px}
+.brand strong{font-family:'Teko',sans-serif;font-size:25px;letter-spacing:1.5px;display:block;line-height:1;color:#fff}
+.brand small{color:var(--gold-light);font-size:10px;letter-spacing:2.2px;font-weight:800;text-transform:uppercase}
+
+.authswitch{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  background:rgba(5,8,17,0.85);padding:5px;border-radius:14px;
+  border:1px solid var(--border);margin:18px 0 16px;
+}
+.authswitch button{
+  padding:10px;border-radius:10px;background:transparent;color:var(--muted);font-weight:700;font-size:13px;
+}
+.authswitch button.active{
+  background:linear-gradient(135deg, rgba(16,185,129,0.22), rgba(245,158,11,0.18));
+  color:#fff;border:1px solid rgba(16,185,129,0.45);box-shadow:0 4px 14px rgba(0,0,0,0.35);
+}
+.auth-msg{
+  padding:10px 12px;border-radius:12px;font-size:12px;font-weight:600;margin-bottom:12px;line-height:1.4;
+}
+.auth-msg.err{background:rgba(244,63,94,0.14);border:1px solid rgba(244,63,94,0.4);color:#fda4af}
+.auth-msg.ok{background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7}
+
+/* FORM FIELDS (DARK GLASS) */
+.field{display:grid;gap:6px;margin-bottom:13px}
+.field label{font-size:11px;color:#cbd5e1;font-weight:700;letter-spacing:.3px}
+.field input,.field select{
+  width:100%;padding:12px 14px;border-radius:12px;
+  background:rgba(5,9,19,0.88);
+  border:1px solid rgba(148,163,184,0.22);
+  color:#f8fafc;outline:none;font-size:13px;
+  transition:border-color .18s, box-shadow .18s;
+}
+.field input::placeholder{color:#64748b}
+.field input:focus,.field select:focus{
+  border-color:var(--emerald);
+  box-shadow:0 0 0 3px rgba(16,185,129,0.16);
+}
+
+/* BUTTONS */
+.btn{
+  border-radius:12px;padding:12px 16px;
+  background:linear-gradient(135deg, #10b981, #84cc16);
+  color:#04110b;font-weight:800;font-size:13px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  box-shadow:0 8px 22px rgba(16,185,129,0.25);
+}
+.btn:hover{filter:brightness(1.06)}
+.btn.secondary{
+  background:rgba(23,34,59,0.9);color:#e2e8f0;
+  border:1px solid rgba(148,163,184,0.22);box-shadow:none;
+}
+.btn.gold{
+  background:linear-gradient(135deg, #fcd34d, #f59e0b);
+  color:#1a1002;box-shadow:0 8px 22px rgba(245,158,11,0.25);
+}
+.btn.danger{
+  background:rgba(244,63,94,0.16);color:#fda4af;
+  border:1px solid rgba(244,63,94,0.35);box-shadow:none;
+}
+.btn.sm{padding:7px 11px;font-size:11px;border-radius:9px}
+
+/* APP SHELL */
+.shell{display:flex;min-height:100vh}
+.side{
+  width:258px;background:rgba(7,11,22,0.94);backdrop-filter:blur(18px);
+  border-right:1px solid var(--border);padding:22px 14px;
+  display:flex;flex-direction:column;gap:18px;flex-shrink:0;
+}
+.leaguebox{
+  background:linear-gradient(145deg, rgba(22,35,62,0.85), rgba(11,17,32,0.95));
+  border:1px solid var(--border-gold);border-radius:16px;padding:14px;
+}
+.eyebrow{color:var(--muted);font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:800}
+.leaguebox strong{display:block;margin-top:5px;font-size:15px;color:#fff}
+.nav{display:grid;gap:5px}
+.nav button{
+  background:transparent;color:#94a3b8;text-align:left;padding:11px 13px;
+  border-radius:12px;font-weight:700;display:flex;align-items:center;gap:10px;font-size:13px;
+}
+.nav button.active,.nav button:hover{
+  background:linear-gradient(90deg, rgba(16,185,129,0.18), rgba(245,158,11,0.08));
+  color:#fff;border-left:3px solid var(--gold);
+}
+
+.main{flex:1;min-width:0;padding:18px clamp(12px,3vw,34px) 98px;max-width:1440px;margin:0 auto;width:100%}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.top h1{font-size:21px;margin:0 0 2px;font-weight:800;letter-spacing:-.3px}.top p{margin:0;color:var(--muted);font-size:11px}
+.topright{display:flex;align-items:center;gap:8px}
+.pill{
+  border:1px solid var(--border-emerald);border-radius:99px;padding:6px 11px;
+  color:#6ee7b7;background:rgba(16,185,129,0.12);font-size:10px;font-weight:800;letter-spacing:.5px;
+}
+.iconbtn{
+  position:relative;width:40px;height:40px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  display:grid;place-items:center;font-size:16px;
+}
+.badge{
+  position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;
+  font-size:10px;font-weight:900;min-width:18px;height:18px;border-radius:99px;
+  display:grid;place-items:center;padding:0 4px;box-shadow:0 3px 10px rgba(244,63,94,0.6);
+}
+.avatar{
+  width:38px;height:38px;border-radius:12px;
+  background:linear-gradient(135deg, #f59e0b, #10b981);
+  display:grid;place-items:center;color:#050811;font-weight:900;font-size:14px;
+}
+
+/* CARDS & GRIDS */
+.grid{display:grid;gap:12px}
+.stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}
+.content{grid-template-columns:minmax(0,1.45fr) minmax(270px,.95fr)}
+.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+
+.card{
+  background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);border-radius:18px;padding:16px;min-width:0;
+  box-shadow:0 12px 32px rgba(0,0,0,0.45);
+}
+.stat{position:relative;overflow:hidden}
+.stat::after{
+  content:"";position:absolute;top:0;left:16px;right:16px;height:2px;
+  background:linear-gradient(90deg, var(--emerald), var(--gold));opacity:.65;
+}
+.stat label{color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.8px}
+.stat strong{display:block;font-size:22px;margin:6px 0 2px;font-weight:800}
+.stat small,.sub{color:var(--muted);font-size:11px}
+.accent{color:#34d399}.gold{color:var(--gold-light)}.cyan{color:var(--cyan)}.danger-txt{color:#fb7185}
+.cardhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.cardhead h2{font-size:15px;margin:0;font-weight:800}
+
+/* CHAMPIONSHIP HERO & LIVE TICKER */
+.hero{
+  background:linear-gradient(125deg, rgba(16,185,129,0.22) 0%, rgba(15,23,42,0.92) 52%, rgba(245,158,11,0.22) 100%);
+  border:1px solid var(--border-gold);border-radius:20px;padding:18px 20px;margin-bottom:14px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;position:relative;overflow:hidden;
+}
+.hero h2{margin:4px 0;font-size:22px;font-weight:900;letter-spacing:-.3px}
+.hero p{margin:0;color:#cbd5e1;font-size:12px}
+.hero .big{font-family:'Teko',sans-serif;font-size:38px;font-weight:700;color:var(--gold-light);line-height:1}
+
+.ticker{
+  background:linear-gradient(90deg, rgba(244,63,94,0.14), rgba(15,23,42,0.92));
+  border:1px solid rgba(244,63,94,0.32);border-radius:14px;padding:10px 13px;
+  margin-bottom:14px;display:flex;align-items:center;gap:10px;cursor:pointer;
+}
+.live-dot{
+  background:var(--red);color:#fff;font-size:9px;font-weight:900;
+  padding:4px 8px;border-radius:7px;letter-spacing:.9px;white-space:nowrap;
+  animation:pulse 1.5s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.section{display:none}.section.active{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.tabs{
+  display:flex;gap:6px;background:rgba(6,10,20,0.85);padding:5px;
+  border-radius:13px;border:1px solid var(--border);margin-bottom:14px;overflow-x:auto;
+}
+.tabs button{flex:1;background:transparent;color:var(--muted);padding:9px 10px;border-radius:9px;font-size:11px;font-weight:800;white-space:nowrap}
+.tabs button.active{background:linear-gradient(135deg, rgba(16,185,129,0.22), rgba(245,158,11,0.16));color:#fff;border:1px solid rgba(255,255,255,0.12)}
+
+/* TABLES */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;white-space:nowrap}
+th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;padding:9px 7px;border-bottom:1px solid var(--border)}
+td{padding:10px 7px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px}
+tr:last-child td{border:0}
+.club{display:flex;align-items:center;gap:8px;font-weight:700}
+.crest{
+  width:28px;height:28px;border-radius:9px;object-fit:cover;overflow:hidden;
+  background:linear-gradient(135deg, #1e293b, #0f172a);
+  border:1px solid var(--border-gold);display:inline-grid;place-items:center;
+  color:var(--gold-light);font-size:10px;font-weight:900;flex-shrink:0;
+}
+.crest.lg{width:44px;height:44px;border-radius:13px;font-size:14px}
+
+/* SPONSORS / PATROCINADORES */
+.sponsor-card{
+  background:linear-gradient(165deg, rgba(20,30,52,0.92), rgba(9,14,26,0.96));
+  border:1px solid rgba(255,255,255,0.09);border-radius:18px;padding:14px;
+  display:flex;flex-direction:column;gap:10px;position:relative;
+  transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+.sponsor-card.master{border-color:rgba(245,158,11,0.48);box-shadow:0 12px 30px rgba(245,158,11,0.08)}
+.sponsor-card:hover{transform:translateY(-2px);border-color:rgba(245,158,11,0.38)}
+.sponsor-logo-box{
+  width:100%;height:170px;border-radius:13px;
+  background:radial-gradient(circle at center, rgba(30,41,59,0.72), rgba(5,9,19,0.94));
+  border:1px solid rgba(255,255,255,0.07);
+  display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden;
+}
+.sponsor-logo-box img{
+  width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;display:block;border-radius:8px;
+}
+.sponsor-monogram{
+  font-family:'Teko',sans-serif;font-size:34px;font-weight:700;letter-spacing:1px;
+  color:var(--gold-light);text-transform:uppercase;
+}
+.sponsor-strip{
+  display:flex;gap:8px;overflow-x:auto;padding:2px 0;
+}
+.sponsor-chip{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(7,12,24,0.85);border:1px solid rgba(255,255,255,0.09);
+  border-radius:12px;padding:7px 11px;flex-shrink:0;cursor:pointer;
+}
+.sponsor-chip:hover{border-color:var(--border-gold)}
+.sponsor-chip img{width:26px;height:26px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,0.04);padding:2px}
+.sponsor-chip span{font-size:12px;font-weight:700;color:#f8fafc}
+
+/* FUT / EA FC PLAYER CARDS */
+.pavatar{
+  width:42px;height:42px;border-radius:12px;object-fit:cover;
+  background:linear-gradient(135deg, #1e293b, #0f172a);
+  border:1px solid rgba(255,255,255,0.15);display:grid;place-items:center;
+  font-weight:900;color:var(--gold-light);font-size:13px;flex-shrink:0;
+}
+.ovr{
+  display:inline-grid;place-items:center;min-width:32px;padding:4px 7px;border-radius:9px;
+  font-family:'Teko',sans-serif;font-weight:700;font-size:16px;line-height:1;
+  background:rgba(16,185,129,0.18);color:#6ee7b7;border:1px solid rgba(16,185,129,0.4);
+}
+.ovr.gold{
+  background:linear-gradient(135deg, rgba(252,211,77,0.28), rgba(245,158,11,0.22));
+  color:#fde68a;border-color:rgba(245,158,11,0.6);box-shadow:0 0 14px rgba(245,158,11,0.2);
+}
+.pcard{
+  background:linear-gradient(165deg, rgba(20,30,52,0.9), rgba(9,14,26,0.95));
+  border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:13px;
+  display:flex;flex-direction:column;gap:10px;position:relative;
+}
+.pcard.star{border-color:rgba(245,158,11,0.42)}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.pmeta{display:flex;align-items:center;gap:10px;min-width:0}
+.pmeta b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.moneygrid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  background:rgba(4,7,15,0.75);padding:9px 10px;border-radius:11px;border:1px solid rgba(255,255,255,0.06);
+}
+.moneygrid span{font-size:9px;color:var(--muted);font-weight:700;display:block;letter-spacing:.4px}
+.moneygrid strong{font-size:12px}
+
+.fixture{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.06)}.fixture:last-child{border:0}
+.score{
+  background:rgba(5,9,18,0.9);border:1px solid var(--border-gold);
+  border-radius:10px;padding:6px 11px;font-weight:900;font-size:13px;min-width:62px;text-align:center;color:#fff;
+}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:8px;background:rgba(30,41,59,0.85);color:#cbd5e1;font-size:10px;font-weight:800}
+.tag.green{background:rgba(16,185,129,0.18);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3)}
+.tag.gold{background:rgba(245,158,11,0.18);color:#fde68a;border:1px solid rgba(245,158,11,0.35)}
+.tag.red{background:rgba(244,63,94,0.18);color:#fda4af;border:1px solid rgba(244,63,94,0.3)}
+.tag.cyan{background:rgba(56,189,248,0.18);color:#7dd3fc;border:1px solid rgba(56,189,248,0.3)}
+
+.newsitem{padding:12px;border-radius:14px;background:rgba(7,12,24,0.75);border:1px solid rgba(255,255,255,0.07);margin-bottom:9px}
+.newsitem h4{margin:5px 0 3px;font-size:13px;color:#fff}.newsitem p{margin:0;font-size:12px;color:#cbd5e1;line-height:1.45}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:12px}
+
+.toast{
+  position:fixed;bottom:84px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg, #10b981, #84cc16);color:#04110b;
+  padding:11px 18px;border-radius:13px;font-weight:800;font-size:12px;
+  display:none;z-index:60;box-shadow:0 12px 32px rgba(0,0,0,0.75);max-width:92vw;text-align:center;
+}
+
+/* POLIMENTO PREMIUM + FILTROS */
+.field input:hover,.field select:hover{border-color:rgba(148,163,184,.42)}
+.card,.pcard,.leaguebox,.hero{transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease}
+.pcard:hover{transform:translateY(-2px);border-color:rgba(245,158,11,.32);box-shadow:0 16px 34px rgba(0,0,0,.38)}
+.cardhead .sub{line-height:1.5}
+.searchbar{display:flex;align-items:center;gap:9px;margin:0 0 12px;padding:0 12px;background:rgba(5,9,19,.78);border:1px solid var(--border);border-radius:12px}
+.searchbar:focus-within{border-color:var(--emerald);box-shadow:0 0 0 3px rgba(16,185,129,.12)}
+.searchbar span{font-size:15px;color:var(--muted)}
+.searchbar input{width:100%;min-width:0;padding:12px 0;background:transparent;border:0;outline:0;color:var(--text);font-size:12px}
+.searchmeta{color:var(--muted);font-size:10px;font-weight:700;margin:-4px 0 10px}
+.authlinks{display:flex;justify-content:flex-end;margin:8px 0 0}
+.authlinks button{background:transparent;color:var(--gold-light);font-size:11px;font-weight:700;padding:7px 0}
+.authlinks button:hover{text-decoration:underline}
+.btn:focus-visible,.iconbtn:focus-visible,.nav button:focus-visible,.mobilebar button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+@media(max-width:680px){.searchbar{margin-bottom:10px}.card{padding:13px}.pcard{padding:12px}.modal{padding:15px}.auth{padding:24px 18px}}
+
+/* PLACAR PREMIUM & LISTA DE JOGOS MOBILE */
+.scoreboard-box{
+  background:linear-gradient(155deg, rgba(16,185,129,0.12), rgba(8,13,26,0.96) 50%, rgba(245,158,11,0.12));
+  border:1px solid var(--border-gold);
+  border-radius:16px;
+  padding:12px 10px;
+  margin-bottom:12px;
+}
+.sb-top-row{
+  display:flex;
+  justify-content:center;
+  margin-bottom:10px;
+}
+.sb-round-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:rgba(5,9,19,0.9);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:99px;
+  padding:4px 12px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.8px;
+  color:var(--gold-light);
+}
+.sb-round-pill input{
+  width:32px;
+  background:transparent;
+  border:0;
+  color:#fff;
+  font-weight:900;
+  font-size:12px;
+  text-align:center;
+  padding:0;
+}
+.sb-teams{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);
+  align-items:start;
+  gap:6px;
+}
+.sb-side{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  gap:6px;
+  min-width:0;
+}
+.sb-side-label{
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.sb-side.home .sb-side-label{color:#34d399}
+.sb-side.away .sb-side-label{color:var(--gold-light)}
+.sb-club-select{
+  width:100%;
+  padding:7px 6px;
+  border-radius:10px;
+  background:rgba(5,9,19,0.92);
+  border:1px solid rgba(148,163,184,0.22);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  text-align:center;
+  text-overflow:ellipsis;
+}
+.sb-stepper{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  background:rgba(4,7,15,0.85);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:4px 6px;
+  border-radius:12px;
+  margin-top:2px;
+}
+.sb-step-btn{
+  width:30px;
+  height:30px;
+  border-radius:8px;
+  background:rgba(30,41,59,0.95);
+  border:1px solid rgba(255,255,255,0.14);
+  color:#fff;
+  font-size:17px;
+  font-weight:900;
+  display:grid;
+  place-items:center;
+  padding:0;
+  flex-shrink:0;
+}
+.sb-step-btn.plus{
+  background:linear-gradient(135deg, #10b981, #84cc16);
+  color:#04110b;
+  border:0;
+}
+.sb-step-btn.plus.away{
+  background:linear-gradient(135deg, #fcd34d, #f59e0b);
+  color:#1a1002;
+}
+.sb-score-num{
+  font-family:'Teko',sans-serif;
+  font-size:34px;
+  font-weight:700;
+  line-height:1;
+  width:32px;
+  max-width:32px;
+  text-align:center;
+  color:#fff;
+  background:transparent;
+  border:0;
+  padding:0;
+  flex-shrink:0;
+  -moz-appearance:textfield;
+}
+.sb-score-num::-webkit-outer-spin-button,
+.sb-score-num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sb-vs{
+  display:grid;
+  place-items:center;
+  height:100%;
+  padding-top:36px;
+  font-family:'Teko',sans-serif;
+  font-size:22px;
+  color:var(--muted);
+  font-weight:700;
+}
+.sides-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.side-col{
+  background:rgba(5,9,18,0.78);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px;
+  min-width:0;
+}
+.side-col.home{border-left:3px solid var(--emerald)}
+.side-col.away{border-left:3px solid var(--gold)}
+.side-col-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+  flex-wrap:wrap;
+}
+.side-col-title{
+  font-size:12px;
+  font-weight:800;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.side-actions{
+  display:flex;
+  gap:5px;
+  flex-shrink:0;
+}
+.side-ev-card{
+  background:rgba(15,23,42,0.95);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;
+  padding:8px;
+  margin-bottom:6px;
+  display:grid;
+  gap:6px;
+}
+.side-ev-card:last-child{margin-bottom:0}
+.side-ev-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+}
+.side-ev-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.side-ev-field label{
+  display:block;
+  font-size:9px;
+  font-weight:800;
+  color:var(--muted);
+  letter-spacing:.4px;
+  margin-bottom:3px;
+  text-transform:uppercase;
+}
+.side-ev-card select{
+  width:100%;
+  padding:7px 8px;
+  border-radius:8px;
+  background:rgba(5,9,19,0.92);
+  border:1px solid rgba(148,163,184,0.22);
+  color:#f8fafc;
+  font-size:11px;
+  font-weight:600;
+}
+.side-ev-del{
+  background:rgba(244,63,94,0.16);
+  color:#fda4af;
+  border:1px solid rgba(244,63,94,0.3);
+  border-radius:7px;
+  padding:3px 7px;
+  font-size:10px;
+  font-weight:800;
+}
+
+/* CARDS DE PARTIDAS (PRÓXIMOS JOGOS & REALIZADOS) */
+.match-card-list{display:grid;gap:10px}
+.match-card{
+  background:linear-gradient(155deg, rgba(18,27,48,0.88), rgba(8,13,26,0.94));
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:15px;
+  padding:12px;
+  display:grid;
+  gap:10px;
+}
+.match-card-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.match-card-teams{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+}
+.match-team-side{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  font-weight:800;
+  font-size:12px;
+}
+.match-team-side.away{
+  justify-content:flex-end;
+  text-align:right;
+}
+.match-team-name{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  line-height:1.25;
+}
+.match-vs-badge{
+  background:rgba(5,9,18,0.92);
+  border:1px solid var(--border-gold);
+  border-radius:9px;
+  padding:5px 10px;
+  font-weight:900;
+  font-size:12px;
+  color:var(--gold-light);
+  white-space:nowrap;
+  text-align:center;
+}
+.match-card-foot{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+@media(max-width:420px){
+  .side-ev-grid{grid-template-columns:1fr}
+}
+
+.stat-pill-rank{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  width:118px;
+  min-width:118px;
+  max-width:118px;
+  height:32px;
+  padding:0 8px;
+  border-radius:9px;
+  font-size:11px;
+  font-weight:800;
+  line-height:1;
+  white-space:nowrap;
+  flex-shrink:0;
+  box-sizing:border-box;
+  font-variant-numeric:tabular-nums;
+}
+.stat-pill-rank.green{
+  background:rgba(16,185,129,0.18);
+  color:#6ee7b7;
+  border:1px solid rgba(16,185,129,0.35);
+}
+.stat-pill-rank.cyan{
+  background:rgba(56,189,248,0.18);
+  color:#7dd3fc;
+  border:1px solid rgba(56,189,248,0.35);
+}
+.rank-info{
+  min-width:0;
+  flex:1;
+}
+.rank-info b{
+  display:block;
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.rank-info .sub{
+  display:block;
+  font-size:11px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+
+/* MISSÕES DE PATROCINADORES & PROGRESSO */
+.mission-list{display:grid;gap:7px;margin-top:4px}
+.mission-box{
+  background:rgba(5,9,19,0.82);border:1px solid rgba(255,255,255,0.08);
+  border-radius:11px;padding:9px 10px;display:grid;gap:5px;
+}
+.mission-box.achieved{
+  background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.45);
+}
+.mission-box.failed{
+  background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.45);
+}
+.mission-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.mission-name{font-size:12px;font-weight:800;color:#fff}
+.mission-desc{font-size:11px;color:var(--muted);line-height:1.35}
+.mission-prog-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+.mission-bar{flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden}
+.mission-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--emerald),var(--gold));transition:width .3s ease}
+.mission-box.achieved .mission-bar-fill{background:#10b981}
+.mission-box.failed .mission-bar-fill{background:#f43f5e}
+.status-achieved{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:7px;
+  background:rgba(16,185,129,0.22);color:#34d399;border:1px solid rgba(16,185,129,0.5);
+  font-size:10px;font-weight:900;letter-spacing:.3px;white-space:nowrap;
+}
+.status-failed{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:7px;
+  background:rgba(244,63,94,0.22);color:#fb7185;border:1px solid rgba(244,63,94,0.5);
+  font-size:10px;font-weight:900;letter-spacing:.3px;white-space:nowrap;
+}
+.status-progress{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:7px;
+  background:rgba(245,158,11,0.16);color:var(--gold-light);border:1px solid rgba(245,158,11,0.35);
+  font-size:10px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.club-sponsor-slot{
+  background:linear-gradient(155deg, rgba(16,24,44,0.92), rgba(7,11,22,0.96));
+  border:1px solid rgba(245,158,11,0.28);border-radius:14px;padding:11px;margin-top:8px;
+}
+.sb-flags{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:10px;padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+.sb-flag{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#cbd5e1;
+  background:rgba(5,9,19,0.75);border:1px solid rgba(255,255,255,0.1);padding:5px 9px;border-radius:9px;cursor:pointer;
+}
+.sb-flag input{accent-color:var(--gold);width:14px;height:14px;margin:0}
+
+/* MODALS */
+.modalbg{
+  position:fixed;inset:0;background:rgba(2,5,12,0.86);backdrop-filter:blur(8px);
+  display:none;place-items:center;padding:12px;z-index:50;
+}
+.modal{
+  background:linear-gradient(170deg, #121c33, #090e1c);
+  border:1px solid rgba(245,158,11,0.35);border-radius:20px;padding:18px;
+  width:min(500px,100%);max-height:88vh;overflow-y:auto;box-shadow:0 25px 80px rgba(0,0,0,0.85);
+}
+.modal h3{margin:0 0 14px;font-size:16px;color:#fff}
+.modalbg{overscroll-behavior:contain}
+.modal{overscroll-behavior:contain}.modalfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.evrow{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;background:rgba(5,9,18,0.85);padding:8px;border-radius:10px;border:1px solid var(--border);margin-bottom:6px}
+
+/* FLOATING GLASS MOBILE NAV (HIDDEN UNTIL LOGGED IN) */
+.mobilebar{display:none}
+@media(max-width:920px){.side{width:210px}.stats{grid-template-columns:repeat(2,1fr)}.content{grid-template-columns:1fr}}
+@media(max-width:680px){
+  .side{display:none}
+  .main{padding:14px 11px 92px}
+  .top h1{font-size:19px}
+  .topright .pill{display:none}
+  #app:not(.hidden) .mobilebar{
+    display:flex;position:fixed;bottom:8px;left:8px;right:8px;z-index:35;
+    background:rgba(10,16,30,0.92);backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,0.12);border-radius:18px;
+    overflow-x:auto;padding:5px 4px;gap:2px;box-shadow:0 12px 35px rgba(0,0,0,0.75);
+  }
+  .mobilebar button{flex:1;min-width:48px;background:transparent;color:#94a3b8;font-size:9px;font-weight:800;padding:6px 2px;border-radius:12px}
+  .mobilebar button span{display:block;font-size:15px;margin-bottom:2px}
+  .mobilebar button.active{color:#fff;background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(245,158,11,0.2));border:1px solid rgba(245,158,11,0.35)}
+  .two,.three{grid-template-columns:1fr}.hero{padding:16px}.hero .big{font-size:30px}
+}
+</style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN / CADASTRO -->
+<div id="authScreen" class="authwrap">
+ <div class="auth">
+  <div class="brand">
+   <div class="crest-hero"><div class="crest-inner">M2</div></div>
+   <div><strong>MASTER LIGA 2.0</strong><small>CHAMPIONS EDITION</small></div>
+  </div>
+  <h1 id="authTitle" style="margin:18px 0 4px;font-size:22px;font-weight:800">Entre na sua liga</h1>
+  <p class="sub" style="margin:0">Gerencie clubes, multas rescisórias, propostas e placares ao vivo.</p>
+
+  <div id="authNormalFields">
+  <div class="authswitch">
+   <button type="button" class="active" id="loginTab" onclick="setAuthMode('login')">Entrar</button>
+   <button type="button" id="signupTab" onclick="setAuthMode('signup')">Criar Conta</button>
+  </div>
+
+  <div id="authMsg" class="auth-msg hidden"></div>
+
+  <div class="field">
+   <label>E-mail</label>
+   <input id="email" type="email" autocomplete="email" placeholder="seuemail@exemplo.com">
+  </div>
+  <div class="field">
+   <label>Senha (mínimo 6 caracteres)</label>
+   <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()">
+  </div>
+  <button type="button" class="btn" style="width:100%;margin-top:4px" id="authSubmit" onclick="submitAuth()">Entrar na Liga →</button>
+  <div class="authlinks" style="justify-content:space-between;align-items:center">
+   <button type="button" onclick="downloadSelfHtml()" style="color:#6ee7b7">⬇️ Baixar index.html</button>
+   <button type="button" id="forgotPasswordBtn" onclick="sendPasswordReset()">Esqueci minha senha</button>
+  </div>
+  </div>
+  <div id="authRecovery" class="hidden">
+   <p class="sub">Crie uma nova senha para recuperar o acesso à sua liga.</p>
+   <div class="field"><label>Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres"></div>
+   <div class="field"><label>Confirmar nova senha</label><input id="confirmNewPassword" type="password" autocomplete="new-password" placeholder="Repita a nova senha"></div>
+   <button type="button" class="btn" style="width:100%" id="updatePasswordBtn" onclick="updatePassword()">Salvar nova senha</button>
+  </div>
+ </div>
+</div>
+
+<!-- APLICATIVO PRINCIPAL -->
+<div id="app" class="shell hidden">
+ <aside class="side">
+  <div class="brand">
+   <div class="crest-hero"><div class="crest-inner">M2</div></div>
+   <div><strong>MASTER LIGA 2.0</strong><small>CHAMPIONS EDITION</small></div>
+  </div>
+  <div class="leaguebox"><small class="eyebrow">LIGA ATIVA</small><strong id="sideLeague">Carregando...</strong><small id="sideSeason" style="display:block;margin-top:4px;color:var(--gold-light);font-weight:700">Temporada</small></div>
+  <nav class="nav" id="nav">
+   <button class="active" data-page="dashboard">▦ &nbsp; Início & Ao Vivo</button>
+   <button data-page="standings">🏆 &nbsp; Classificação & Stats</button>
+   <button data-page="market">⇄ &nbsp; Mercado & Multas</button>
+   <button data-page="clubs">◈ &nbsp; Clubes & Elencos</button>
+   <button data-page="matches">⚽ &nbsp; Jogos & Resultados</button>
+   <button data-page="finance">💰 &nbsp; Financeiro</button>
+   <button data-page="sponsors">🤝 &nbsp; Patrocinadores</button>
+   <button data-page="seasons">▣ &nbsp; Temporadas</button>
+   <button data-page="admin">⚙ &nbsp; Painel ADM</button>
+  </nav>
+ </aside>
+
+ <main class="main">
+  <header class="top">
+   <div><h1 id="pageTitle">Início & Ao Vivo</h1><p id="pageSub">Sua liga, seus clubes, suas regras.</p></div>
+   <div class="topright">
+    <span class="pill">● AO VIVO</span>
+    <button class="iconbtn" onclick="openNotifications()" title="Propostas e Notificações">🔔<span class="badge hidden" id="notifBadge">0</span></button>
+    <button class="btn secondary sm" onclick="logout()">Sair</button>
+    <div class="avatar" id="avatar">M</div>
+   </div>
+  </header>
+
+  <div id="noLeague" class="card hidden">
+   <h2 style="margin-top:0">Você ainda não participa de uma liga</h2>
+   <p class="sub">Crie sua competição como Administrador ou entre com o código de convite enviado pelo organizador.</p>
+   <div class="grid two" style="margin-top:14px">
+    <div><div class="field"><label>Nome da nova liga</label><input id="newLeagueName" placeholder="Ex.: Master Liga 2.0"></div><button class="btn" onclick="createLeague()">Criar minha liga</button></div>
+    <div><div class="field"><label>Código de convite</label><input id="inviteCode" placeholder="Ex.: A7F92B"></div><button class="btn gold" onclick="joinLeague()">Entrar com convite</button></div>
+   </div>
+  </div>
+
+  <div id="leagueContent" class="hidden">
+   <!-- INÍCIO & NOTÍCIAS AO VIVO -->
+   <section class="section active" id="dashboard">
+    <div class="ticker" onclick="go('news')">
+     <span class="live-dot">PLANTÃO AO VIVO</span>
+     <div style="min-width:0;flex:1"><b id="tickerTitle" style="font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acompanhe tudo que acontece no mercado e nos jogos!</b></div>
+     <span class="gold" style="font-size:11px;font-weight:800">Ver →</span>
+    </div>
+
+    <div class="hero">
+     <div><div class="eyebrow" style="color:var(--gold-light)">CHAMPIONS LEAGUE MANAGER</div><h2 id="heroLeague">Liga</h2><p id="heroMeta">Temporada ativa</p></div>
+     <div class="big">M<span style="font-size:18px;color:#fff">/2.0</span></div>
+    </div>
+
+    <div class="grid stats">
+     <div class="card stat"><label>CLUBES</label><strong id="kClubs">0</strong><small>Participantes</small></div>
+     <div class="card stat"><label>ATLETAS</label><strong id="kPlayers">0</strong><small>Cadastrados</small></div>
+     <div class="card stat"><label>JOGOS FEITOS</label><strong id="kMatches">0</strong><small id="kMatchesSub">Na temporada</small></div>
+     <div class="card stat"><label>NEGÓCIOS</label><strong id="kTransfers">0</strong><small>Transferências</small></div>
+    </div>
+
+    <div class="grid content">
+     <div class="card">
+      <div class="cardhead"><h2>Classificação</h2><button class="btn secondary sm" onclick="go('standings')">Completa →</button></div>
+      <div class="tablewrap"><table><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>SG</th></tr></thead><tbody id="miniTable"></tbody></table></div>
+     </div>
+     <div class="card">
+      <div class="cardhead"><h2>Notícias ao Vivo</h2><button class="btn secondary sm" onclick="go('news')">Todas →</button></div>
+      <div id="dashNews"></div>
+     </div>
+    </div>
+
+    <div id="dashSponsorsWrap" class="card hidden" style="margin-top:14px">
+     <div class="cardhead"><h2>🤝 Patrocinadores Oficiais</h2><button class="btn secondary sm" onclick="go('sponsors')">Ver todos →</button></div>
+     <div id="dashSponsorsList" class="sponsor-strip"></div>
+    </div>
+   </section>
+
+   <!-- NOTÍCIAS AO VIVO COMPLETA -->
+   <section class="section" id="news">
+    <div class="cardhead"><div><h2>Plantão ao Vivo da Liga</h2><div class="sub">Gols, resultados, liderança, blindagens e transferências em tempo real.</div></div><button class="btn secondary sm" onclick="go('dashboard')">← Voltar</button></div>
+    <div id="allNewsList"></div>
+   </section>
+
+   <!-- CLASSIFICAÇÃO, ARTILHARIA E ASSISTÊNCIAS -->
+   <section class="section" id="standings">
+    <div class="tabs" id="standingsTabs">
+     <button class="active" onclick="setStandTab('table',this)">🏆 Tabela Geral</button>
+     <button onclick="setStandTab('scorers',this)">⚽ Artilharia</button>
+     <button onclick="setStandTab('assists',this)">👟 Assistências</button>
+    </div>
+
+    <div id="tab-table" class="card">
+     <div class="cardhead"><h2>Classificação da Temporada</h2><span class="tag gold" id="champPrizeBadge">Prêmio Campeão: R$ 0</span></div>
+     <div class="tablewrap"><table><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead><tbody id="fullTable"></tbody></table></div>
+    </div>
+
+    <div id="tab-scorers" class="card hidden">
+     <div class="cardhead"><div><h2>Artilheiros do Campeonato</h2><div class="sub">Disputa geral entre todos os clubes • +5% no passe ao fim da temporada</div></div><span class="tag green" id="scorerPrizeBadge">Prêmio: R$ 0</span></div>
+     <div id="scorersList"></div>
+    </div>
+
+    <div id="tab-assists" class="card hidden">
+     <div class="cardhead"><div><h2>Líderes em Assistências do Campeonato</h2><div class="sub">Disputa geral entre todos os clubes • +3% no passe ao fim da temporada</div></div><span class="tag cyan" id="assistPrizeBadge">Prêmio: R$ 0</span></div>
+     <div id="assistsList"></div>
+    </div>
+   </section>
+
+   <!-- MERCADO DA BOLA -->
+   <section class="section" id="market">
+    <div class="cardhead">
+     <div><h2>Mercado da Bola</h2><div class="sub">Multa rescisória (4x), Blindagem (1:4), Trocas e Propostas.</div></div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn secondary sm" onclick="openPlayerModal()">+ Jogador</button>
+      <button class="btn sm" onclick="openOfferModal()">⇄ Propor Negócio</button>
+     </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px">
+     <div class="searchbar" style="margin:0"><span>⌕</span><input id="playerSearch" type="search" placeholder="Buscar atleta por nome ou posição..." autocomplete="off" aria-label="Buscar atletas"></div>
+     <select id="playerClubFilter" onchange="render()" aria-label="Filtrar atletas por clube" style="padding:11px 12px;border-radius:12px;background:rgba(5,9,19,.78);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700;max-width:175px">
+      <option value="ALL">Todos os clubes</option>
+     </select>
+    </div>
+    <div class="searchmeta" id="playerSearchMeta">Todos os atletas da liga</div>
+    <div class="tabs">
+     <button class="active" onclick="setMktTab('allplayers',this)">Atletas & Multas</button>
+     <button onclick="setMktTab('history',this)">Negócios Fechados</button>
+    </div>
+    <div id="mkt-allplayers" class="grid three"></div>
+    <div id="mkt-history" class="card hidden">
+     <div class="cardhead">
+      <h2>Negócios Fechados</h2>
+      <select id="transferClubFilter" onchange="render()" aria-label="Filtrar transferências por clube" style="padding:8px 11px;border-radius:10px;background:rgba(5,9,19,.85);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700;max-width:190px">
+       <option value="ALL">Todos os clubes</option>
+      </select>
+     </div>
+     <div class="searchbar"><span>⌕</span><input id="transferSearch" type="search" placeholder="Buscar jogador ou clube nas transferências..." autocomplete="off" aria-label="Buscar transferências"></div>
+     <div id="transferHistory"></div>
+    </div>
+   </section>
+
+   <!-- CLUBES & ELENCOS -->
+   <section class="section" id="clubs">
+    <div class="cardhead"><div><h2>Clubes & Elencos</h2><div class="sub">Gerencie caixa disponível, elenco e blindagem de atletas.</div></div><button class="btn sm" onclick="openClubModal()">+ Novo Clube</button></div>
+    <div class="searchbar"><span>⌕</span><input id="clubSearch" type="search" placeholder="Buscar clube ou manager..." autocomplete="off" aria-label="Buscar clubes"></div>
+    <div class="searchmeta" id="clubSearchMeta">Todos os clubes da liga</div>
+    <div class="grid three" id="clubCards"></div>
+   </section>
+
+   <!-- JOGOS & RESULTADOS -->
+   <section class="section" id="matches">
+    <div class="cardhead">
+     <div><h2>Jogos & Resultados</h2><div class="sub">Antecipe qualquer partida ou lance placares com gols, assistências e cartões.</div></div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn secondary sm" onclick="openDrawModal()">🎲 Sortear Tabela</button>
+      <button class="btn sm" onclick="openMatchModal(null)">+ Jogo Avulso</button>
+     </div>
+    </div>
+    <div class="tabs">
+     <button class="active" onclick="setMatchTab('scheduled',this)">📅 Próximos Jogos (<span id="cntSched">0</span>)</button>
+     <button onclick="setMatchTab('played',this)">✅ Realizados (<span id="cntPlayed">0</span>)</button>
+    </div>
+    <div id="matchesScheduled" class="card"></div>
+    <div id="matchesPlayed" class="card hidden"></div>
+   </section>
+
+   <!-- FINANCEIRO -->
+   <section class="section" id="finance">
+    <div class="grid stats">
+     <div class="card stat"><label>CAIXA TOTAL CLUBES</label><strong id="fCash">R$ 0</strong></div>
+     <div class="card stat"><label>RECEITAS</label><strong id="fIncome" class="accent">R$ 0</strong></div>
+     <div class="card stat"><label>DESPESAS</label><strong id="fExpense" class="danger-txt">R$ 0</strong></div>
+     <div class="card stat"><label>SALDO MOVIMENTADO</label><strong id="fBalance">R$ 0</strong></div>
+    </div>
+    <div class="card">
+     <div class="cardhead"><h2>Livro-Caixa Automático & Manual</h2><button class="btn sm" onclick="openModal('financeModal')">+ Lançamento</button></div>
+     <div class="tablewrap"><table><thead><tr><th>Data</th><th>Clube</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="ledgerRows"></tbody></table></div>
+    </div>
+   </section>
+
+   <!-- PATROCINADORES -->
+   <section class="section" id="sponsors">
+    <div class="cardhead">
+     <div><h2>Patrocinadores & Metas da Temporada</h2><div class="sub">Cada clube pode escolher até <b>2 patrocinadores</b> antes do início da temporada. Os bônus caem no caixa ao cumprir cada meta.</div></div>
+     <button class="btn gold sm hidden" id="addSponsorBtn" onclick="openSponsorModal()">+ Novo Patrocinador</button>
+    </div>
+
+    <div id="clubSponsorManagerCard" class="card" style="margin-bottom:14px">
+     <div class="cardhead">
+      <div><h2 style="font-size:14px">📋 Contratos do Clube na Temporada</h2><div class="sub" id="sponsorLockInfo">Escolha até 2 patrocinadores antes do 1º jogo da temporada.</div></div>
+      <select id="sponsorTargetClub" onchange="render()" style="padding:8px 11px;border-radius:10px;background:rgba(5,9,19,.85);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700"></select>
+     </div>
+     <div id="activeClubSponsorsWrap" class="grid two"></div>
+    </div>
+
+    <div class="cardhead" style="margin-top:6px"><h2 style="font-size:14px">🏢 Patrocinadores Disponíveis na Liga</h2><span class="tag gold">2 metas aleatórias por marca</span></div>
+    <div class="grid three" id="sponsorsList"></div>
+   </section>
+
+   <!-- TEMPORADAS -->
+   <section class="section" id="seasons">
+    <div class="cardhead">
+     <div><h2>Temporadas & Premiações</h2><div class="sub">Encerre a temporada para pagar prêmios e valorizar passes (+10%, +5%, +3%).</div></div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn gold sm" onclick="finalizeSeason()">🏆 Premiar & Encerrar</button>
+      <button class="btn sm" onclick="newSeason()">+ Nova Temporada</button>
+     </div>
+    </div>
+    <div class="card" id="seasonList"></div>
+   </section>
+
+   <!-- PAINEL ADM -->
+   <section class="section" id="admin">
+    <div class="grid content">
+     <div class="card">
+      <h2>⚙️ Valores Padrão & Premiações (ADM)</h2>
+      <p class="sub" style="margin-bottom:12px">Defina quanto cada ação paga ou desconta automaticamente nos jogos e no fim da temporada.</p>
+      <div class="grid two">
+       <div class="field"><label>Bônus por Gol (R$)</label><input id="cfgGoal" type="number"></div>
+       <div class="field"><label>Bônus por Assistência (R$)</label><input id="cfgAssist" type="number"></div>
+       <div class="field"><label>Multa Cartão Amarelo (R$)</label><input id="cfgYellow" type="number"></div>
+       <div class="field"><label>Multa Cartão Vermelho (R$)</label><input id="cfgRed" type="number"></div>
+       <div class="field"><label>Bilheteria Jogo em Casa (R$)</label><input id="cfgStadium" type="number"></div>
+       <div class="field"><label>Prêmio Clube Campeão (R$)</label><input id="cfgChamp" type="number"></div>
+       <div class="field"><label>Prêmio Artilheiro (R$)</label><input id="cfgScorer" type="number"></div>
+       <div class="field"><label>Prêmio Líder Assistências (R$)</label><input id="cfgAssistPrize" type="number"></div>
+      </div>
+      <button class="btn" style="width:100%" onclick="saveLeagueSettings()">💾 Salvar Valores e Premiações</button>
+     </div>
+
+     <div class="card">
+      <h2>Convite & Participantes</h2>
+      <div class="field"><label>Código de Convite da Liga</label><input id="adminInvite" readonly></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+       <button class="btn secondary sm" onclick="copyInvite()">Copiar Convite</button>
+       <button class="btn gold sm" onclick="downloadSelfHtml()">⬇️ Baixar index.html</button>
+      </div>
+      <div class="field" style="margin-top:14px"><label>Nome da Liga</label><input id="adminLeagueName"></div>
+      <button class="btn secondary sm" onclick="saveLeagueName()">Atualizar Nome</button>
+      <hr style="border-color:var(--border);margin:16px 0">
+      <div class="eyebrow" style="margin-bottom:8px">MEMBROS NA LIGA</div>
+      <div id="membersList"></div>
+     </div>
+    </div>
+   </section>
+  </div>
+ </main>
+
+ <!-- BARRA INFERIOR FLUTUANTE (SÓ APARECE APÓS LOGIN) -->
+ <div class="mobilebar" id="mobileNav">
+  <button class="active" data-page="dashboard"><span>▦</span>Início</button>
+  <button data-page="standings"><span>🏆</span>Tabela</button>
+  <button data-page="market"><span>⇄</span>Mercado</button>
+  <button data-page="clubs"><span>◈</span>Clubes</button>
+  <button data-page="matches"><span>⚽</span>Jogos</button>
+  <button data-page="finance"><span>💰</span>Caixa</button>
+  <button data-page="sponsors"><span>🤝</span>Patroc.</button>
+  <button data-page="seasons"><span>▣</span>Anos</button>
+  <button data-page="admin"><span>⚙</span>ADM</button>
+ </div>
+</div>
+
+<!-- MODAL: NOVO / EDITAR PATROCINADOR (ADM) -->
+<div class="modalbg" id="sponsorModal"><div class="modal"><h3 id="sponsorModalTitle">Novo Patrocinador</h3><input type="hidden" id="editSponsorId">
+ <div class="field"><label>Logo / Foto do Patrocinador (Galeria do celular ou Link)</label>
+  <div class="sponsor-logo-box" id="spLogoPreview" style="height:124px;margin-bottom:6px"></div>
+  <input type="file" id="spLogoFile" accept="image/*" onchange="handleSponsorPhotoFile(this)">
+  <div style="display:flex;gap:6px">
+   <input id="spLogoUrl" placeholder="Ou cole o link da foto (opcional)" oninput="updateSponsorLogoPreview()">
+   <button type="button" class="btn secondary sm" onclick="$('spLogoUrl').value='';$('spLogoFile').value='';updateSponsorLogoPreview()">Limpar</button>
+  </div>
+ </div>
+ <div class="field"><label>Nome da Marca / Patrocinador</label><input id="spName" placeholder="Ex.: Nike, Betano, Emirates..." oninput="updateSponsorLogoPreview()"></div>
+ <div class="grid two">
+  <div class="field"><label>Categoria / Cota</label>
+   <select id="spTier">
+    <option value="Patrocinador Máster">Patrocinador Máster</option>
+    <option value="Patrocinador Oficial" selected>Patrocinador Oficial</option>
+    <option value="Fornecedor Esportivo">Fornecedor Esportivo</option>
+    <option value="Apoiador">Apoiador</option>
+   </select>
+  </div>
+  <div class="field"><label>Bônus Total pelas 2 Metas (R$)</label><input id="spBonus" type="number" min="0" value="500000" oninput="updateSponsorMissionsPreview()"></div>
+ </div>
+
+ <div class="card" style="background:rgba(5,9,18,0.85);margin-bottom:12px;padding:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+   <span class="eyebrow" style="color:var(--gold-light)">🎯 2 METAS DO PATROCINADOR (50% CADA)</span>
+   <button type="button" class="btn secondary sm" onclick="randomizeSponsorGoals()">🎲 Sortear 2 Aleatórias</button>
+  </div>
+  <div class="field" style="margin-bottom:8px"><label>Meta 1</label><select id="spGoal1" onchange="updateSponsorMissionsPreview()"></select></div>
+  <div class="field" style="margin-bottom:6px"><label>Meta 2</label><select id="spGoal2" onchange="updateSponsorMissionsPreview()"></select></div>
+  <div id="spGoalsPreview" class="sub" style="font-size:11px"></div>
+ </div>
+
+ <div class="field"><label>Observação Extra (Opcional)</label><input id="spDesc" placeholder="Ex.: Válido até o fim da temporada"></div>
+ <div class="modalfoot"><button class="btn danger hidden" id="delSponsorBtn" style="margin-right:auto" onclick="deleteSponsor()">Excluir</button><button class="btn secondary" onclick="closeModal('sponsorModal')">Cancelar</button><button class="btn gold" onclick="saveSponsor()">Salvar Patrocinador</button></div>
+</div></div>
+
+<!-- MODAL: NOVO / EDITAR CLUBE -->
+<div class="modalbg" id="clubModal"><div class="modal"><h3 id="clubModalTitle">Novo Clube</h3><input type="hidden" id="editClubId">
+ <div class="field"><label>Foto / Escudo do Clube (Galeria do celular ou Link)</label>
+  <div style="display:flex;align-items:center;gap:10px">
+   <div id="cLogoPreview"></div>
+   <div style="flex:1;min-width:0;display:grid;gap:6px">
+    <input type="file" id="cLogoFile" accept="image/*" onchange="handleClubPhotoFile(this)">
+    <div style="display:flex;gap:6px">
+     <input id="cLogoUrl" placeholder="Ou cole o link da foto (opcional)" oninput="updateClubLogoPreview()">
+     <button type="button" class="btn secondary sm" onclick="$('cLogoUrl').value='';$('cLogoFile').value='';updateClubLogoPreview()">Limpar</button>
+    </div>
+   </div>
+  </div>
+ </div>
+ <div class="field"><label>Nome do Clube</label><input id="cName" placeholder="Ex.: Corinthians" oninput="updateClubLogoPreview()"></div>
+ <div class="field"><label>Nome do Manager</label><input id="cOwner" placeholder="Ex.: Antônio"></div>
+ <div class="field"><label>Vincular Conta de Usuário (para notificações)</label><select id="cUser"></select></div>
+ <div class="field"><label>Valor de Transferência Disponível / Caixa (R$)</label><input id="cBudget" type="number" value="10000000"></div>
+ <div class="modalfoot"><button class="btn danger hidden" id="delClubBtn" style="margin-right:auto" onclick="deleteClub()">Excluir</button><button class="btn secondary" onclick="closeModal('clubModal')">Cancelar</button><button class="btn" onclick="saveClub()">Salvar Clube</button></div>
+</div></div>
+
+<!-- MODAL: CADASTRAR / EDITAR JOGADOR -->
+<div class="modalbg" id="playerModal"><div class="modal"><h3 id="playerModalTitle">Cadastrar Jogador</h3><input type="hidden" id="editPlayerId">
+ <div class="field"><label>Foto do Atleta (Galeria do celular ou Link)</label>
+  <input type="file" id="pPhotoFile" accept="image/*" onchange="handlePhotoFile(this)">
+  <input id="pPhotoUrl" placeholder="Ou cole o link da foto (opcional)">
+ </div>
+ <div class="field"><label>Nome do Jogador</label><input id="pName" placeholder="Ex.: Yuri Alberto"></div>
+ <div class="grid two">
+  <div class="field"><label>Posição</label><select id="pPos"><option>ATA</option><option>PE</option><option>PD</option><option>MEI</option><option>MC</option><option>VOL</option><option>LE</option><option>LD</option><option>ZAG</option><option>GOL</option></select></div>
+  <div class="field"><label>Overall (1 a 99)</label><input id="pOvr" type="number" min="1" max="99" value="82"></div>
+ </div>
+ <div class="grid two">
+  <div class="field"><label>Valor de Mercado (R$)</label><input id="pValue" type="number" value="1000000" oninput="autoCalcClause()"></div>
+  <div class="field"><label>Multa Rescisória (Padrão 4x)</label><input id="pClause" type="number" value="4000000"></div>
+ </div>
+ <div class="field"><label>Clube Atual</label><select id="pClub"></select></div>
+ <div class="modalfoot"><button class="btn danger hidden" id="delPlayerBtn" style="margin-right:auto" onclick="deletePlayer()">Excluir</button><button class="btn secondary" onclick="closeModal('playerModal')">Cancelar</button><button class="btn" onclick="savePlayer()">Salvar Jogador</button></div>
+</div></div>
+
+<!-- MODAL: BLINDAR JOGADOR (1:4) -->
+<div class="modalbg" id="shieldModal"><div class="modal"><h3>🛡️ Blindar Jogador</h3><input type="hidden" id="shPlayerId">
+ <p class="sub" id="shPlayerDesc" style="margin-top:0"></p>
+ <div class="field"><label>Quanto deseja investir do caixa do clube? (R$)</label><input id="shAmount" type="number" value="4000" oninput="previewShield()"></div>
+ <div class="card" style="background:rgba(5,9,18,0.85);margin-bottom:10px">
+  <div class="sub">A cada R$ 1 investido, a Multa Rescisória sobe R$ 4 (o valor de mercado não muda):</div>
+  <strong id="shPreview" class="accent" style="display:block;margin-top:6px;font-size:14px">+ R$ 16.000 na Multa Rescisória</strong>
+ </div>
+ <div class="modalfoot"><button class="btn secondary" onclick="closeModal('shieldModal')">Cancelar</button><button class="btn" onclick="confirmShield()">Confirmar Blindagem</button></div>
+</div></div>
+
+<!-- MODAL: PAGAR MULTA RESCISÓRIA (COMPRA IMEDIATA) -->
+<div class="modalbg" id="buyoutModal"><div class="modal"><h3>⚡ Compra Imediata pela Multa</h3><input type="hidden" id="boPlayerId">
+ <p class="sub" id="boDesc" style="margin-top:0"></p>
+ <div class="field"><label>Clube Comprador</label><select id="boBuyerClub"></select></div>
+ <div class="modalfoot"><button class="btn secondary" onclick="closeModal('buyoutModal')">Cancelar</button><button class="btn gold" onclick="confirmBuyout()">Pagar Multa Agora</button></div>
+</div></div>
+
+<!-- MODAL: PROPOR NEGÓCIO (TROCA OU JOGADOR + DINHEIRO) -->
+<div class="modalbg" id="offerModal"><div class="modal"><h3>⇄ Propor Contratação / Troca</h3>
+ <p class="sub" style="margin-top:0">Para Compra Imediata pela multa integral sem negociação, use o botão dourado <b>Pagar Multa</b> direto no card do atleta.</p>
+ <div class="field"><label>Seu Clube (Comprador)</label><select id="ofBuyerClub" onchange="refreshOfferPlayers()"></select></div>
+ <div class="field"><label>Jogador Desejado (de outro clube)</label><select id="ofTargetPlayer"></select></div>
+ <div class="field"><label>Incluir Jogador na Troca (Opcional)</label><select id="ofSwapPlayer"></select></div>
+ <div class="field"><label>Valor em Dinheiro Oferecido (R$)</label><input id="ofCash" type="number" value="0" min="0"></div>
+ <div class="modalfoot"><button class="btn secondary" onclick="closeModal('offerModal')">Cancelar</button><button class="btn" onclick="sendProposal()">Enviar Proposta</button></div>
+</div></div>
+
+<!-- MODAL: NOTIFICAÇÕES / PROPOSTAS PENDENTES -->
+<div class="modalbg" id="notifModal"><div class="modal"><h3>🔔 Central de Propostas & Negociações</h3>
+ <div id="notifList"></div>
+ <div class="modalfoot"><button class="btn secondary" onclick="closeModal('notifModal')">Fechar</button></div>
+</div></div>
+
+<!-- MODAL: SORTEAR TABELA -->
+<div class="modalbg" id="drawModal"><div class="modal"><h3>🎲 Sortear Jogos da Temporada</h3>
+ <p class="sub" style="margin-top:0">Os clubes serão sorteados aleatoriamente. Você poderá antecipar qualquer confronto e lançar o placar na ordem que precisar.</p>
+ <div class="field"><label>Formato da Competição</label><select id="drawFormat"><option value="true">Turno e Returno (Ida e Volta)</option><option value="false">Turno Único</option></select></div>
+ <div class="modalfoot"><button class="btn secondary" onclick="closeModal('drawModal')">Cancelar</button><button class="btn" onclick="runFixtureDraw()">Sortear Agora</button></div>
+</div></div>
+
+<!-- MODAL: LANÇAR PLACAR + GOLS, ASSISTÊNCIAS E CARTÕES -->
+<div class="modalbg" id="matchModal"><div class="modal" style="width:min(540px,100%)"><h3>⚽ Placar & Eventos da Partida</h3><input type="hidden" id="mEditId">
+ <div class="scoreboard-box">
+  <div class="sb-top-row">
+   <label class="sb-round-pill">RODADA <input id="mRound" type="number" min="1" value="1"></label>
+  </div>
+  <div class="sb-teams">
+   <div class="sb-side home">
+    <span class="sb-side-label">🏠 Casa (Esquerda)</span>
+    <div id="mHomeCrest"></div>
+    <select id="mHome" class="sb-club-select" onchange="refreshMatchEventSelects()"></select>
+    <div class="sb-stepper">
+     <button type="button" class="sb-step-btn" onclick="stepScore('home',-1)" aria-label="Diminuir gol mandante">−</button>
+     <input id="mHG" class="sb-score-num" type="number" min="0" value="0" onchange="onManualScoreChange()">
+     <button type="button" class="sb-step-btn plus" onclick="stepScore('home',1)" aria-label="Aumentar gol mandante">+</button>
+    </div>
+   </div>
+   <div class="sb-vs">×</div>
+   <div class="sb-side away">
+    <span class="sb-side-label">✈️ Visitante (Direita)</span>
+    <div id="mAwayCrest"></div>
+    <select id="mAway" class="sb-club-select" onchange="refreshMatchEventSelects()"></select>
+    <div class="sb-stepper">
+     <button type="button" class="sb-step-btn" onclick="stepScore('away',-1)" aria-label="Diminuir gol visitante">−</button>
+     <input id="mAG" class="sb-score-num" type="number" min="0" value="0" onchange="onManualScoreChange()">
+     <button type="button" class="sb-step-btn plus away" onclick="stepScore('away',1)" aria-label="Aumentar gol visitante">+</button>
+    </div>
+   </div>
+  </div>
+  <div class="sb-flags">
+   <label class="sb-flag"><input type="checkbox" id="mIsDerby"> 🔥 Clássico</label>
+   <label class="sb-flag"><input type="checkbox" id="mHomeComeback"> 🔄 Virada Casa</label>
+   <label class="sb-flag"><input type="checkbox" id="mAwayComeback"> 🔄 Virada Visitante</label>
+  </div>
+ </div>
+
+ <div class="sides-grid">
+  <div class="side-col home">
+   <div class="side-col-head">
+    <div class="side-col-title accent" id="homeSideTitle">🏠 Mandante</div>
+    <div class="side-actions">
+     <button class="btn sm" type="button" onclick="addSideEvent('home','goal')">+ ⚽ Gol</button>
+     <button class="btn secondary sm" type="button" onclick="addSideEvent('home','yellow_card')">+ 🟨</button>
+     <button class="btn danger sm" type="button" onclick="addSideEvent('home','red_card')">+ 🟥</button>
+    </div>
+   </div>
+   <div id="homeEventsList"><div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols da casa.</div></div>
+  </div>
+
+  <div class="side-col away">
+   <div class="side-col-head">
+    <div class="side-col-title gold" id="awaySideTitle">✈️ Visitante</div>
+    <div class="side-actions">
+     <button class="btn gold sm" type="button" onclick="addSideEvent('away','goal')">+ ⚽ Gol</button>
+     <button class="btn secondary sm" type="button" onclick="addSideEvent('away','yellow_card')">+ 🟨</button>
+     <button class="btn danger sm" type="button" onclick="addSideEvent('away','red_card')">+ 🟥</button>
+    </div>
+   </div>
+   <div id="awayEventsList"><div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols do visitante.</div></div>
+  </div>
+ </div>
+
+ <div class="modalfoot"><button class="btn danger hidden" id="delMatchBtn" style="margin-right:auto" onclick="deleteMatch($('mEditId').value)">🗑️ Excluir Jogo</button><button class="btn secondary" onclick="closeModal('matchModal')">Cancelar</button><button class="btn" onclick="saveMatchResult()">Salvar Placar e Atualizar Tudo</button></div>
+</div></div>
+
+<!-- MODAL: LANÇAMENTO FINANCEIRO MANUAL -->
+<div class="modalbg" id="financeModal"><div class="modal"><h3>Lançamento Financeiro</h3>
+ <div class="field"><label>Clube</label><select id="fClub"></select></div>
+ <div class="field"><label>Tipo</label><select id="fType"><option value="income">Receita (+)</option><option value="expense">Despesa (-)</option></select></div>
+ <div class="field"><label>Descrição</label><input id="fDesc" placeholder="Ex.: Ajuste de caixa, premiação extra..."></div>
+ <div class="field"><label>Valor (R$)</label><input id="fAmount" type="number" min="1"></div>
+ <div class="modalfoot"><button class="btn secondary" onclick="closeModal('financeModal')">Cancelar</button><button class="btn" onclick="addLedger()">Salvar</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://wfglcfljgiguidaoolul.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmZ2xjZmxqZ2lndWlkYW9vbHVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4NDI1MDQsImV4cCI6MjExMDQxODUwNH0.O8nalwwGH5icfE--VTq3JQtRPtmptqL9opdxMsCwyHU';
+
+let sb = null, user = null, league = null, membership = null, season = null;
+let clubs = [], players = [], matches = [], matchEvents = [], transfers = [], proposals = [], ledger = [], seasons = [], members = [], news = [], sponsors = [], channels = [];
+let authMode = 'login';
+let reloadTimer = null;
+const norm = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+let busyOps = new Set();
+async function runLocked(key, fn){
+  if(busyOps.has(key)) return;
+  busyOps.add(key);
+  try { return await fn(); } finally { busyOps.delete(key); }
+}
+
+const $ = id => document.getElementById(id);
+const money = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(s){ const t = $('toast'); t.textContent = s; t.style.display = 'block'; setTimeout(() => { t.style.display = 'none'; }, 3400); }
+
+function showAuthMsg(text, type){
+  const box = $('authMsg');
+  if(!text){ box.classList.add('hidden'); return; }
+  box.textContent = text;
+  box.className = 'auth-msg ' + (type || 'err');
+  box.classList.remove('hidden');
+}
+
+function setAuthMode(m){
+  authMode = m;
+  showAuthMsg('', '');
+  $('authTitle').textContent = m === 'login' ? 'Entre na sua liga' : 'Crie sua conta de Manager';
+  $('authSubmit').textContent = m === 'login' ? 'Entrar na Liga →' : 'Criar Conta e Entrar →';
+  $('loginTab').classList.toggle('active', m === 'login');
+  $('signupTab').classList.toggle('active', m === 'signup');
+}
+
+async function submitAuth(){
+  if(!window.supabase?.createClient){ showAuthMsg('Não foi possível carregar o serviço de conexão. Verifique sua internet e atualize a página.', 'err'); return; }
+  if(!sb){ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+  const email = $('email').value.trim();
+  const password = $('password').value;
+  showAuthMsg('', '');
+
+  if(!email || !password){
+    showAuthMsg('Preencha o e-mail e a senha para continuar.', 'err');
+    return;
+  }
+  if(password.length < 6){
+    showAuthMsg('A senha deve ter pelo menos 6 caracteres.', 'err');
+    return;
+  }
+
+  const btn = $('authSubmit');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = authMode === 'login' ? 'Entrando...' : 'Criando conta...';
+
+  try {
+    let res;
+    if(authMode === 'signup'){
+      res = await sb.auth.signUp({ email, password });
+      if(res.error) throw res.error;
+      if(!res.data.session){
+        const loginTry = await sb.auth.signInWithPassword({ email, password });
+        if(loginTry.data?.session){
+          res = loginTry;
+        } else {
+          showAuthMsg('Conta criada! Se o Supabase pedir confirmação, verifique seu e-mail e depois clique em Entrar.', 'ok');
+          setAuthMode('login');
+          return;
+        }
+      }
+    } else {
+      res = await sb.auth.signInWithPassword({ email, password });
+      if(res.error) throw res.error;
+    }
+
+    user = res.data.user || res.data.session?.user;
+    if(user){
+      try { await sb.from('profiles').upsert({ id: user.id, email: user.email }); } catch(_) {}
+      await boot();
+    }
+  } catch(e){
+    let msg = e?.message || 'Erro ao autenticar.';
+    if(msg.includes('Invalid login credentials')) msg = 'E-mail ou senha incorretos. Se ainda não tem conta, toque em "Criar Conta".';
+    if(msg.includes('User already registered')) msg = 'Este e-mail já está cadastrado. Toque em "Entrar" para acessar.';
+    if(msg.includes('Email not confirmed')) msg = 'Confirme seu e-mail na caixa de entrada antes de entrar.';
+    showAuthMsg(msg, 'err');
+    toast(msg);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+function showRecoveryMode(){
+  $('authScreen').classList.remove('hidden'); $('app').classList.add('hidden');
+  $('authNormalFields').classList.add('hidden'); $('authRecovery').classList.remove('hidden');
+  $('authTitle').textContent = 'Redefinir senha';
+  showAuthMsg('Link de recuperação validado. Defina sua nova senha abaixo.', 'ok');
+}
+async function updatePassword(){
+  const password = $('newPassword').value;
+  const confirm = $('confirmNewPassword').value;
+  if(password.length < 6) return showAuthMsg('A nova senha precisa ter pelo menos 6 caracteres.', 'err');
+  if(password !== confirm) return showAuthMsg('As senhas não coincidem.', 'err');
+  const btn = $('updatePasswordBtn'); btn.disabled = true; btn.textContent = 'Salvando...';
+  try{
+    const { error } = await sb.auth.updateUser({ password });
+    if(error) throw error;
+    $('newPassword').value = ''; $('confirmNewPassword').value = '';
+    $('authRecovery').classList.add('hidden'); $('authNormalFields').classList.remove('hidden');
+    showAuthMsg('Senha atualizada com sucesso. Entrando na sua liga...', 'ok');
+    await boot();
+  }catch(error){ showAuthMsg('Não foi possível atualizar a senha: ' + (error?.message || 'erro inesperado'), 'err'); }
+  finally{ btn.disabled = false; btn.textContent = 'Salvar nova senha'; }
+}
+
+async function sendPasswordReset(){
+  if(!window.supabase?.createClient){ showAuthMsg('Serviço de conexão indisponível. Atualize a página e tente novamente.', 'err'); return; }
+  if(!sb) sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const email = $('email').value.trim();
+  if(!email){ showAuthMsg('Digite seu e-mail no campo acima para receber o link de recuperação.', 'err'); $('email').focus(); return; }
+  const btn = $('forgotPasswordBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try{
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('#')[0] });
+    if(error) throw error;
+    showAuthMsg('Se o endereço estiver cadastrado, você receberá um link para redefinir sua senha. Confira também o spam.', 'ok');
+  }catch(error){ showAuthMsg('Não foi possível solicitar a recuperação: ' + (error?.message || 'erro inesperado'), 'err'); }
+  finally{ btn.disabled = false; btn.textContent = 'Esqueci minha senha'; }
+}
+
+async function logout(){
+  if(sb) await sb.auth.signOut();
+  location.reload();
+}
+
+async function boot(){
+  const { data, error } = await sb.auth.getSession();
+  if(error || !data.session) return;
+  user = data.session.user;
+  $('authScreen').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  $('avatar').textContent = (user.email || 'M').slice(0, 1).toUpperCase();
+  await loadMemberships();
+}
+
+async function loadMemberships(){
+  const { data, error } = await sb.from('league_members').select('league_id,role,leagues(*)').eq('user_id', user.id);
+  if(error){ toast('Erro ao carregar ligas: ' + error.message); return; }
+  if(!data || !data.length){
+    $('noLeague').classList.remove('hidden');
+    $('leagueContent').classList.add('hidden');
+    return;
+  }
+  league = data[0].leagues;
+  membership = data[0];
+  await loadAll();
+}
+
+async function createLeague(){
+  const name = $('newLeagueName').value.trim();
+  if(!name) return toast('Digite o nome da liga.');
+  if(!user?.id) return toast('Sua sessão expirou. Entre novamente.');
+  const code = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
+  const { data, error } = await sb.from('leagues').insert({ name, invite_code: code, created_by: user.id }).select().single();
+  if(error) return toast('Não foi possível criar a liga: ' + error.message);
+  const memberResult = await sb.from('league_members').insert({ league_id: data.id, user_id: user.id, role: 'admin' });
+  if(memberResult.error){
+    console.error(memberResult.error);
+    await sb.from('leagues').delete().eq('id', data.id);
+    return toast('A liga foi criada, mas não foi possível registrar você como administrador. Verifique as políticas do banco e tente novamente.');
+  }
+  const seasonResult = await sb.from('seasons').insert({ league_id: data.id, name: 'Temporada 1', status: 'active' });
+  if(seasonResult.error){
+    console.error(seasonResult.error);
+    return toast('Liga criada, mas a temporada inicial não foi criada: ' + seasonResult.error.message + '. Crie a temporada pelo painel após verificar o banco.');
+  }
+  league = data;
+  membership = { role: 'admin' };
+  await loadAll();
+}
+
+async function joinLeague(){
+  const code = $('inviteCode').value.trim().toUpperCase();
+  if(!code) return toast('Informe o código de convite.');
+  const { error } = await sb.rpc('join_league_by_code', { p_code: code });
+  if(error) return toast(error.message);
+  await loadMemberships();
+  toast('Você entrou na liga!');
+}
+
+async function loadAll(){
+  const id = league.id;
+  const q = await Promise.all([
+    sb.from('leagues').select('*').eq('id', id).single(),
+    sb.from('seasons').select('*').eq('league_id', id).order('created_at', { ascending: false }),
+    sb.from('clubs').select('*').eq('league_id', id).order('name'),
+    sb.from('players').select('*').eq('league_id', id).order('overall', { ascending: false }),
+    sb.from('matches').select('*').eq('league_id', id).order('match_order', { ascending: true }),
+    sb.from('match_events').select('*').eq('league_id', id),
+    sb.from('transfers').select('*').eq('league_id', id).order('created_at', { ascending: false }),
+    sb.from('transfer_proposals').select('*').eq('league_id', id).order('created_at', { ascending: false }),
+    sb.from('ledger_entries').select('*').eq('league_id', id).order('created_at', { ascending: false }),
+    sb.from('league_members').select('role,user_id,profiles(email)').eq('league_id', id),
+    sb.from('league_news').select('*').eq('league_id', id).order('created_at', { ascending: false }).limit(30),
+    sb.from('league_sponsors').select('*').eq('league_id', id).order('created_at', { ascending: false })
+  ]);
+  for(let i = 0; i < q.length; i++){
+    if(q[i].error){ console.warn('Falha ao carregar dados da liga:', q[i].error); toast('Falha ao carregar dados: ' + q[i].error.message); }
+  }
+  if(q[0].data) league = q[0].data;
+  seasons = q[1].data || [];
+  season = seasons.find(s => s.status === 'active') || seasons.find(s => s.status !== 'archived') || seasons[0] || null;
+  clubs = q[2].data || [];
+  players = q[3].data || [];
+  matches = q[4].data || [];
+  matchEvents = q[5].data || [];
+  transfers = q[6].data || [];
+  proposals = q[7].data || [];
+  ledger = q[8].data || [];
+  members = q[9].data || [];
+  news = q[10].data || [];
+  sponsors = q[11].data || [];
+  render();
+  $('noLeague').classList.add('hidden');
+  $('leagueContent').classList.remove('hidden');
+  subscribe();
+  processSponsorPayouts();
+}
+
+function subscribe(){
+  if(channels.length) return;
+  ['clubs','players','matches','match_events','transfers','transfer_proposals','ledger_entries','seasons','league_news','league_sponsors','leagues'].forEach(table => {
+    const filter = table === 'leagues' ? 'id=eq.' + league.id : 'league_id=eq.' + league.id;
+    const ch = sb.channel('rt-' + table + '-' + league.id).on('postgres_changes', { event: '*', schema: 'public', table, filter }, () => { clearTimeout(reloadTimer); reloadTimer = setTimeout(() => loadAll(), 350); }).subscribe();
+    channels.push(ch);
+  });
+}
+
+function isAdmin(){ return membership?.role === 'admin'; }
+function myClubIds(){ return clubs.filter(c => c.owner_user_id === user.id).map(c => c.id); }
+function canManageClub(clubId){ return isAdmin() || myClubIds().includes(clubId); }
+
+function statsRows(){
+  const played = matches.filter(m => m.season_id === season?.id && m.status === 'played' && m.home_goals !== null);
+  return clubs.map(c => {
+    const ms = played.filter(m => m.home_club_id === c.id || m.away_club_id === c.id);
+    const r = { ...c, j: ms.length, v: 0, e: 0, d: 0, gp: 0, gc: 0 };
+    ms.forEach(m => {
+      const h = m.home_club_id === c.id;
+      const a = h ? m.home_goals : m.away_goals;
+      const b = h ? m.away_goals : m.home_goals;
+      r.gp += a; r.gc += b;
+      if(a > b) r.v++; else if(a === b) r.e++; else r.d++;
+    });
+    r.pts = r.v * 3 + r.e;
+    r.sg = r.gp - r.gc;
+    return r;
+  }).sort((a, b) => b.pts - a.pts || b.sg - a.sg || b.gp - a.gp);
+}
+
+function playerAvatar(p){
+  const initials = esc((p?.name || 'AT').slice(0, 2).toUpperCase());
+  if(p?.photo_url) return `<img class="pavatar" src="${esc(p.photo_url)}" alt="${esc(p?.name || '')}" onerror="this.outerHTML='<div class=\'pavatar\'>${initials}</div>'">`;
+  return `<div class="pavatar">${initials}</div>`;
+}
+function crest(c, large = false){
+  const initials = esc((c?.name || 'CL').split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase());
+  const cls = large ? 'crest lg' : 'crest';
+  if(c?.logo_url) return `<img class="${cls}" src="${esc(c.logo_url)}" alt="${esc(c?.name || '')}" onerror="this.outerHTML='<span class=\'${cls}\'>${initials}</span>'">`;
+  return `<span class="${cls}">${initials}</span>`;
+}
+function sponsorLogoHtml(s){
+  const initials = esc((s?.name || 'PT').split(/\s+/).map(x => x[0]).join('').slice(0, 3).toUpperCase());
+  if(s?.logo_url) return `<img src="${esc(s.logo_url)}" alt="${esc(s?.name || '')}" onerror="this.outerHTML='<span class=\'sponsor-monogram\'>${initials}</span>'">`;
+  return `<span class="sponsor-monogram">${initials}</span>`;
+}
+
+function render(){
+  if(!league) return;
+  const rows = statsRows();
+  const seasonMatches = matches.filter(m => m.season_id === season?.id);
+  const playedMatches = seasonMatches.filter(m => m.status === 'played' && m.home_goals !== null);
+  const schedMatches = seasonMatches.filter(m => m.status !== 'played' || m.home_goals === null);
+
+  $('sideLeague').textContent = league.name;
+  $('sideSeason').textContent = season?.name || 'Sem temporada';
+  $('heroLeague').textContent = league.name;
+  $('heroMeta').textContent = `${clubs.length} clubes • ${season?.name || 'Sem temporada'} • Tempo real`;
+  $('kClubs').textContent = clubs.length;
+  $('kPlayers').textContent = players.length;
+  $('kMatches').textContent = playedMatches.length;
+  $('kMatchesSub').textContent = `de ${seasonMatches.length} jogos`;
+  $('kTransfers').textContent = transfers.length;
+
+  const pendingProps = proposals.filter(pr => pr.status === 'pending' && (isAdmin() || myClubIds().includes(pr.from_club_id)));
+  $('notifBadge').textContent = pendingProps.length;
+  $('notifBadge').classList.toggle('hidden', pendingProps.length === 0);
+
+  if(news.length){
+    $('tickerTitle').textContent = `${news[0].title} — ${news[0].body}`;
+    $('dashNews').innerHTML = news.slice(0, 4).map(n => `<div class="newsitem"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
+    $('allNewsList').innerHTML = news.map(n => `<div class="newsitem"><div style="display:flex;justify-content:space-between"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><span class="sub">${new Date(n.created_at).toLocaleString('pt-BR')}</span></div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
+  } else {
+    $('dashNews').innerHTML = '<div class="empty">Nenhuma notícia registrada ainda.</div>';
+    $('allNewsList').innerHTML = '<div class="empty">As notícias aparecerão automaticamente conforme os jogos e negócios acontecerem.</div>';
+  }
+
+  // Vitrine rápida de Patrocinadores no Início
+  $('dashSponsorsWrap').classList.toggle('hidden', sponsors.length === 0);
+  if(sponsors.length){
+    $('dashSponsorsList').innerHTML = sponsors.map(s => `<div class="sponsor-chip" onclick="go('sponsors')">${s.logo_url ? `<img src="${esc(s.logo_url)}" alt="${esc(s.name)}" onerror="this.style.display='none'">` : ''}<span>${esc(s.name)}</span></div>`).join('');
+  }
+
+  // Aba Patrocinadores & Contratos por Clube
+  $('addSponsorBtn').classList.toggle('hidden', !isAdmin());
+  const spClubSel = $('sponsorTargetClub');
+  const manageableClubs = isAdmin() ? clubs : clubs.filter(c => c.owner_user_id === user.id);
+  const displayClubs = manageableClubs.length ? manageableClubs : clubs;
+  if(spClubSel){
+    const prevSpClub = spClubSel.value;
+    spClubSel.innerHTML = displayClubs.map(c => `<option value="${c.id}">${esc(c.name)} (${getClubSeasonSponsorIds(c.id, season?.id).length}/2)</option>`).join('');
+    if([...spClubSel.options].some(o => o.value === prevSpClub)) spClubSel.value = prevSpClub;
+  }
+  const activeClubId = spClubSel?.value || displayClubs[0]?.id || null;
+  // Definir os contratos selecionados antes de qualquer bloco que os consulte.
+  const activeClubChosen = activeClubId ? getClubSeasonSponsorIds(activeClubId, season?.id) : [];
+  const seasonStarted = isSeasonStarted();
+  if($('sponsorLockInfo')){
+    $('sponsorLockInfo').textContent = seasonStarted
+      ? '🔒 Temporada em andamento — contratos bloqueados. Acompanhe o avanço das metas abaixo.'
+      : (activeClubChosen.length >= 2
+        ? '🔒 Dois contratos definidos. As demais propostas ficam ocultas até o encerramento da temporada.'
+        : '🟢 Pré-temporada aberta — escolha até 2 patrocinadores antes do 1º jogo.');
+  }
+  if($('activeClubSponsorsWrap')){
+    $('activeClubSponsorsWrap').innerHTML = activeClubId
+      ? renderClubSponsorsHtml(activeClubId, false)
+      : '<div class="empty">Cadastre um clube para gerenciar patrocínios.</div>';
+  }
+
+  const sponsorCatalogVisible = activeClubChosen.length >= 2
+    ? sponsors.filter(s => activeClubChosen.includes(s.id))
+    : sponsors;
+  $('sponsorsList').innerHTML = sponsorCatalogVisible.map(s => {
+    const isMaster = norm(s.tier).includes('master');
+    const tierCls = isMaster ? 'gold' : (norm(s.tier).includes('fornecedor') ? 'cyan' : 'green');
+    const goals = getSponsorGoals(s);
+    const cleanDesc = cleanSponsorDesc(s);
+    const alreadySigned = activeClubChosen.includes(s.id);
+    const canSign = activeClubId && canManageClub(activeClubId) && !seasonStarted && !alreadySigned && activeClubChosen.length < 2;
+    return `<div class="sponsor-card ${isMaster ? 'master' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+        <span class="tag ${tierCls}">${esc(s.tier || 'Patrocinador Oficial')}</span>
+        ${Number(s.bonus_amount) > 0 ? `<span class="accent" style="font-size:11px;font-weight:800">Bônus-base: ${money(s.bonus_amount)}</span>` : ''}
+      </div>
+      <div class="sponsor-logo-box">${sponsorLogoHtml(s)}</div>
+      <div>
+        <b style="font-size:15px;display:block">${esc(s.name)}</b>
+        ${cleanDesc ? `<span class="sub" style="display:block;margin-top:3px">${esc(cleanDesc)}</span>` : ''}
+        ${activeClubId ? `<span class="sub" style="display:block;margin-top:4px;color:var(--gold-light)">${esc(sponsorContractRate(activeClubId, s.id).label)} • ${Math.round(sponsorContractRate(activeClubId, s.id).rate*100)}% do valor-base</span>` : ''}
+      </div>
+      <div class="mission-list">
+        ${goals.map((g, idx) => `<div class="mission-box">
+          <div class="mission-top"><span class="mission-name">🎯 Meta ${idx + 1}: ${esc(g.name)}</span><span class="tag gold">${money(Math.round((Number(s.bonus_amount) || 0) * (activeClubId ? sponsorContractRate(activeClubId, s.id).rate : 1) / 2))}</span></div>
+          <div class="mission-desc">${esc(g.desc)}</div>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:auto;flex-wrap:wrap">
+        ${alreadySigned ? `<span class="tag green" style="flex:1;justify-content:center;padding:8px">✅ Assinado (${esc(clubs.find(c => c.id === activeClubId)?.name || '')})</span>` : ''}
+        ${canSign ? `<button class="btn sm" style="flex:1" onclick="signClubSponsor('${activeClubId}','${s.id}')">✍️ Assinar Patrocínio</button>` : ''}
+        ${isAdmin() ? `<button class="btn secondary sm" onclick="openSponsorModal('${s.id}')">✏️</button><button class="btn danger sm" onclick="deleteSponsorById('${s.id}')" title="Excluir patrocinador">🗑️</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') || `<div class="empty" style="grid-column:1/-1">${isAdmin() ? 'Nenhum patrocinador cadastrado ainda. Toque em "+ Novo Patrocinador" para adicionar marcas e fotos.' : 'Nenhum patrocinador oficial cadastrado na liga ainda.'}</div>`;
+
+  $('miniTable').innerHTML = rows.map((r, i) => `<tr><td>${i + 1}</td><td><span class="club">${crest(r)}${esc(r.name)}</span></td><td class="accent"><b>${r.pts}</b></td><td>${r.j}</td><td>${r.sg > 0 ? '+' : ''}${r.sg}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">Cadastre clubes.</td></tr>';
+  $('fullTable').innerHTML = rows.map((r, i) => `<tr><td><b>${i + 1}</b></td><td><span class="club">${crest(r)}${esc(r.name)}</span></td><td class="accent"><b>${r.pts}</b></td><td>${r.j}</td><td>${r.v}</td><td>${r.e}</td><td>${r.d}</td><td>${r.gp}</td><td>${r.gc}</td><td>${r.sg > 0 ? '+' : ''}${r.sg}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">Sem clubes.</td></tr>';
+  $('champPrizeBadge').textContent = `Prêmio Campeão: ${money(league.champion_prize)}`;
+  $('scorerPrizeBadge').textContent = `Prêmio: ${money(league.top_scorer_prize)}`;
+  $('assistPrizeBadge').textContent = `Prêmio: ${money(league.top_assist_prize)}`;
+
+  // Artilharia e Assistências Gerais do Campeonato
+  const evSeason = matchEvents.filter(e => e.season_id === season?.id && e.event_type === 'goal');
+  const goalMap = {}, assistMap = {};
+  evSeason.forEach(e => {
+    goalMap[e.player_id] = (goalMap[e.player_id] || 0) + 1;
+    if(e.assist_player_id) assistMap[e.assist_player_id] = (assistMap[e.assist_player_id] || 0) + 1;
+  });
+  const topScorers = Object.entries(goalMap).map(([pid, cnt]) => ({ p: players.find(x => x.id === pid), cnt })).filter(x => x.p).sort((a, b) => b.cnt - a.cnt);
+  const topAssists = Object.entries(assistMap).map(([pid, cnt]) => ({ p: players.find(x => x.id === pid), cnt })).filter(x => x.p).sort((a, b) => b.cnt - a.cnt);
+
+  $('scorersList').innerHTML = topScorers.map((x, i) => {
+    const cl = clubs.find(c => c.id === x.p.club_id);
+    return `<div class="fixture"><div class="pmeta" style="flex:1;min-width:0"><b style="width:22px;flex-shrink:0;color:var(--gold-light)">${i + 1}º</b>${playerAvatar(x.p)}<div class="rank-info"><b>${esc(x.p.name)}</b><span class="sub">${esc(cl?.name || 'Livre')}</span></div></div><span class="stat-pill-rank green">⚽ ${x.cnt} ${x.cnt === 1 ? 'Gol' : 'Gols'}</span></div>`;
+  }).join('') || '<div class="empty">Nenhum gol registrado nesta temporada.</div>';
+
+  $('assistsList').innerHTML = topAssists.map((x, i) => {
+    const cl = clubs.find(c => c.id === x.p.club_id);
+    return `<div class="fixture"><div class="pmeta" style="flex:1;min-width:0"><b style="width:22px;flex-shrink:0;color:var(--cyan)">${i + 1}º</b>${playerAvatar(x.p)}<div class="rank-info"><b>${esc(x.p.name)}</b><span class="sub">${esc(cl?.name || 'Livre')}</span></div></div><span class="stat-pill-rank cyan">👟 ${x.cnt} ${x.cnt === 1 ? 'Assistência' : 'Assistências'}</span></div>`;
+  }).join('') || '<div class="empty">Nenhuma assistência registrada nesta temporada.</div>';
+
+  const clubFilterEl = $('playerClubFilter');
+  const prevClubFilter = clubFilterEl?.value || 'ALL';
+  if(clubFilterEl){
+    const freeCount = players.filter(p => !p.club_id).length;
+    clubFilterEl.innerHTML = `<option value="ALL">Todos os clubes (${players.length})</option>`
+      + `<option value="FREE">Mercado Livre (${freeCount})</option>`
+      + clubs.map(c => `<option value="${c.id}">${esc(c.name)} (${players.filter(p => p.club_id === c.id).length})</option>`).join('');
+    if([...clubFilterEl.options].some(o => o.value === prevClubFilter)) clubFilterEl.value = prevClubFilter;
+  }
+  const selectedClub = clubFilterEl?.value || 'ALL';
+
+  const playerQuery = norm($('playerSearch')?.value || '');
+  const visiblePlayers = players.filter(p => {
+    const matchesClub = selectedClub === 'ALL'
+      ? true
+      : selectedClub === 'FREE'
+        ? !p.club_id
+        : p.club_id === selectedClub;
+    if(!matchesClub) return false;
+    const clubName = clubs.find(c => c.id === p.club_id)?.name || 'Mercado Livre';
+    return !playerQuery || [p.name, p.position, clubName].some(v => norm(v).includes(playerQuery));
+  });
+  if($('playerSearchMeta')) $('playerSearchMeta').textContent = `${visiblePlayers.length} de ${players.length} atletas`;
+  $('mkt-allplayers').innerHTML = visiblePlayers.map(p => {
+    const cl = clubs.find(c => c.id === p.club_id);
+    const clause = Number(p.release_clause || p.market_value * 4);
+    const ownedByMe = p.club_id && myClubIds().includes(p.club_id);
+    const canShield = p.club_id && canManageClub(p.club_id);
+    const canBuyOrNegotiate = !ownedByMe && (myClubIds().length > 0 || (isAdmin() && clubs.length > 1));
+    return `<div class="pcard ${p.overall >= 85 ? 'star' : ''}">
+      <div class="prow">
+        <div class="pmeta">${playerAvatar(p)}<div style="min-width:0"><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • ${esc(cl?.name || 'Mercado Livre')}</span></div></div>
+        <span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span>
+      </div>
+      <div class="moneygrid">
+        <div><span>VALOR DE MERCADO</span><strong>${money(p.market_value)}</strong></div>
+        <div><span>MULTA (COMPRA IMEDIATA)</span><strong class="gold">${money(clause)}</strong></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${canShield ? `<button class="btn secondary sm" style="flex:1" onclick="openShieldModal('${p.id}')">🛡️ Blindar (1:4)</button>` : ''}
+        ${canBuyOrNegotiate ? `<button class="btn gold sm" style="flex:1" onclick="openBuyoutModal('${p.id}')">⚡ Pagar Multa</button>` : ''}
+        ${canBuyOrNegotiate && p.club_id ? `<button class="btn secondary sm" style="flex:1" onclick="openOfferModal('${p.id}')">⇄ Negociar</button>` : ''}
+        ${isAdmin() ? `<button class="btn secondary sm" onclick="openPlayerModal('${p.id}')">✏️</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') || `<div class="empty">${(playerQuery || selectedClub !== 'ALL') ? 'Nenhum atleta encontrado para esse filtro.' : 'Nenhum atleta cadastrado.'}</div>`;
+
+  const trClubEl = $('transferClubFilter');
+  const prevTrClub = trClubEl?.value || 'ALL';
+  if(trClubEl){
+    trClubEl.innerHTML = `<option value="ALL">Todos os clubes (${transfers.length})</option>`
+      + clubs.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    if([...trClubEl.options].some(o => o.value === prevTrClub)) trClubEl.value = prevTrClub;
+  }
+  const selectedTrClub = trClubEl?.value || 'ALL';
+  const trClubObj = clubs.find(c => c.id === selectedTrClub);
+  const trQuery = norm($('transferSearch')?.value || '');
+
+  const visibleTransfers = transfers.filter(t => {
+    const matchesClub = selectedTrClub === 'ALL'
+      ? true
+      : (t.from_club_id === selectedTrClub || t.to_club_id === selectedTrClub || (trClubObj && (norm(t.from_club_name) === norm(trClubObj.name) || norm(t.to_club_name) === norm(trClubObj.name))));
+    if(!matchesClub) return false;
+    return !trQuery || [t.player_name, t.from_club_name, t.to_club_name, t.offered_player_name].some(v => norm(v).includes(trQuery));
+  });
+
+  $('transferHistory').innerHTML = visibleTransfers.map(t => `<div class="fixture"><div><b>${esc(t.player_name)}</b><div class="sub">${esc(t.from_club_name || 'Livre')} → ${esc(t.to_club_name)} ${t.offered_player_name ? '(Troca: ' + esc(t.offered_player_name) + ')' : ''}</div></div><b class="accent">${money(t.fee)}</b></div>`).join('') || `<div class="empty">${(trQuery || selectedTrClub !== 'ALL') ? 'Nenhuma transferência encontrada para esse clube/busca.' : 'Nenhuma transferência concluída.'}</div>`;
+
+  const clubQuery = norm($('clubSearch')?.value || '');
+  const visibleClubs = clubs.filter(c => !clubQuery || [c.name,c.owner_name].some(v => norm(v).includes(clubQuery)));
+  if($('clubSearchMeta')) $('clubSearchMeta').textContent = `${visibleClubs.length} de ${clubs.length} clubes`;
+  $('clubCards').innerHTML = visibleClubs.map(c => {
+    const ps = players.filter(p => p.club_id === c.id);
+    const avg = ps.length ? Math.round(ps.reduce((a, p) => a + p.overall, 0) / ps.length) : 0;
+    return `<div class="card">
+      <div class="cardhead"><div class="club">${crest(c, true)}<div><b>${esc(c.name)}</b><div class="sub">${esc(c.owner_name || 'Manager')}</div></div></div>
+      ${canManageClub(c.id) ? `<button class="btn secondary sm" onclick="openClubModal('${c.id}')">${isAdmin() ? 'Editar Clube' : '📷 Foto / Escudo'}</button>` : ''}
+      </div>
+      <div class="moneygrid" style="margin-bottom:10px">
+        <div><span>CAIXA DISPONÍVEL</span><strong class="accent">${money(c.balance)}</strong></div>
+        <div><span>ELENCO / OVR MÉDIO</span><strong>${ps.length} atletas • ${avg}</strong></div>
+      </div>
+      ${getClubSeasonSponsorIds(c.id, season?.id).length ? `<div style="margin-bottom:10px"><div class="eyebrow" style="margin-bottom:4px;color:var(--gold-light)">🤝 PATROCINADORES & METAS</div>${renderClubSponsorsHtml(c.id, true)}</div>` : ''}
+      ${ps.map(p => `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div>`).join('') || '<div class="empty">Elenco vazio.</div>'}
+    </div>`;
+  }).join('') || `<div class="empty">${clubQuery ? 'Nenhum clube encontrado para essa busca.' : 'Cadastre os clubes da liga.'}</div>`;
+
+  $('cntSched').textContent = schedMatches.length;
+  $('cntPlayed').textContent = playedMatches.length;
+  $('matchesScheduled').innerHTML = `<div class="match-card-list">` + (schedMatches.map((m, idx) => {
+    const h = clubs.find(c => c.id === m.home_club_id), a = clubs.find(c => c.id === m.away_club_id);
+    return `<div class="match-card">
+      <div class="match-card-top">
+        <span class="tag">Jogo #${m.match_order || idx + 1} • Rodada ${m.round_number || 1}</span>
+        ${isAdmin() ? `<div style="display:flex;gap:6px;align-items:center"><button class="btn sm" onclick="openMatchModal('${m.id}')">⚽ Lançar Placar</button><button class="btn danger sm" onclick="deleteMatch('${m.id}')" title="Excluir jogo" aria-label="Excluir jogo">🗑️</button></div>` : '<span class="sub">Aguardando</span>'}
+      </div>
+      <div class="match-card-teams">
+        <div class="match-team-side">${crest(h)}<span class="match-team-name">${esc(h?.name || '?')}</span></div>
+        <span class="match-vs-badge">VS</span>
+        <div class="match-team-side away"><span class="match-team-name">${esc(a?.name || '?')}</span>${crest(a)}</div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty">Nenhum jogo pendente. Toque em "Sortear Tabela" para gerar os confrontos.</div>') + `</div>`;
+
+  $('matchesPlayed').innerHTML = `<div class="match-card-list">` + (playedMatches.slice().reverse().map(m => {
+    const h = clubs.find(c => c.id === m.home_club_id), a = clubs.find(c => c.id === m.away_club_id);
+    const evs = matchEvents.filter(e => e.match_id === m.id);
+    const summary = evs.map(e => {
+      const pl = players.find(x => x.id === e.player_id);
+      if(e.event_type === 'goal') return `⚽ ${pl?.name || ''}`;
+      if(e.event_type === 'yellow_card') return `🟨 ${pl?.name || ''}`;
+      return `🟥 ${pl?.name || ''}`;
+    }).join(' • ');
+    return `<div class="match-card">
+      <div class="match-card-top">
+        <span class="tag green">Rodada ${m.round_number || 1} • Encerrado</span>
+        ${isAdmin() ? `<div style="display:flex;gap:6px;align-items:center"><button class="btn secondary sm" onclick="openMatchModal('${m.id}')">✏️ Editar</button><button class="btn danger sm" onclick="deleteMatch('${m.id}')" title="Excluir jogo" aria-label="Excluir jogo">🗑️</button></div>` : ''}
+      </div>
+      <div class="match-card-teams">
+        <div class="match-team-side">${crest(h)}<span class="match-team-name">${esc(h?.name || '?')}</span></div>
+        <span class="score">${m.home_goals} : ${m.away_goals}</span>
+        <div class="match-team-side away"><span class="match-team-name">${esc(a?.name || '?')}</span>${crest(a)}</div>
+      </div>
+      <div class="match-card-foot"><div class="sub">${esc(summary || 'Sem eventos individuais registrados')}</div></div>
+    </div>`;
+  }).join('') || '<div class="empty">Nenhuma partida realizada ainda.</div>') + `</div>`;
+
+  const visibleLedger = ledger.filter(x => !/\[(SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS):/.test(String(x.description || '')));
+  const inc = visibleLedger.filter(x => x.entry_type === 'income').reduce((a, x) => a + Number(x.amount), 0);
+  const exp = visibleLedger.filter(x => x.entry_type === 'expense').reduce((a, x) => a + Number(x.amount), 0);
+  $('fCash').textContent = money(clubs.reduce((a, c) => a + Number(c.balance), 0));
+  $('fIncome').textContent = money(inc);
+  $('fExpense').textContent = money(exp);
+  $('fBalance').textContent = money(inc - exp);
+  $('ledgerRows').innerHTML = visibleLedger.map(x => `<tr><td>${new Date(x.created_at).toLocaleDateString('pt-BR')}</td><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[SPONSOR_PAYOUT:[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sem lançamentos.</td></tr>';
+
+  $('seasonList').innerHTML = seasons.map(s => `<div class="fixture"><div><b>${esc(s.name)}</b><div class="sub">${new Date(s.created_at).toLocaleDateString('pt-BR')}</div></div><span class="tag ${s.status === 'active' ? 'green' : ''}">${s.status === 'active' ? 'ATIVA' : 'ENCERRADA'}</span></div>`).join('');
+  $('cfgGoal').value = league.goal_bonus ?? 50000;
+  $('cfgAssist').value = league.assist_bonus ?? 25000;
+  $('cfgYellow').value = league.yellow_card_fine ?? 15000;
+  $('cfgRed').value = league.red_card_fine ?? 40000;
+  $('cfgStadium').value = league.home_stadium_income ?? 100000;
+  $('cfgChamp').value = league.champion_prize ?? 2000000;
+  $('cfgScorer').value = league.top_scorer_prize ?? 500000;
+  $('cfgAssistPrize').value = league.top_assist_prize ?? 300000;
+  $('adminInvite').value = league.invite_code;
+  $('adminLeagueName').value = league.name;
+  $('membersList').innerHTML = members.map(m => `<div class="fixture"><span>${esc(m.profiles?.email || 'Participante')}</span><span class="tag">${m.role === 'admin' ? 'ADM' : 'MEMBRO'}</span></div>`).join('');
+  $('fClub').innerHTML = clubs.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+function go(page){
+  document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === page));
+  document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  const titles = {
+    dashboard: ['Início & Ao Vivo', 'Acompanhe a liga em tempo real.'],
+    news: ['Plantão ao Vivo', 'Todas as movimentações e placares.'],
+    standings: ['Classificação & Stats', 'Tabela, artilharia e assistências.'],
+    market: ['Mercado da Bola', 'Multas rescisórias, blindagem e trocas.'],
+    clubs: ['Clubes & Elencos', 'Caixas disponíveis e planteis.'],
+    matches: ['Jogos & Resultados', 'Tabela sorteada e placares.'],
+    finance: ['Financeiro', 'Extrato de receitas, bônus e multas.'],
+    sponsors: ['Patrocinadores', 'Marcas oficiais e parceiros da liga.'],
+    seasons: ['Temporadas', 'Premiações e valorização de passe.'],
+    admin: ['Painel ADM', 'Configure valores, prêmios e regras.']
+  };
+  if(titles[page]){ $('pageTitle').textContent = titles[page][0]; $('pageSub').textContent = titles[page][1]; }
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => go(b.dataset.page)));
+function openModal(id){ $(id).style.display = 'grid'; }
+function closeModal(id){ $(id).style.display = 'none'; }
+document.querySelectorAll('.modalbg').forEach(bg => {
+  bg.addEventListener('click', event => { if(event.target === bg) bg.style.display = 'none'; });
+});
+document.addEventListener('keydown', event => {
+  if(event.key === 'Escape') document.querySelectorAll('.modalbg').forEach(m => { if(m.style.display === 'grid') m.style.display = 'none'; });
+});
+
+function setStandTab(t, btn){
+  ['table', 'scorers', 'assists'].forEach(x => $('tab-' + x).classList.toggle('hidden', x !== t));
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setMktTab(t, btn){
+  ['allplayers', 'history'].forEach(x => $('mkt-' + x).classList.toggle('hidden', x !== t));
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setMatchTab(t, btn){
+  $('matchesScheduled').classList.toggle('hidden', t !== 'scheduled');
+  $('matchesPlayed').classList.toggle('hidden', t !== 'played');
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+
+/* CATÁLOGO OFICIAL DAS METAS DE PATROCINADORES */
+const SPONSOR_MISSIONS = [
+  { id: 'muralha', num: 1, name: 'Muralha Intransponível', desc: 'Ficar 5 jogos consecutivos sem perder', target: 5 },
+  { id: 'maquina_gols', num: 2, name: 'Máquina de Gols', desc: 'Marcar 3 ou mais gols em uma partida', target: 3 },
+  { id: 'invencibilidade', num: 3, name: 'Invencibilidade', desc: 'Ficar 8 jogos consecutivos sem perder', target: 8 },
+  { id: 'ataque_avassalador', num: 4, name: 'Ataque Avassalador', desc: 'Marcar 10 gols em 3 partidas consecutivas', target: 10 },
+  { id: 'rei_viradas', num: 5, name: 'Rei das Viradas', desc: 'Vencer 2 partidas após sair perdendo', target: 2 },
+  { id: 'dominio_absoluto', num: 6, name: 'Domínio Absoluto', desc: 'Vencer uma partida por 4 ou mais gols', target: 4 },
+  { id: 'especialista_classicos', num: 7, name: 'Especialista em Clássicos', desc: 'Vencer 2 clássicos no campeonato', target: 2 },
+  { id: 'defesa_aco', num: 8, name: 'Defesa de Aço', desc: 'Sofrer no máximo 5 gols em 10 jogos', target: 10 },
+  { id: 'artilharia_pesada', num: 9, name: 'Artilharia Pesada', desc: 'Ter 3 jogadores diferentes marcando gols no mesmo jogo', target: 3 },
+  { id: 'comeco_avassalador', num: 10, name: 'Começo Avassalador', desc: 'Vencer as 3 primeiras partidas', target: 3 },
+  { id: 'visitante_indesejado', num: 11, name: 'Visitante Indesejado', desc: 'Vencer 3 partidas consecutivas fora de casa', target: 3 },
+  { id: 'fortaleza_casa', num: 12, name: 'Fortaleza em Casa', desc: 'Ficar 5 jogos consecutivos sem perder como mandante', target: 5 },
+  { id: 'garcom_elite', num: 13, name: 'Garçom de Elite', desc: 'Ter um jogador com 5 assistências no campeonato', target: 5 },
+  { id: 'hat_trick', num: 14, name: 'Hat-trick Premiado', desc: 'Um jogador marcar 3 gols em uma única partida', target: 3 },
+  { id: 'poder_reacao', num: 15, name: 'Poder de Reação', desc: 'Marcar gols nos últimos 15 minutos em 3 partidas', target: 3 },
+  { id: 'ataque_equilibrado', num: 16, name: 'Ataque Equilibrado', desc: 'Ter 5 jogadores diferentes com pelo menos 2 gols', target: 5 },
+  { id: 'campeao_regularidade', num: 17, name: 'Campeão de Regularidade', desc: 'Pontuar em 10 partidas consecutivas', target: 10 },
+  { id: 'dobradinha_ouro', num: 18, name: 'Dobradinha de Ouro', desc: 'Ter dois jogadores com pelo menos 5 gols cada', target: 2 },
+  { id: 'gol_relampago', num: 19, name: 'Gol Relâmpago', desc: 'Marcar antes dos 15 minutos em 3 partidas', target: 3 },
+  { id: 'reta_final', num: 20, name: 'Reta Final de Campeão', desc: 'Vencer as últimas 3 partidas do campeonato', target: 3 },
+  { id: 'campeao_temporada', num: 21, name: 'Campeão da Temporada', desc: 'Ser campeão do campeonato (pago ao ser matematicamente campeão)', target: 1 }
+];
+
+const paidSponsorCache = new Set();
+
+function downloadSelfHtml(){
+  try {
+    const docHtml = '<!doctype html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([docHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'index.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('Download do index.html iniciado!');
+  } catch(e){
+    toast('Use o menu do navegador (⋮) -> Download para salvar o index.html.');
+  }
+}
+
+function getSponsorGoals(sp){
+  const desc = String(sp?.description || '');
+  const m = desc.match(/\[\[GOALS:([a-z0-9_,]+)\]\]/i);
+  if(m){
+    const ids = m[1].split(',').map(x => x.trim()).filter(Boolean);
+    const found = ids.map(id => SPONSOR_MISSIONS.find(x => x.id === id)).filter(Boolean);
+    if(found.length >= 2) return found.slice(0, 2);
+  }
+  const seed = String(sp?.id || sp?.name || 'sp').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const g1 = SPONSOR_MISSIONS[seed % SPONSOR_MISSIONS.length];
+  const g2 = SPONSOR_MISSIONS[(seed * 7 + 3) % SPONSOR_MISSIONS.length];
+  return [g1, g2.id === g1.id ? SPONSOR_MISSIONS[(seed + 1) % SPONSOR_MISSIONS.length] : g2];
+}
+
+function cleanSponsorDesc(sp){
+  return String(sp?.description || '').replace(/\s*\[\[GOALS:[^\]]+\]\]/g, '').trim();
+}
+
+function getMatchFlags(matchId){
+  if(!matchId) return { derby: false, homeComeback: false, awayComeback: false };
+  const tag = `[MATCH_FLAGS:${matchId}:`;
+  const entry = ledger.find(l => String(l.description || '').includes(tag));
+  if(entry){
+    const m = String(entry.description).match(/\[MATCH_FLAGS:[^:]+:([01]):([01]):([01])\]/);
+    if(m) return { derby: m[1] === '1', homeComeback: m[2] === '1', awayComeback: m[3] === '1' };
+  }
+  try {
+    const raw = localStorage.getItem('ml_mflags_' + matchId);
+    if(raw) return JSON.parse(raw);
+  } catch(_) {}
+  return { derby: false, homeComeback: false, awayComeback: false };
+}
+
+function getGoalTiming(ev){
+  if(ev?.minute != null){
+    if(Number(ev.minute) <= 15) return 'early';
+    if(Number(ev.minute) >= 75) return 'late';
+  }
+  if(!ev?.match_id) return 'normal';
+  const entry = ledger.find(l => String(l.description || '').includes(`[GOAL_TIMING:${ev.match_id}:`));
+  if(entry){
+    const m = String(entry.description).match(/\[GOAL_TIMING:[^:]+:([^\]]+)\]/);
+    if(m){
+      const tokens = m[1].split(',');
+      const hit = tokens.find(t => t.startsWith(ev.player_id + ':'));
+      if(hit) return hit.split(':')[1] || 'normal';
+    }
+  }
+  return 'normal';
+}
+
+function getClubSeasonSponsorIds(clubId, seasonId){
+  if(!clubId || !seasonId) return [];
+  const prefixSign = `[SPONSOR_SIGN:${seasonId}:${clubId}:`;
+  const prefixUnsign = `[SPONSOR_UNSIGN:${seasonId}:${clubId}:`;
+  const chron = ledger.slice().reverse();
+  const chosen = [];
+  chron.forEach(l => {
+    const d = String(l.description || '');
+    if(d.includes(prefixSign)){
+      const m = d.match(/\[SPONSOR_SIGN:[^:]+:[^:]+:([^\]]+)\]/);
+      if(m && !chosen.includes(m[1]) && sponsors.some(s => s.id === m[1])) chosen.push(m[1]);
+    } else if(d.includes(prefixUnsign)){
+      const m = d.match(/\[SPONSOR_UNSIGN:[^:]+:[^:]+:([^\]]+)\]/);
+      if(m){
+        const idx = chosen.indexOf(m[1]);
+        if(idx !== -1) chosen.splice(idx, 1);
+      }
+    }
+  });
+  return chosen.slice(0, 2);
+}
+
+function isSeasonStarted(){
+  if(!season) return false;
+  return matches.some(m => m.season_id === season.id && m.status === 'played' && m.home_goals !== null);
+}
+
+function evaluateSponsorMission(mission, clubId, rowsCache){
+  const seasonMatches = matches
+    .filter(m => m.season_id === season?.id)
+    .slice()
+    .sort((a, b) => (a.match_order || 0) - (b.match_order || 0) || (a.round_number || 0) - (b.round_number || 0));
+
+  const clubMatches = seasonMatches.filter(m => m.home_club_id === clubId || m.away_club_id === clubId);
+  const played = clubMatches.filter(m => m.status === 'played' && m.home_goals !== null);
+  const remaining = clubMatches.filter(m => m.status !== 'played' || m.home_goals === null);
+
+  const defaultPlanned = Math.max(10, (clubs.length > 1 ? (clubs.length - 1) * 2 : 10));
+  const rem = clubMatches.length > 0 ? remaining.length : Math.max(0, defaultPlanned - played.length);
+  const totalPlanned = played.length + rem;
+
+  const gameRecords = played.map(m => {
+    const isHome = m.home_club_id === clubId;
+    const gf = Number(isHome ? m.home_goals : m.away_goals);
+    const ga = Number(isHome ? m.away_goals : m.home_goals);
+    const res = gf > ga ? 'W' : (gf === ga ? 'D' : 'L');
+    const flags = getMatchFlags(m.id);
+    const evs = matchEvents.filter(e => e.match_id === m.id && e.club_id === clubId);
+    const goals = evs.filter(e => e.event_type === 'goal');
+    return {
+      m, isHome, gf, ga, res,
+      derby: flags.derby,
+      comeback: isHome ? flags.homeComeback : flags.awayComeback,
+      goals,
+      earlyGoal: goals.some(g => getGoalTiming(g) === 'early'),
+      lateGoal: goals.some(g => getGoalTiming(g) === 'late')
+    };
+  });
+
+  const seasonClubGoals = matchEvents.filter(e => e.season_id === season?.id && e.club_id === clubId && e.event_type === 'goal');
+  const target = mission.target;
+  let current = 0;
+  let achieved = false;
+  let failed = false;
+  let extraNote = '';
+
+  switch(mission.id){
+    case 'muralha': {
+      let streak = 0;
+      for(const g of gameRecords){
+        if(g.res !== 'L'){ streak++; if(streak >= 5) achieved = true; }
+        else streak = 0;
+      }
+      current = achieved ? 5 : streak;
+      if(!achieved && current + rem < 5) failed = true;
+      break;
+    }
+    case 'maquina_gols': {
+      const maxG = gameRecords.reduce((mx, g) => Math.max(mx, g.gf), 0);
+      achieved = maxG >= 3;
+      current = Math.min(3, maxG);
+      if(!achieved && rem === 0) failed = true;
+      break;
+    }
+    case 'invencibilidade': {
+      let streak = 0;
+      for(const g of gameRecords){
+        if(g.res !== 'L'){ streak++; if(streak >= 8) achieved = true; }
+        else streak = 0;
+      }
+      current = achieved ? 8 : streak;
+      if(!achieved && current + rem < 8) failed = true;
+      break;
+    }
+    case 'ataque_avassalador': {
+      let best3 = 0;
+      for(let i = 0; i <= gameRecords.length - 3; i++){
+        const s = gameRecords[i].gf + gameRecords[i + 1].gf + gameRecords[i + 2].gf;
+        if(s > best3) best3 = s;
+      }
+      if(best3 >= 10){
+        achieved = true;
+        current = 10;
+      } else {
+        const tail = gameRecords.slice(-2).reduce((a, g) => a + g.gf, 0);
+        current = Math.min(9, Math.max(best3, rem > 0 ? tail : best3));
+        if(totalPlanned < 3 || rem === 0) failed = true;
+      }
+      break;
+    }
+    case 'rei_viradas': {
+      const cnt = gameRecords.filter(g => g.res === 'W' && g.comeback).length;
+      achieved = cnt >= 2;
+      current = Math.min(2, cnt);
+      if(!achieved && current + rem < 2) failed = true;
+      break;
+    }
+    case 'dominio_absoluto': {
+      const maxDiff = gameRecords.reduce((mx, g) => Math.max(mx, g.gf - g.ga), 0);
+      achieved = maxDiff >= 4;
+      current = Math.min(4, Math.max(0, maxDiff));
+      if(!achieved && rem === 0) failed = true;
+      break;
+    }
+    case 'especialista_classicos': {
+      const wins = gameRecords.filter(g => g.derby && g.res === 'W').length;
+      const remDerbies = remaining.filter(m => getMatchFlags(m.id).derby).length;
+      achieved = wins >= 2;
+      current = Math.min(2, wins);
+      if(!achieved && (rem === 0 || (clubMatches.length > 0 && remaining.some(m => getMatchFlags(m.id).derby) && wins + remDerbies < 2))) failed = true;
+      break;
+    }
+    case 'defesa_aco': {
+      if(totalPlanned < 10){
+        failed = true;
+        current = gameRecords.length;
+      } else if(gameRecords.length >= 10){
+        for(let i = 0; i <= gameRecords.length - 10; i++){
+          const conceded = gameRecords.slice(i, i + 10).reduce((a, g) => a + g.ga, 0);
+          if(conceded <= 5) achieved = true;
+        }
+        const last10Conceded = gameRecords.slice(-10).reduce((a, g) => a + g.ga, 0);
+        current = 10;
+        extraNote = `${last10Conceded}/5 gols sofridos`;
+        if(!achieved && rem === 0) failed = true;
+      } else {
+        const conceded = gameRecords.reduce((a, g) => a + g.ga, 0);
+        current = gameRecords.length;
+        extraNote = `${conceded}/5 gols sofridos`;
+        if(totalPlanned === 10 && conceded > 5) failed = true;
+      }
+      break;
+    }
+    case 'artilharia_pesada': {
+      let maxDistinct = 0;
+      for(const g of gameRecords){
+        const distinct = new Set(g.goals.map(x => x.player_id)).size;
+        if(distinct > maxDistinct) maxDistinct = distinct;
+      }
+      achieved = maxDistinct >= 3;
+      current = Math.min(3, maxDistinct);
+      if(!achieved && rem === 0) failed = true;
+      break;
+    }
+    case 'comeco_avassalador': {
+      const first3 = gameRecords.slice(0, 3);
+      const nonWin = first3.some(g => g.res !== 'W');
+      if(nonWin || totalPlanned < 3){
+        failed = true;
+        current = first3.filter(g => g.res === 'W').length;
+      } else if(first3.length === 3){
+        achieved = true;
+        current = 3;
+      } else {
+        current = first3.length;
+      }
+      break;
+    }
+    case 'visitante_indesejado': {
+      const awayGames = gameRecords.filter(g => !g.isHome);
+      const remAway = clubMatches.length > 0 ? remaining.filter(m => m.away_club_id === clubId).length : Math.ceil(rem / 2);
+      let streak = 0;
+      for(const g of awayGames){
+        if(g.res === 'W'){ streak++; if(streak >= 3) achieved = true; }
+        else streak = 0;
+      }
+      current = achieved ? 3 : streak;
+      if(!achieved && current + remAway < 3) failed = true;
+      break;
+    }
+    case 'fortaleza_casa': {
+      const homeGames = gameRecords.filter(g => g.isHome);
+      const remHome = clubMatches.length > 0 ? remaining.filter(m => m.home_club_id === clubId).length : Math.ceil(rem / 2);
+      let streak = 0;
+      for(const g of homeGames){
+        if(g.res !== 'L'){ streak++; if(streak >= 5) achieved = true; }
+        else streak = 0;
+      }
+      current = achieved ? 5 : streak;
+      if(!achieved && current + remHome < 5) failed = true;
+      break;
+    }
+    case 'garcom_elite': {
+      const byPlayer = {};
+      seasonClubGoals.forEach(e => {
+        if(e.assist_player_id) byPlayer[e.assist_player_id] = (byPlayer[e.assist_player_id] || 0) + 1;
+      });
+      const maxA = Math.max(0, ...Object.values(byPlayer));
+      achieved = maxA >= 5;
+      current = Math.min(5, maxA);
+      if(!achieved && rem === 0) failed = true;
+      break;
+    }
+    case 'hat_trick': {
+      let maxHat = 0;
+      for(const g of gameRecords){
+        const perP = {};
+        g.goals.forEach(x => { perP[x.player_id] = (perP[x.player_id] || 0) + 1; });
+        maxHat = Math.max(maxHat, ...Object.values(perP), 0);
+      }
+      achieved = maxHat >= 3;
+      current = Math.min(3, maxHat);
+      if(!achieved && rem === 0) failed = true;
+      break;
+    }
+    case 'poder_reacao': {
+      const cnt = gameRecords.filter(g => g.lateGoal).length;
+      achieved = cnt >= 3;
+      current = Math.min(3, cnt);
+      if(!achieved && current + rem < 3) failed = true;
+      break;
+    }
+    case 'ataque_equilibrado': {
+      const perP = {};
+      seasonClubGoals.forEach(e => { perP[e.player_id] = (perP[e.player_id] || 0) + 1; });
+      const qual = Object.values(perP).filter(v => v >= 2).length;
+      achieved = qual >= 5;
+      current = Math.min(5, qual);
+      if(!achieved && rem === 0) failed = true;
+      break;
+    }
+    case 'campeao_regularidade': {
+      let streak = 0;
+      for(const g of gameRecords){
+        if(g.res !== 'L'){ streak++; if(streak >= 10) achieved = true; }
+        else streak = 0;
+      }
+      current = achieved ? 10 : streak;
+      if(!achieved && current + rem < 10) failed = true;
+      break;
+    }
+    case 'dobradinha_ouro': {
+      const perP = {};
+      seasonClubGoals.forEach(e => { perP[e.player_id] = (perP[e.player_id] || 0) + 1; });
+      const qual = Object.values(perP).filter(v => v >= 5).length;
+      achieved = qual >= 2;
+      current = Math.min(2, qual);
+      if(!achieved && rem === 0) failed = true;
+      break;
+    }
+    case 'gol_relampago': {
+      const cnt = gameRecords.filter(g => g.earlyGoal).length;
+      achieved = cnt >= 3;
+      current = Math.min(3, cnt);
+      if(!achieved && current + rem < 3) failed = true;
+      break;
+    }
+    case 'reta_final': {
+      if(totalPlanned < 3){
+        failed = true;
+      } else {
+        const startIdx = totalPlanned - 3;
+        const tailGames = gameRecords.slice(startIdx);
+        if(tailGames.some(g => g.res !== 'W')){
+          failed = true;
+          current = tailGames.filter(g => g.res === 'W').length;
+        } else if(tailGames.length === 3){
+          achieved = true;
+          current = 3;
+        } else {
+          current = tailGames.length;
+        }
+      }
+      break;
+    }
+    case 'campeao_temporada': {
+      const rows = rowsCache || statsRows();
+      const myRow = rows.find(r => r.id === clubId);
+      const others = rows.filter(r => r.id !== clubId);
+      if(myRow && others.length && (gameRecords.length > 0 || season?.status === 'archived')){
+        const myMax = myRow.pts + rem * 3;
+        const bestOtherCur = Math.max(...others.map(o => o.pts));
+        const bestOtherMax = Math.max(...others.map(o => {
+          const oAll = seasonMatches.filter(m => m.home_club_id === o.id || m.away_club_id === o.id);
+          const oRem = oAll.length > 0 ? oAll.filter(m => m.status !== 'played' || m.home_goals === null).length : rem;
+          return o.pts + oRem * 3;
+        }));
+        if((season?.status === 'archived' && rows[0]?.id === clubId) || (gameRecords.length > 0 && myRow.pts > bestOtherMax)){
+          achieved = true;
+          current = 1;
+        } else if(myMax < bestOtherCur || (season?.status === 'archived' && rows[0]?.id !== clubId)){
+          failed = true;
+          current = 0;
+        }
+      }
+      break;
+    }
+  }
+
+  return {
+    current,
+    target,
+    achieved,
+    failed: !achieved && failed,
+    extraNote
+  };
+}
+
+function renderClubSponsorsHtml(clubId, compact = false){
+  if(!season) return '';
+  const chosenIds = getClubSeasonSponsorIds(clubId, season.id);
+  const rowsCache = statsRows();
+  if(!chosenIds.length){
+    return `<div class="sub" style="padding:10px;border-radius:11px;background:rgba(5,9,19,0.65);border:1px dashed rgba(255,255,255,0.12)">Nenhum patrocinador assinado nesta temporada (0/2).</div>`;
+  }
+  const locked = isSeasonStarted();
+  return chosenIds.map(spId => {
+    const sp = sponsors.find(s => s.id === spId);
+    if(!sp) return '';
+    const goals = getSponsorGoals(sp);
+    const goalBonus = Math.round((Number(sp.bonus_amount) || 0) * getSponsorContractRate(clubId, sp.id, season.id) / 2);
+    return `<div class="club-sponsor-slot">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0">
+          ${sp.logo_url ? `<img src="${esc(sp.logo_url)}" alt="${esc(sp.name)}" style="width:30px;height:30px;object-fit:contain;border-radius:7px;background:rgba(255,255,255,0.05);padding:2px" onerror="this.style.display='none'">` : ''}
+          <div style="min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(sp.name)}</b><span class="sub">${esc(sp.tier || 'Patrocinador Oficial')}</span></div>
+        </div>
+        ${!locked && canManageClub(clubId) && !compact ? `<button class="btn danger sm" onclick="unsignClubSponsor('${clubId}','${sp.id}')">Distratar</button>` : ''}
+      </div>
+      <div class="mission-list">
+        ${goals.map((g, idx) => {
+          const ev = evaluateSponsorMission(g, clubId, rowsCache);
+          const pct = Math.min(100, Math.round((ev.current / Math.max(1, ev.target)) * 100));
+          const stateCls = ev.achieved ? 'achieved' : (ev.failed ? 'failed' : '');
+          const badgeHtml = ev.achieved
+            ? `<span class="status-achieved">✅ Meta Alcançada</span>`
+            : (ev.failed ? `<span class="status-failed">❌ Meta Fracassada</span>` : `<span class="status-progress">${ev.current}/${ev.target}</span>`);
+          return `<div class="mission-box ${stateCls}">
+            <div class="mission-top">
+              <span class="mission-name">${idx + 1}. ${esc(g.name)}</span>
+              ${badgeHtml}
+            </div>
+            <div class="mission-desc">${esc(g.desc)}${ev.extraNote ? ` • <b>${esc(ev.extraNote)}</b>` : ''}</div>
+            <div class="mission-prog-row">
+              <div class="mission-bar"><div class="mission-bar-fill" style="width:${ev.achieved ? 100 : pct}%"></div></div>
+              <span class="accent" style="font-size:10px;font-weight:800">+${money(goalBonus)}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+// Gestão contratual por clube: reajuste individual baseado no desempenho da temporada anterior.
+function sponsorContractRate(clubId, sponsorId){
+  const previous = seasons.filter(x => x.id !== season?.id && x.status === 'archived')
+    .sort((a,b) => new Date(b.ended_at || b.created_at) - new Date(a.ended_at || a.created_at))[0];
+  if(!previous) return { rate: 1, achieved: 0, previousSponsor: false, label: 'Contrato inicial' };
+  const previousIds = getClubSeasonSponsorIds(clubId, previous.id);
+  const sameSponsor = previousIds.includes(sponsorId);
+  if(sameSponsor){
+    const sp = sponsors.find(x => x.id === sponsorId);
+    if(!sp) return { rate: 1, achieved: 0, previousSponsor: true, label: 'Renovação' };
+    const oldSeason = season; season = previous;
+    const achieved = getSponsorGoals(sp).filter(g => evaluateSponsorMission(g, clubId, statsRows()).achieved).length;
+    season = oldSeason;
+    const rate = achieved === 2 ? 1.15 : (achieved === 1 ? 1.05 : .80);
+    return { rate, achieved, previousSponsor: true,
+      label: achieved === 2 ? 'Renovação premiada +15%' : achieved === 1 ? 'Renovação +5%' : 'Renovação com redução de 20%' };
+  }
+  // Ao trocar de marca, o abatimento depende do aproveitamento global dos contratos anteriores.
+  let totalGoals = 0, totalAchieved = 0;
+  const oldSeason = season; season = previous;
+  previousIds.forEach(id => {
+    const oldSponsor = sponsors.find(x => x.id === id);
+    if(!oldSponsor) return;
+    const outcomes = getSponsorGoals(oldSponsor).map(g => evaluateSponsorMission(g, clubId, statsRows()).achieved);
+    totalGoals += outcomes.length;
+    totalAchieved += outcomes.filter(Boolean).length;
+  });
+  season = oldSeason;
+  const poorPerformance = totalGoals > 0 && totalAchieved / totalGoals < .5;
+  return { rate: poorPerformance ? .80 : 1, achieved: totalAchieved, previousSponsor: false,
+    label: poorPerformance ? 'Novo contrato: desconto de 20% por metas não cumpridas' : 'Novo contrato: valor padrão' };
+}
+function getSponsorContractRate(clubId, sponsorId, seasonId){
+  const tag = `[SPONSOR_RATE:${seasonId}:${clubId}:${sponsorId}:`;
+  const row = ledger.find(x => String(x.description || '').includes(tag));
+  const match = row && String(row.description).match(/\[SPONSOR_RATE:[^:]+:[^:]+:[^:]+:([0-9.]+)\]/);
+  return match ? Math.max(.5, Math.min(1.5, Number(match[1]) || 1)) : 1;
+}
+
+async function signClubSponsor(clubId, sponsorId){
+  if(!season) return toast('Crie uma temporada antes de assinar patrocínio.');
+  // O bloqueio depende exclusivamente de partida efetivamente disputada nesta temporada.
+  // Jogos agendados e o rótulo/status da temporada não impedem a contratação.
+  if(isSeasonStarted()) return toast('Os contratos só podem ser escolhidos antes da primeira partida da temporada.');
+  if(!canManageClub(clubId)) return toast('Você não tem permissão para gerenciar os patrocínios deste clube.');
+  const current = getClubSeasonSponsorIds(clubId, season.id);
+  if(current.includes(sponsorId)) return toast('Este patrocinador já está assinado com o clube.');
+  if(current.length >= 2) return toast('Limite máximo de 2 patrocinadores por clube atingido.');
+  const club = clubs.find(c => c.id === clubId), sp = sponsors.find(s => s.id === sponsorId);
+  if(!club || !sp) return;
+  const deal = sponsorContractRate(clubId, sponsorId);
+  const rate = Number(deal.rate.toFixed(2));
+  const desc = `Contrato de Patrocínio: ${sp.name} [SPONSOR_SIGN:${season.id}:${clubId}:${sponsorId}] [SPONSOR_RATE:${season.id}:${clubId}:${sponsorId}:${rate}]`;
+  const { error } = await sb.from('ledger_entries').insert({
+    league_id: league.id, season_id: season.id, club_id: clubId, entry_type: 'income', amount: 1, description: desc
+  });
+  if(error) return toast('Erro ao assinar patrocínio: ' + error.message);
+  try {
+    await sb.from('league_news').insert({
+      league_id: league.id, category: 'PATROCÍNIO',
+      title: `🤝 ${club.name} fechou com ${sp.name}!`,
+      body: `${club.name}: ${deal.label}. Bônus por metas ajustado para ${Math.round(rate*100)}% do valor-base (${money(Math.round((Number(sp.bonus_amount)||0)*rate))}).`
+    });
+  } catch(_) {}
+  toast(`${sp.name} assinado! ${deal.label}.`);
+  await loadAll();
+}
+
+async function unsignClubSponsor(clubId, sponsorId){
+  if(!season) return;
+  if(isSeasonStarted()) return toast('Não é possível cancelar patrocínio após o início da temporada.');
+  if(!canManageClub(clubId)) return toast('Sem permissão.');
+  const sp = sponsors.find(s => s.id === sponsorId);
+  const desc = `Distrato de Patrocínio: ${sp?.name || ''} [SPONSOR_UNSIGN:${season.id}:${clubId}:${sponsorId}]`;
+  const { error } = await sb.from('ledger_entries').insert({
+    league_id: league.id, season_id: season.id, club_id: clubId, entry_type: 'expense', amount: 1, description: desc
+  });
+  if(error) return toast(error.message);
+  toast('Contrato cancelado.');
+  await loadAll();
+}
+
+async function processSponsorPayouts(){
+  if(!league || !season || !clubs.length || !sponsors.length) return;
+  return runLocked('sponsor-payouts', async () => {
+    const rowsCache = statsRows();
+    let paidAny = false;
+    for(const c of clubs){
+      if(!canManageClub(c.id)) continue;
+      const chosenIds = getClubSeasonSponsorIds(c.id, season.id);
+      for(const spId of chosenIds){
+        const sp = sponsors.find(s => s.id === spId);
+        if(!sp) continue;
+        const totalBonus = Number(sp.bonus_amount) || 0;
+        if(totalBonus <= 0) continue;
+        const goals = getSponsorGoals(sp);
+        for(let idx = 0; idx < goals.length; idx++){
+          const g = goals[idx];
+          const ev = evaluateSponsorMission(g, c.id, rowsCache);
+          if(!ev.achieved) continue;
+          const payoutKey = `[SPONSOR_PAYOUT:${season.id}:${c.id}:${sp.id}:${idx}]`;
+          if(paidSponsorCache.has(payoutKey)) continue;
+          if(ledger.some(l => String(l.description || '').includes(payoutKey))){
+            paidSponsorCache.add(payoutKey);
+            continue;
+          }
+          const contractRate = getSponsorContractRate(c.id, sp.id, season.id);
+          const adjustedBonus = Math.round(totalBonus * contractRate);
+          const payoutVal = idx === 0 ? Math.floor(adjustedBonus / 2) : (adjustedBonus - Math.floor(adjustedBonus / 2));
+          if(payoutVal <= 0) continue;
+          paidSponsorCache.add(payoutKey);
+          const desc = `Bônus Patrocínio (${sp.name} — ${g.name}) ${payoutKey}`;
+          const { error } = await sb.rpc('post_ledger_entry', {
+            p_league_id: league.id, p_season_id: season.id, p_club_id: c.id,
+            p_type: 'income', p_amount: payoutVal, p_description: desc
+          });
+          if(!error){
+            paidAny = true;
+            try {
+              await sb.from('league_news').insert({
+                league_id: league.id, category: 'PATROCÍNIO',
+                title: `💰 Meta Alcançada! ${c.name} +${money(payoutVal)}`,
+                body: `${c.name} cumpriu a meta "${g.name}" do patrocinador ${sp.name} e recebeu ${money(payoutVal)} no caixa!`
+              });
+            } catch(_) {}
+          } else {
+            paidSponsorCache.delete(payoutKey);
+          }
+        }
+      }
+    }
+    if(paidAny){
+      toast('💰 Bônus de meta de patrocinador depositado no caixa!');
+      await loadAll();
+    }
+  });
+}
+
+function populateSponsorGoalSelects(){
+  const opts = SPONSOR_MISSIONS.map(m => `<option value="${m.id}">#${m.num} ${esc(m.name)} — ${esc(m.desc)}</option>`).join('');
+  if($('spGoal1')) $('spGoal1').innerHTML = opts;
+  if($('spGoal2')) $('spGoal2').innerHTML = opts;
+}
+
+function randomizeSponsorGoals(){
+  populateSponsorGoalSelects();
+  const idx1 = Math.floor(Math.random() * SPONSOR_MISSIONS.length);
+  let idx2 = Math.floor(Math.random() * (SPONSOR_MISSIONS.length - 1));
+  if(idx2 >= idx1) idx2++;
+  $('spGoal1').value = SPONSOR_MISSIONS[idx1].id;
+  $('spGoal2').value = SPONSOR_MISSIONS[idx2].id;
+  updateSponsorMissionsPreview();
+}
+
+function updateSponsorMissionsPreview(){
+  const g1 = SPONSOR_MISSIONS.find(x => x.id === $('spGoal1')?.value);
+  const g2 = SPONSOR_MISSIONS.find(x => x.id === $('spGoal2')?.value);
+  const total = Number($('spBonus')?.value) || 0;
+  const half = Math.round(total / 2);
+  if($('spGoalsPreview')){
+    $('spGoalsPreview').innerHTML = `<div>• <b>${esc(g1?.name || '')}</b> (${money(half)}): ${esc(g1?.desc || '')}</div>`
+      + `<div style="margin-top:3px">• <b>${esc(g2?.name || '')}</b> (${money(half)}): ${esc(g2?.desc || '')}</div>`;
+  }
+}
+
+/* PATROCINADORES (ADM) */
+function updateSponsorLogoPreview(){
+  const box = $('spLogoPreview');
+  if(!box) return;
+  box.innerHTML = sponsorLogoHtml({ name: $('spName')?.value || 'PT', logo_url: $('spLogoUrl')?.value.trim() || null });
+}
+
+function handleSponsorPhotoFile(input){
+  const file = input.files?.[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ input.value = ''; return toast('Selecione um arquivo de imagem válido.'); }
+  if(file.size > 8 * 1024 * 1024){ input.value = ''; return toast('A imagem deve ter no máximo 8 MB.'); }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxSide = 440;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/webp', 0.85);
+      $('spLogoUrl').value = dataUrl.startsWith('data:image/webp') ? dataUrl : canvas.toDataURL('image/png');
+      updateSponsorLogoPreview();
+      toast('Logo do patrocinador carregada!');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openSponsorModal(sponsorId){
+  if(!isAdmin()) return toast('Apenas o ADM pode gerenciar patrocinadores.');
+  const s = sponsors.find(x => x.id === sponsorId);
+  populateSponsorGoalSelects();
+  $('editSponsorId').value = s?.id || '';
+  $('sponsorModalTitle').textContent = s ? 'Editar Patrocinador' : 'Novo Patrocinador';
+  $('spLogoFile').value = '';
+  $('spLogoUrl').value = s?.logo_url || '';
+  $('spName').value = s?.name || '';
+  $('spTier').value = s?.tier || 'Patrocinador Oficial';
+  $('spBonus').value = s?.bonus_amount ?? 500000;
+  $('spDesc').value = s ? cleanSponsorDesc(s) : '';
+  if(s){
+    const gs = getSponsorGoals(s);
+    $('spGoal1').value = gs[0].id;
+    $('spGoal2').value = gs[1].id;
+  } else {
+    randomizeSponsorGoals();
+  }
+  $('delSponsorBtn').classList.toggle('hidden', !s);
+  updateSponsorLogoPreview();
+  updateSponsorMissionsPreview();
+  openModal('sponsorModal');
+}
+
+async function saveSponsor(){
+  if(!isAdmin()) return toast('Apenas o ADM pode salvar patrocinadores.');
+  const id = $('editSponsorId').value;
+  const name = $('spName').value.trim();
+  const tier = $('spTier').value;
+  const bonus = Number($('spBonus').value) || 0;
+  const desc = $('spDesc').value.trim();
+  const logo = $('spLogoUrl').value.trim();
+  if(!name) return toast('Informe o nome do patrocinador.');
+  if(bonus < 0 || !Number.isFinite(bonus)) return toast('Informe um valor válido.');
+  if(logo && !/^https:\/\//i.test(logo) && !/^data:image\/(jpeg|png|webp);base64,/i.test(logo)) return toast('A logo deve usar um link HTTPS ou uma imagem válida.');
+
+  const g1 = $('spGoal1').value;
+  const g2 = $('spGoal2').value;
+  if(!g1 || !g2 || g1 === g2) return toast('Escolha 2 metas diferentes para o patrocinador.');
+  const encodedDesc = `${desc ? desc + ' ' : ''}[[GOALS:${g1},${g2}]]`.trim();
+  const payload = {
+    league_id: league.id,
+    name,
+    tier,
+    bonus_amount: bonus,
+    logo_url: logo || null,
+    description: encodedDesc
+  };
+  const { error } = id
+    ? await sb.from('league_sponsors').update(payload).eq('id', id)
+    : await sb.from('league_sponsors').insert(payload);
+  if(error) return toast('Erro ao salvar patrocinador: ' + error.message);
+  closeModal('sponsorModal');
+  toast('Patrocinador salvo com sucesso!');
+  await loadAll();
+}
+
+async function deleteSponsor(){
+  const id = $('editSponsorId').value;
+  if(id) await deleteSponsorById(id, true);
+}
+
+async function deleteSponsorById(id, fromModal = false){
+  if(!isAdmin()) return toast('Apenas o ADM pode excluir patrocinadores.');
+  if(!confirm('Excluir este patrocinador permanentemente?')) return;
+  const { error } = await sb.from('league_sponsors').delete().eq('id', id);
+  if(error) return toast('Não foi possível excluir: ' + error.message);
+  if(fromModal) closeModal('sponsorModal');
+  toast('Patrocinador excluído.');
+  await loadAll();
+}
+
+function updateClubLogoPreview(){
+  const box = $('cLogoPreview');
+  if(!box) return;
+  box.innerHTML = crest({ name: $('cName')?.value || 'CL', logo_url: $('cLogoUrl')?.value.trim() || null }, true);
+}
+
+function handleClubPhotoFile(input){
+  const file = input.files?.[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ input.value = ''; return toast('Selecione um arquivo de imagem válido.'); }
+  if(file.size > 8 * 1024 * 1024){ input.value = ''; return toast('A imagem deve ter no máximo 8 MB.'); }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 160; canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+      const min = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, 160, 160);
+      const dataUrl = canvas.toDataURL('image/webp', 0.82);
+      $('cLogoUrl').value = dataUrl.startsWith('data:image/webp') ? dataUrl : canvas.toDataURL('image/png');
+      updateClubLogoPreview();
+      toast('Escudo / foto do clube carregada!');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openClubModal(clubId){
+  if(!clubId && !isAdmin()) return toast('Apenas o ADM pode criar novos clubes.');
+  if(clubId && !canManageClub(clubId)) return toast('Você não tem permissão para editar este clube.');
+  const c = clubs.find(x => x.id === clubId);
+  const admin = isAdmin();
+  $('editClubId').value = c?.id || '';
+  $('clubModalTitle').textContent = !c ? 'Novo Clube' : (admin ? 'Editar Clube & Escudo' : 'Foto / Escudo do Clube');
+  $('cLogoFile').value = '';
+  $('cLogoUrl').value = c?.logo_url || '';
+  $('cName').value = c?.name || '';
+  $('cOwner').value = c?.owner_name || '';
+  $('cBudget').value = c?.balance ?? 10000000;
+  $('cName').disabled = !admin;
+  $('cOwner').disabled = !admin;
+  $('cUser').disabled = !admin;
+  $('cBudget').disabled = !admin;
+  $('delClubBtn').classList.toggle('hidden', !c || !admin);
+  $('cUser').innerHTML = '<option value="">-- Sem vínculo --</option>' + members.map(m => `<option value="${m.user_id}" ${c?.owner_user_id === m.user_id ? 'selected' : ''}>${esc(m.profiles?.email || m.user_id)}</option>`).join('');
+  updateClubLogoPreview();
+  openModal('clubModal');
+}
+
+async function deleteClub(){
+  if(!isAdmin()) return;
+  const id = $('editClubId').value;
+  if(!id || !confirm('Excluir este clube permanentemente?')) return;
+  const { error } = await sb.from('clubs').delete().eq('id', id);
+  if(error) return toast('Não foi possível excluir: ' + error.message);
+  closeModal('clubModal'); toast('Clube excluído.'); await loadAll();
+}
+
+async function saveClub(){
+  const id = $('editClubId').value;
+  const admin = isAdmin();
+  if(!id && !admin) return toast('Apenas o ADM pode cadastrar novos clubes.');
+  if(id && !canManageClub(id)) return toast('Você não tem permissão para editar este clube.');
+  const logo = $('cLogoUrl').value.trim();
+  if(logo && !/^https:\/\//i.test(logo) && !/^data:image\/(jpeg|png|webp);base64,/i.test(logo)) return toast('A foto deve usar um link HTTPS ou uma imagem válida.');
+
+  if(!admin){
+    const { error } = await sb.from('clubs').update({ logo_url: logo || null }).eq('id', id);
+    if(error) return toast(error.message);
+    closeModal('clubModal'); toast('Foto / escudo do clube atualizado!'); await loadAll();
+    return;
+  }
+
+  const name = $('cName').value.trim();
+  const balance = Number($('cBudget').value);
+  if(!name) return toast('Informe o nome do clube.');
+  if(!Number.isFinite(balance) || balance < 0) return toast('Informe um caixa válido, igual ou maior que zero.');
+  const payload = { league_id: league.id, name, owner_name: $('cOwner').value.trim(), owner_user_id: $('cUser').value || null, balance, logo_url: logo || null };
+  const { error } = id ? await sb.from('clubs').update(payload).eq('id', id) : await sb.from('clubs').insert(payload);
+  if(error) return toast(error.message);
+  closeModal('clubModal'); toast('Clube salvo com sucesso!'); await loadAll();
+}
+
+function handlePhotoFile(input){
+  const file = input.files?.[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ input.value = ''; return toast('Selecione um arquivo de imagem válido.'); }
+  if(file.size > 8 * 1024 * 1024){ input.value = ''; return toast('A imagem deve ter no máximo 8 MB.'); }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 140; canvas.height = 140;
+      const ctx = canvas.getContext('2d');
+      const min = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, 140, 140);
+      $('pPhotoUrl').value = canvas.toDataURL('image/jpeg', 0.75);
+      toast('Foto carregada e otimizada!');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function autoCalcClause(){
+  const v = +$('pValue').value || 0;
+  $('pClause').value = v * 4;
+}
+function openPlayerModal(playerId){
+  if(!isAdmin()) return toast('Apenas o ADM pode cadastrar ou editar jogadores.');
+  const p = players.find(x => x.id === playerId);
+  $('editPlayerId').value = p?.id || '';
+  $('playerModalTitle').textContent = p ? 'Editar Jogador' : 'Cadastrar Jogador';
+  $('pPhotoUrl').value = p?.photo_url || '';
+  $('pName').value = p?.name || '';
+  $('pPos').value = p?.position || 'ATA';
+  $('pOvr').value = p?.overall || 82;
+  $('pValue').value = p?.market_value || 1000000;
+  $('pClause').value = p?.release_clause || (p?.market_value ? p.market_value * 4 : 4000000);
+  $('pClub').innerHTML = '<option value="">Mercado Livre</option>' + clubs.map(c => `<option value="${c.id}" ${p?.club_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  $('delPlayerBtn').classList.toggle('hidden', !p);
+  openModal('playerModal');
+}
+
+async function deletePlayer(){
+  if(!isAdmin()) return;
+  const id = $('editPlayerId').value;
+  if(!id || !confirm('Excluir este jogador permanentemente?')) return;
+  const { error } = await sb.from('players').delete().eq('id', id);
+  if(error) return toast('Não foi possível excluir: ' + error.message);
+  closeModal('playerModal'); toast('Jogador excluído.'); await loadAll();
+}
+
+async function savePlayer(){
+  if(!isAdmin()) return toast('Apenas o ADM pode cadastrar ou editar jogadores.');
+  const id = $('editPlayerId').value, name = $('pName').value.trim(), ovr = Number($('pOvr').value);
+  const val = Number($('pValue').value), clauseInput = $('pClause').value;
+  const clause = clauseInput === '' ? val * 4 : Number(clauseInput);
+  if(!name || !Number.isInteger(ovr) || ovr < 1 || ovr > 99) return toast('Preencha o nome e um overall inteiro entre 1 e 99.');
+  if(!Number.isFinite(val) || val < 0 || !Number.isFinite(clause) || clause < 0) return toast('Valor de mercado e multa devem ser números válidos e não negativos.');
+  const photo = $('pPhotoUrl').value.trim();
+  if(photo && !/^https:\/\//i.test(photo) && !/^data:image\/(jpeg|png|webp);base64,/i.test(photo)) return toast('A foto deve usar um link HTTPS ou uma imagem válida.');
+  const payload = { league_id: league.id, season_id: season?.id, club_id: $('pClub').value || null, name, position: $('pPos').value, overall: ovr, market_value: val, release_clause: clause, photo_url: photo || null };
+  const { error } = id ? await sb.from('players').update(payload).eq('id', id) : await sb.from('players').insert(payload);
+  if(error) return toast(error.message);
+  closeModal('playerModal'); toast('Jogador salvo!'); await loadAll();
+}
+
+function openShieldModal(playerId){
+  const p = players.find(x => x.id === playerId);
+  if(!p) return;
+  if(!p.club_id || !canManageClub(p.club_id)) return toast('Você não tem permissão para blindar este jogador.');
+  $('shPlayerId').value = p.id;
+  $('shPlayerDesc').textContent = `${p.name} • Multa atual: ${money(p.release_clause || p.market_value * 4)}`;
+  $('shAmount').value = 4000;
+  previewShield();
+  openModal('shieldModal');
+}
+function previewShield(){
+  const inv = +$('shAmount').value || 0;
+  $('shPreview').textContent = `+ ${money(inv * 4)} na Multa Rescisória (Compra Imediata)`;
+}
+async function confirmShield(){ return runLocked('shield', async () => {
+  const pid = $('shPlayerId').value, inv = Number($('shAmount').value);
+  const player = players.find(p => p.id === pid);
+  if(!player || !player.club_id || !canManageClub(player.club_id)) return toast('Você não tem permissão para blindar este jogador.');
+  if(!Number.isFinite(inv) || inv <= 0) return toast('Informe um valor válido maior que zero.');
+  const { error } = await sb.rpc('shield_player', { p_league_id: league.id, p_season_id: season?.id || null, p_player_id: pid, p_invest_amount: inv });
+  if(error) return toast(error.message);
+  closeModal('shieldModal'); toast('Jogador blindado com sucesso!'); await loadAll();
+}); }
+
+function openBuyoutModal(playerId){
+  const p = players.find(x => x.id === playerId);
+  if(!p) return;
+  const avail = isAdmin() ? clubs.filter(c => c.id !== p.club_id) : clubs.filter(c => c.owner_user_id === user.id && c.id !== p.club_id);
+  if(!avail.length) return toast('Você não possui um clube comprador disponível.');
+  const preferredBuyer = avail.find(c => c.owner_user_id === user.id) || avail[0];
+  const clause = Number(p.release_clause || p.market_value * 4);
+  $('boPlayerId').value = p.id;
+  $('boDesc').innerHTML = `Contratar <b>${esc(p.name)}</b> pagando a multa rescisória integral de <b class="gold">${money(clause)}</b> (compra imediata sem troca).`;
+  $('boBuyerClub').innerHTML = avail.map(c => `<option value="${c.id}" ${c.id === preferredBuyer?.id ? 'selected' : ''}>${esc(c.name)} (Caixa: ${money(c.balance)})</option>`).join('');
+  openModal('buyoutModal');
+}
+async function confirmBuyout(){ return runLocked('buyout', async () => {
+  const pid = $('boPlayerId').value;
+  const buyerId = $('boBuyerClub').value;
+  const { error } = await sb.rpc('buyout_player', { p_league_id: league.id, p_season_id: season?.id || null, p_player_id: pid, p_buyer_club_id: buyerId });
+  if(error) return toast(error.message);
+  closeModal('buyoutModal');
+  toast('Multa paga! Jogador contratado imediatamente.');
+  await loadAll();
+}); }
+
+function openOfferModal(targetId){
+  const availClubs = isAdmin() ? clubs : clubs.filter(c => c.owner_user_id === user.id);
+  if(!availClubs.length) return toast('Você precisa ter um clube vinculado para propor negociações.');
+  const targetPlayer = targetId ? players.find(p => p.id === targetId) : null;
+  const preferredBuyer = availClubs.find(c => c.owner_user_id === user.id && c.id !== targetPlayer?.club_id)
+    || availClubs.find(c => c.id !== targetPlayer?.club_id)
+    || availClubs[0];
+  $('ofBuyerClub').innerHTML = availClubs.map(c => `<option value="${c.id}" ${c.id === preferredBuyer?.id ? 'selected' : ''}>${esc(c.name)} (${money(c.balance)})</option>`).join('');
+  const eligibleTargets = players.filter(p => p.club_id && p.club_id !== preferredBuyer?.id);
+  if(!eligibleTargets.length) return toast('Não há jogadores de outros clubes disponíveis para negociação.');
+  $('ofTargetPlayer').innerHTML = eligibleTargets.map(p => `<option value="${p.id}" ${p.id === targetId ? 'selected' : ''}>${esc(p.name)} (${p.overall}) — ${esc(clubs.find(c => c.id === p.club_id)?.name || '')}</option>`).join('');
+  $('ofCash').value = 0;
+  refreshOfferPlayers();
+  openModal('offerModal');
+}
+function refreshOfferPlayers(){
+  const buyerId = $('ofBuyerClub').value;
+  const currentTarget = $('ofTargetPlayer').value;
+  const otherClubs = clubs.filter(c => c.id !== buyerId);
+  $('ofTargetPlayer').innerHTML = otherClubs.map(c => {
+    const cPlayers = players.filter(p => p.club_id === c.id);
+    if(!cPlayers.length) return '';
+    return `<optgroup label="${esc(c.name)}">${cPlayers.map(p => `<option value="${p.id}" ${p.id === currentTarget ? 'selected' : ''}>${esc(p.name)} (${p.overall}) — ${esc(p.position)}</option>`).join('')}</optgroup>`;
+  }).join('');
+  $('ofSwapPlayer').innerHTML = '<option value="">-- Nenhum jogador (apenas dinheiro) --</option>' + players.filter(p => p.club_id === buyerId).map(p => `<option value="${p.id}">${esc(p.name)} (OVR ${p.overall})</option>`).join('');
+}
+async function sendProposal(){
+  const buyerId = $('ofBuyerClub').value, targetId = $('ofTargetPlayer').value, swapId = $('ofSwapPlayer').value || null, cash = Number($('ofCash').value);
+  const target = players.find(p => p.id === targetId);
+  const buyerClub = clubs.find(c => c.id === buyerId);
+  const offered = swapId ? players.find(p => p.id === swapId) : null;
+  if(!buyerClub || (!isAdmin() && buyerClub.owner_user_id !== user.id)) return toast('Você não tem permissão para negociar por este clube.');
+  if(!target || !target.club_id) return toast('Selecione um jogador válido.');
+  if(target.club_id === buyerId) return toast('Este jogador já é do seu clube.');
+  if(!Number.isFinite(cash) || cash < 0) return toast('Informe uma oferta em dinheiro válida.');
+  if(swapId && (!offered || offered.club_id !== buyerId)) return toast('O jogador oferecido precisa pertencer ao clube comprador.');
+  if(!swapId && cash <= 0) return toast('Ofereça um jogador para troca, dinheiro, ou ambos.');
+  const { error } = await sb.from('transfer_proposals').insert({ league_id: league.id, season_id: season?.id || null, from_club_id: target.club_id, to_club_id: buyerId, target_player_id: targetId, offered_player_id: swapId, cash_offer: cash });
+  if(error) return toast(error.message);
+  closeModal('offerModal'); toast('Proposta enviada! O clube vendedor foi notificado.'); await loadAll();
+}
+
+function openNotifications(){
+  const myIds = myClubIds();
+  const list = proposals.filter(pr => isAdmin() || myIds.includes(pr.from_club_id) || myIds.includes(pr.to_club_id));
+  $('notifList').innerHTML = list.map(pr => {
+    const buyer = clubs.find(c => c.id === pr.to_club_id), seller = clubs.find(c => c.id === pr.from_club_id);
+    const target = players.find(p => p.id === pr.target_player_id), offered = players.find(p => p.id === pr.offered_player_id);
+    const canAnswer = pr.status === 'pending' && (isAdmin() || myIds.includes(pr.from_club_id));
+    return `<div class="newsitem">
+      <div style="display:flex;justify-content:space-between"><span class="tag ${pr.status === 'pending' ? 'gold' : pr.status === 'accepted' ? 'green' : 'red'}">${pr.status === 'pending' ? 'PENDENTE' : pr.status === 'accepted' ? 'ACEITA' : 'RECUSADA'}</span><span class="sub">${new Date(pr.created_at).toLocaleDateString('pt-BR')}</span></div>
+      <h4>${esc(buyer?.name || '?')} quer ${esc(target?.name || '?')} (do ${esc(seller?.name || '?')})</h4>
+      <p>Oferta: ${offered ? `<b>${esc(offered.name)}</b> (OVR ${offered.overall})` : 'Sem troca de atleta'} ${Number(pr.cash_offer) > 0 ? `+ <b>${money(pr.cash_offer)}</b>` : ''}</p>
+      ${canAnswer ? `<div style="display:flex;gap:8px;margin-top:9px"><button class="btn sm" onclick="answerProposal('${pr.id}',true)">✅ Aceitar</button><button class="btn danger sm" onclick="answerProposal('${pr.id}',false)">❌ Recusar</button></div>` : ''}
+    </div>`;
+  }).join('') || '<div class="empty">Nenhuma proposta no momento.</div>';
+  openModal('notifModal');
+}
+async function answerProposal(id, accept){ return runLocked('prop-' + id, async () => {
+  const { error } = await sb.rpc('respond_transfer_proposal', { p_proposal_id: id, p_accept: accept });
+  if(error) return toast(error.message);
+  closeModal('notifModal'); toast(accept ? 'Negociação aceita e concluída!' : 'Proposta recusada.'); await loadAll();
+}); }
+
+function openDrawModal(){
+  if(!isAdmin()) return toast('Apenas o ADM pode sortear os jogos.');
+  if(!season) return toast('Crie uma temporada primeiro.');
+  openModal('drawModal');
+}
+async function runFixtureDraw(){ return runLocked('draw', async () => {
+  const dbl = $('drawFormat').value === 'true';
+  const { error } = await sb.rpc('generate_season_fixtures', { p_league_id: league.id, p_season_id: season.id, p_double_round: dbl });
+  if(error) return toast(error.message);
+  closeModal('drawModal'); toast('Tabela sorteada com sucesso!'); await loadAll();
+}); }
+
+function updateScoreboardHeader(){
+  const hClub = clubs.find(c => c.id === $('mHome').value);
+  const aClub = clubs.find(c => c.id === $('mAway').value);
+  $('mHomeCrest').innerHTML = crest(hClub, true);
+  $('mAwayCrest').innerHTML = crest(aClub, true);
+  $('homeSideTitle').textContent = `🏠 ${hClub?.name || 'Mandante'}`;
+  $('awaySideTitle').textContent = `✈️ ${aClub?.name || 'Visitante'}`;
+}
+
+function syncScoreFromGoalEvents(){
+  const homeGoals = $('homeEventsList').querySelectorAll('.side-ev-card[data-type="goal"]').length;
+  const awayGoals = $('awayEventsList').querySelectorAll('.side-ev-card[data-type="goal"]').length;
+  $('mHG').value = homeGoals;
+  $('mAG').value = awayGoals;
+}
+
+function stepScore(side, delta){
+  const input = side === 'home' ? $('mHG') : $('mAG');
+  const list = side === 'home' ? $('homeEventsList') : $('awayEventsList');
+  const current = Math.max(0, parseInt(input.value, 10) || 0);
+  const next = Math.max(0, current + delta);
+  if(delta > 0){
+    addSideEvent(side, 'goal');
+  } else if(delta < 0){
+    const goalCards = list.querySelectorAll('.side-ev-card[data-type="goal"]');
+    if(goalCards.length > 0){
+      goalCards[goalCards.length - 1].remove();
+      syncScoreFromGoalEvents();
+    } else {
+      input.value = next;
+    }
+  }
+}
+
+function onManualScoreChange(){
+  const hg = Math.max(0, parseInt($('mHG').value, 10) || 0);
+  const ag = Math.max(0, parseInt($('mAG').value, 10) || 0);
+  $('mHG').value = hg;
+  $('mAG').value = ag;
+}
+
+function openMatchModal(matchId){
+  if(!isAdmin()) return toast('Apenas o ADM pode lançar placares.');
+  if(!season) return toast('Crie uma temporada primeiro.');
+  const m = matches.find(x => x.id === matchId);
+  $('mEditId').value = m?.id || '';
+  $('delMatchBtn').classList.toggle('hidden', !m || !isAdmin());
+  $('mHome').innerHTML = clubs.map(c => `<option value="${c.id}" ${m?.home_club_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  $('mAway').innerHTML = clubs.map(c => `<option value="${c.id}" ${m?.away_club_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  if(!m && clubs.length > 1) $('mAway').selectedIndex = 1;
+  $('mHG').value = m?.home_goals ?? 0;
+  $('mAG').value = m?.away_goals ?? 0;
+  $('mRound').value = m?.round_number || 1;
+  $('homeEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols da casa.</div>';
+  $('awayEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols do visitante.</div>';
+  const flags = getMatchFlags(m?.id);
+  if($('mIsDerby')) $('mIsDerby').checked = !!flags.derby;
+  if($('mHomeComeback')) $('mHomeComeback').checked = !!flags.homeComeback;
+  if($('mAwayComeback')) $('mAwayComeback').checked = !!flags.awayComeback;
+  updateScoreboardHeader();
+  if(m){
+    const hId = $('mHome').value;
+    matchEvents.filter(e => e.match_id === m.id).forEach(e => {
+      const side = e.club_id === hId ? 'home' : 'away';
+      addSideEvent(side, e.event_type, e, true);
+    });
+    if(m.home_goals !== null) $('mHG').value = m.home_goals;
+    if(m.away_goals !== null) $('mAG').value = m.away_goals;
+  }
+  openModal('matchModal');
+}
+
+function addSideEvent(side, type, existing = null, skipAutoScore = false){
+  const clubId = side === 'home' ? $('mHome').value : $('mAway').value;
+  const clubPlayers = players.filter(p => p.club_id === clubId);
+  const playerOpts = clubPlayers.length
+    ? clubPlayers.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.position)})</option>`).join('')
+    : '<option value="">Sem atletas no elenco</option>';
+
+  const card = document.createElement('div');
+  card.className = 'side-ev-card';
+  card.dataset.type = type;
+  card.dataset.side = side;
+
+  if(type === 'goal'){
+    card.innerHTML = `
+      <div class="side-ev-top">
+        <span class="tag ${side === 'home' ? 'green' : 'gold'}">⚽ Gol</span>
+        <button type="button" class="side-ev-del" onclick="removeSideEvent(this)">✕</button>
+      </div>
+      <div class="side-ev-grid">
+        <div class="side-ev-field"><label>⚽ Autor do Gol</label><select class="ev-player" aria-label="Autor do gol">${playerOpts}</select></div>
+        <div class="side-ev-field"><label>👟 Assistência</label><select class="ev-assist" aria-label="Assistência"><option value="">Sem assistência</option>${playerOpts}</select></div>
+      </div>
+      <div class="side-ev-field"><label>⏱️ Momento do Gol (Opcional — p/ metas)</label><select class="ev-timing"><option value="normal">Normal (16' a 74')</option><option value="early">⚡ Gol Relâmpago (Antes dos 15')</option><option value="late">⏱️ Poder de Reação (Últimos 15')</option></select></div>
+    `;
+  } else {
+    const label = type === 'yellow_card' ? '🟨 Cartão Amarelo' : '🟥 Cartão Vermelho';
+    const cls = type === 'yellow_card' ? 'gold' : 'red';
+    card.innerHTML = `
+      <div class="side-ev-top">
+        <span class="tag ${cls}">${label}</span>
+        <button type="button" class="side-ev-del" onclick="removeSideEvent(this)">✕</button>
+      </div>
+      <div class="side-ev-field"><label>Atleta</label><select class="ev-player" aria-label="Jogador punido">${playerOpts}</select></div>
+    `;
+  }
+
+  const container = side === 'home' ? $('homeEventsList') : $('awayEventsList');
+  const hint = container.querySelector('.ev-empty-hint');
+  if(hint) hint.remove();
+  container.appendChild(card);
+
+  if(existing){
+    const playerSelect = card.querySelector('.ev-player');
+    if(existing.player_id && ![...playerSelect.options].some(o => o.value === existing.player_id)){
+      const oldPlayer = players.find(p => p.id === existing.player_id);
+      playerSelect.add(new Option(oldPlayer?.name || 'Jogador anterior', existing.player_id));
+    }
+    if(existing.player_id) playerSelect.value = existing.player_id;
+
+    const assistSelect = card.querySelector('.ev-assist');
+    if(assistSelect && existing.assist_player_id){
+      if(![...assistSelect.options].some(o => o.value === existing.assist_player_id)){
+        const oldAssist = players.find(p => p.id === existing.assist_player_id);
+        assistSelect.add(new Option(oldAssist?.name || 'Assistente anterior', existing.assist_player_id));
+      }
+      assistSelect.value = existing.assist_player_id;
+    }
+    const timingSelect = card.querySelector('.ev-timing');
+    if(timingSelect) timingSelect.value = getGoalTiming(existing);
+  } else if(type === 'goal' && clubPlayers.length > 1){
+    const assistSelect = card.querySelector('.ev-assist');
+    if(assistSelect) assistSelect.value = '';
+  }
+
+  if(type === 'goal' && !skipAutoScore){
+    syncScoreFromGoalEvents();
+  }
+}
+
+function removeSideEvent(btn){
+  const card = btn.closest('.side-ev-card');
+  const wasGoal = card?.dataset.type === 'goal';
+  card?.remove();
+  if(wasGoal) syncScoreFromGoalEvents();
+}
+
+function refreshMatchEventSelects(){
+  $('homeEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols da casa.</div>';
+  $('awayEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols do visitante.</div>';
+  $('mHG').value = 0;
+  $('mAG').value = 0;
+  updateScoreboardHeader();
+}
+
+async function deleteMatch(matchId){ return runLocked('delmatch-' + matchId, async () => {
+  if(!isAdmin()) return toast('Apenas o ADM pode excluir jogos.');
+  const m = matches.find(x => x.id === matchId);
+  if(!m) return;
+  const h = clubs.find(c => c.id === m.home_club_id)?.name || 'Mandante';
+  const a = clubs.find(c => c.id === m.away_club_id)?.name || 'Visitante';
+  const isPlayed = m.status === 'played' && m.home_goals !== null;
+  const msg = isPlayed
+    ? `Excluir o jogo realizado ${h} ${m.home_goals} x ${m.away_goals} ${a}? Os pontos, gols, assistências e cartões desta partida serão removidos.`
+    : `Excluir o jogo agendado ${h} x ${a}?`;
+  if(!confirm(msg)) return;
+
+  await sb.from('match_events').delete().eq('match_id', matchId);
+  const { error } = await sb.from('matches').delete().eq('id', matchId);
+  if(error) return toast('Não foi possível excluir o jogo: ' + error.message);
+
+  closeModal('matchModal');
+  toast('Jogo excluído com sucesso!');
+  await loadAll();
+}); }
+
+async function saveMatchResult(){ return runLocked('match', async () => {
+  if(!isAdmin()) return toast('Apenas o ADM pode lançar ou editar placares.');
+  const h = $('mHome').value, a = $('mAway').value, hg = Number($('mHG').value), ag = Number($('mAG').value), rnd = Number($('mRound').value);
+  if(!h || !a || h === a) return toast('Escolha clubes diferentes.');
+  if(!Number.isInteger(hg) || hg < 0 || !Number.isInteger(ag) || ag < 0 || !Number.isInteger(rnd) || rnd < 1) return toast('Placar e rodada devem ser números inteiros válidos.');
+  const evs = [];
+  ['home', 'away'].forEach(side => {
+    const clubId = side === 'home' ? h : a;
+    const container = side === 'home' ? $('homeEventsList') : $('awayEventsList');
+    container.querySelectorAll('.side-ev-card').forEach(card => {
+      const sel = card.querySelector('.ev-player');
+      if(!sel || !sel.value){
+        evs.push({ _invalid: 'Selecione o jogador em todos os eventos adicionados.' });
+        return;
+      }
+      const assistSel = card.querySelector('.ev-assist');
+      if(assistSel && assistSel.value === sel.value){
+        evs.push({ _invalid: 'O autor do gol não pode dar assistência para si mesmo.' });
+        return;
+      }
+      evs.push({
+        event_type: card.dataset.type,
+        club_id: clubId,
+        player_id: sel.value,
+        assist_player_id: assistSel ? (assistSel.value || null) : null
+      });
+    });
+  });
+  const invalid = evs.find(e => e._invalid);
+  if(invalid) return toast(invalid._invalid);
+  const goalEvents = evs.filter(e => e.event_type === 'goal');
+  if(goalEvents.length > 0){
+    const homeGoalsLogged = goalEvents.filter(e => e.club_id === h).length;
+    const awayGoalsLogged = goalEvents.filter(e => e.club_id === a).length;
+    if(homeGoalsLogged !== hg || awayGoalsLogged !== ag) return toast(`Você adicionou eventos de gol: confira se há ${hg} gol(s) do mandante e ${ag} do visitante (ou remova os eventos para lançar só o placar).`);
+  }
+  const timingTokens = [];
+  ['home', 'away'].forEach(side => {
+    const container = side === 'home' ? $('homeEventsList') : $('awayEventsList');
+    container.querySelectorAll('.side-ev-card[data-type="goal"]').forEach(card => {
+      const pid = card.querySelector('.ev-player')?.value;
+      const t = card.querySelector('.ev-timing')?.value || 'normal';
+      if(pid && t !== 'normal') timingTokens.push(`${pid}:${t}`);
+    });
+  });
+  const isDerby = $('mIsDerby')?.checked ? '1' : '0';
+  const hCome = $('mHomeComeback')?.checked ? '1' : '0';
+  const aCome = $('mAwayComeback')?.checked ? '1' : '0';
+
+  const { error } = await sb.rpc('record_match_with_events', {
+    p_league_id: league.id, p_season_id: season.id, p_match_id: $('mEditId').value || null,
+    p_home_club_id: h, p_away_club_id: a, p_home_goals: hg, p_away_goals: ag, p_round_number: rnd, p_events: evs
+  });
+  if(error) return toast(error.message);
+
+  // Persist optional derby / comeback / goal-timing metadata
+  const { data: latestMatches } = await sb.from('matches').select('id,home_club_id,away_club_id,round_number').eq('league_id', league.id).eq('season_id', season.id).eq('home_club_id', h).eq('away_club_id', a).eq('round_number', rnd).order('created_at', { ascending: false }).limit(1);
+  const savedMatchId = $('mEditId').value || latestMatches?.[0]?.id;
+  if(savedMatchId && (isDerby === '1' || hCome === '1' || aCome === '1' || timingTokens.length)){
+    try {
+      await sb.from('ledger_entries').delete().eq('league_id', league.id).ilike('description', `%[MATCH_FLAGS:${savedMatchId}:%`);
+      await sb.from('ledger_entries').insert({
+        league_id: league.id, season_id: season.id, club_id: h, entry_type: 'income', amount: 1,
+        description: `Dados da Partida [MATCH_FLAGS:${savedMatchId}:${isDerby}:${hCome}:${aCome}]` + (timingTokens.length ? ` [GOAL_TIMING:${savedMatchId}:${timingTokens.join(',')}]` : '')
+      });
+    } catch(_) {}
+  }
+
+  closeModal('matchModal'); toast('Placar, estatísticas e metas atualizados!'); await loadAll();
+}); }
+
+async function addLedger(){
+  if(!isAdmin()) return toast('Apenas o ADM pode lançar no caixa.');
+  const clubId = $('fClub').value, type = $('fType').value, amount = Number($('fAmount').value), desc = $('fDesc').value.trim();
+  if(!clubId || !Number.isFinite(amount) || amount <= 0 || !desc) return toast('Preencha todos os campos com valores válidos.');
+  const { error } = await sb.rpc('post_ledger_entry', { p_league_id: league.id, p_season_id: season?.id || null, p_club_id: clubId, p_type: type, p_amount: amount, p_description: desc });
+  if(error) return toast(error.message);
+  closeModal('financeModal'); toast('Lançamento registrado!'); await loadAll();
+}
+
+async function finalizeSeason(){ return runLocked('finalize', async () => {
+  if(!isAdmin()) return toast('Apenas o ADM.');
+  if(!season || season.status !== 'active') return toast('Nenhuma temporada ativa para encerrar.');
+  if(!confirm('Encerrar temporada atual, pagar prêmios ao Campeão/Artilheiro/Assistências e valorizar passes (+10%, +5%, +3%)?')) return;
+  const { error } = await sb.rpc('finalize_season_awards', { p_league_id: league.id, p_season_id: season.id });
+  if(error) return toast(error.message);
+  toast('Temporada encerrada, prêmios pagos e passes valorizados!'); await loadAll();
+}); }
+async function newSeason(){ return runLocked('newseason', async () => {
+  if(!isAdmin()) return toast('Apenas o ADM.');
+  const name = prompt('Nome da nova temporada:', 'Temporada ' + (seasons.length + 1));
+  if(!name) return;
+  const { error: archiveError } = await sb.from('seasons').update({ status: 'archived', ended_at: new Date().toISOString() }).eq('league_id', league.id).eq('status', 'active');
+  if(archiveError) return toast('Não foi possível arquivar a temporada anterior: ' + archiveError.message);
+  const { error } = await sb.from('seasons').insert({ league_id: league.id, name: name.trim(), status: 'active' });
+  if(error) return toast('A temporada anterior foi arquivada, mas a nova não foi criada: ' + error.message);
+  toast('Nova temporada iniciada!'); await loadAll();
+}); }
+
+async function saveLeagueSettings(){
+  if(!isAdmin()) return toast('Apenas o ADM.');
+  const payload = {
+    goal_bonus: Math.max(0, Number($('cfgGoal').value) || 0),
+    assist_bonus: Math.max(0, Number($('cfgAssist').value) || 0),
+    yellow_card_fine: Math.max(0, Number($('cfgYellow').value) || 0),
+    red_card_fine: Math.max(0, Number($('cfgRed').value) || 0),
+    home_stadium_income: Math.max(0, Number($('cfgStadium').value) || 0),
+    champion_prize: Math.max(0, Number($('cfgChamp').value) || 0),
+    top_scorer_prize: Math.max(0, Number($('cfgScorer').value) || 0),
+    top_assist_prize: Math.max(0, Number($('cfgAssistPrize').value) || 0)
+  };
+  const { error } = await sb.from('leagues').update(payload).eq('id', league.id);
+  if(error) return toast(error.message);
+  toast('Valores e premiações salvos!'); await loadAll();
+}
+async function saveLeagueName(){
+  if(!isAdmin()) return toast('Apenas o ADM.');
+  const name = $('adminLeagueName').value.trim();
+  if(!name) return;
+  const { error } = await sb.from('leagues').update({ name }).eq('id', league.id);
+  if(error) return toast(error.message);
+  toast('Nome da liga atualizado!'); await loadAll();
+}
+function copyInvite(){
+  navigator.clipboard.writeText(league.invite_code).then(() => toast('Código copiado!')).catch(() => toast('Código: ' + league.invite_code));
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  $('playerSearch')?.addEventListener('input', () => render());
+  $('transferSearch')?.addEventListener('input', () => render());
+  $('clubSearch')?.addEventListener('input', () => render());
+  try {
+    if(!window.supabase?.createClient) throw new Error('Biblioteca de conexão não carregada. Verifique sua internet ou bloqueador de conteúdo.');
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb.auth.onAuthStateChange((event) => { if(event === 'PASSWORD_RECOVERY') showRecoveryMode(); });
+    const { data } = await sb.auth.getSession();
+    if(data?.session) await boot();
+  } catch(err){
+    showAuthMsg('Erro ao inicializar conexão: ' + (err?.message || err), 'err');
+  }
+});
+</script>
+</body>
+</html>
