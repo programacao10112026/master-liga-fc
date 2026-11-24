@@ -1599,7 +1599,7 @@ function subscribe(){
   });
 }
 
-function isAdmin(){ return membership?.role === 'admin'; }
+function isAdmin(){ return membership?.role === 'admin' || Boolean(league?.created_by && user?.id && league.created_by === user.id); }
 function myClubIds(){ return clubs.filter(c => c.owner_user_id === user.id).map(c => c.id); }
 function canManageClub(clubId){ return isAdmin() || myClubIds().includes(clubId); }
 
@@ -3257,11 +3257,8 @@ async function runManualPayroll(){
     const summary = clubs.map(c => {
       const w = players.filter(p => p.club_id === c.id).reduce((s, p) => s + calcSalary(p.market_value), 0);
       return `• ${c.name}: ${money(w)}`;
-    }).join('
-');
-    if(!confirm(`Descontar a folha salarial (0,05% do valor de mercado) de todos os clubes agora?
-
-${summary}`)) return;
+    }).join('\n');
+    if(!confirm(`Descontar a folha salarial (0,05% do valor de mercado) de todos os clubes agora?\n\n${summary}`)) return;
     let count = 0;
     for(const c of clubs){
       const squad = players.filter(p => p.club_id === c.id);
@@ -4247,38 +4244,47 @@ async function fetchEurBrlRate(){
   return tmEurBrlRate;
 }
 
-async function fetchTransfermarktPlayer(playerName){
+let tmLiveApiAvailable = true;
+
+async function fetchTransfermarktPlayer(playerName, tryLive = true){
   const cleanName = String(playerName || '').trim();
   const key = norm(cleanName);
   let eurValue = 0;
   let source = '';
   let tmClub = '';
   let tmPhoto = '';
+  let liveFailed = false;
 
   // 1. Consulta direta na API pública do Transfermarkt
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 4500);
-    const url = `https://transfermarkt-api.fly.dev/players/search/${encodeURIComponent(cleanName)}?page_number=1`;
-    const res = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(timer);
-    if(res.ok){
-      const json = await res.json();
-      const list = Array.isArray(json?.results) ? json.results : [];
-      if(list.length){
-        const exact = list.find(r => norm(r.name) === key)
-          || list.find(r => norm(r.name).includes(key) || key.includes(norm(r.name)))
-          || list[0];
-        const parsed = parseTransfermarktEur(exact?.marketValue ?? exact?.market_value);
-        if(parsed > 0){
-          eurValue = parsed;
-          source = '🌐 Transfermarkt Ao Vivo';
-          tmClub = exact?.club?.name || '';
-          tmPhoto = exact?.playerImage || exact?.image || '';
+  if(tryLive && tmLiveApiAvailable){
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 2800);
+      const url = `https://transfermarkt-api.fly.dev/players/search/${encodeURIComponent(cleanName)}?page_number=1`;
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if(res.ok){
+        const json = await res.json();
+        const list = Array.isArray(json?.results) ? json.results : [];
+        if(list.length){
+          const exact = list.find(r => norm(r.name) === key)
+            || list.find(r => norm(r.name).includes(key) || key.includes(norm(r.name)))
+            || list[0];
+          const parsed = parseTransfermarktEur(exact?.marketValue ?? exact?.market_value);
+          if(parsed > 0){
+            eurValue = parsed;
+            source = '🌐 Transfermarkt Ao Vivo';
+            tmClub = exact?.club?.name || '';
+            tmPhoto = exact?.playerImage || exact?.image || '';
+          }
         }
+      } else {
+        liveFailed = true;
       }
+    } catch(_) {
+      liveFailed = true;
     }
-  } catch(_) {}
+  }
 
   // 2. Fallback para Base Oficial Transfermarkt (2026) se a API estiver indisponível ou sem retorno
   if(!eurValue){
@@ -4291,7 +4297,7 @@ async function fetchTransfermarktPlayer(playerName){
     }
   }
 
-  return { eurValue, source, tmClub, tmPhoto };
+  return { eurValue, source, tmClub, tmPhoto, liveFailed };
 }
 
 function convertEurToLeagueBrl(eurValue, mode){
@@ -4362,12 +4368,14 @@ async function runTransfermarktFetch(){
   const mode = $('tmScaleMode')?.value || 'brl_real';
   localStorage.setItem('ml_tm_scale', mode);
 
+  tmLiveApiAvailable = true;
   const results = [];
-  const batchSize = 6;
+  const batchSize = 10;
   for(let i = 0; i < players.length; i += batchSize){
     const slice = players.slice(i, i + batchSize);
     const chunk = await Promise.all(slice.map(async p => {
-      const tm = await fetchTransfermarktPlayer(p.name);
+      const tm = await fetchTransfermarktPlayer(p.name, tmLiveApiAvailable);
+      if(tm.liveFailed) tmLiveApiAvailable = false;
       const oldVal = Number(p.market_value) || 0;
       const oldClause = Number(p.release_clause) || (oldVal * 4);
       const shieldBonus = Math.max(0, oldClause - (oldVal * 4));
