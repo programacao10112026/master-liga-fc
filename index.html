@@ -317,8 +317,17 @@ tr:last-child td{border:0}
   display:grid;grid-template-columns:1fr 1fr;gap:8px;
   background:rgba(4,7,15,0.75);padding:9px 10px;border-radius:11px;border:1px solid rgba(255,255,255,0.06);
 }
+.moneygrid.three-cols{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .moneygrid span{font-size:9px;color:var(--muted);font-weight:700;display:block;letter-spacing:.4px}
-.moneygrid strong{font-size:12px}
+.moneygrid strong{font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:420px){.moneygrid.three-cols{grid-template-columns:1fr 1fr}}
+.tm-row{
+  background:rgba(5,9,18,0.85);border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:6px;
+}
+.tm-row.changed{border-color:rgba(16,185,129,0.38)}
+.tm-prog{height:8px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden;margin:8px 0}
+.tm-prog-bar{height:100%;background:linear-gradient(90deg,var(--cyan),var(--emerald));transition:width .25s ease}
 
 .fixture{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.06)}.fixture:last-child{border:0}
 .score{
@@ -928,8 +937,9 @@ tr:last-child td{border:0}
    <!-- MERCADO DA BOLA -->
    <section class="section" id="market">
     <div class="cardhead">
-     <div><h2>Mercado da Bola</h2><div class="sub">Multa rescisória (4x), Blindagem (1:4), Trocas e Propostas.</div></div>
+     <div><h2>Mercado da Bola</h2><div class="sub">Salário (0,05% do passe), Multa rescisória (4x), Blindagem (1:4) e Transfermarkt.</div></div>
      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn gold sm hidden" id="tmSyncMktBtn" onclick="openTransfermarktModal()">📊 Atualizar Transfermarkt</button>
       <button class="btn secondary sm" onclick="openPlayerModal()">+ Jogador</button>
       <button class="btn sm" onclick="openOfferModal()">⇄ Propor Negócio</button>
      </div>
@@ -989,10 +999,16 @@ tr:last-child td{border:0}
      <div class="card stat"><label>CAIXA TOTAL CLUBES</label><strong id="fCash">R$ 0</strong></div>
      <div class="card stat"><label>RECEITAS</label><strong id="fIncome" class="accent">R$ 0</strong></div>
      <div class="card stat"><label>DESPESAS</label><strong id="fExpense" class="danger-txt">R$ 0</strong></div>
-     <div class="card stat"><label>SALDO MOVIMENTADO</label><strong id="fBalance">R$ 0</strong></div>
+     <div class="card stat"><label>FOLHA SALARIAL (0,05% / JOGO)</label><strong id="fPayroll" class="cyan">R$ 0</strong><small>Soma dos salários da liga</small></div>
     </div>
     <div class="card">
-     <div class="cardhead"><h2>Livro-Caixa Automático & Manual</h2><button class="btn sm" onclick="openModal('financeModal')">+ Lançamento</button></div>
+     <div class="cardhead">
+      <div><h2>Livro-Caixa Automático & Manual</h2><div class="sub">Salários de 0,05% do valor de mercado são descontados por partida disputada.</div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+       <button class="btn gold sm hidden" id="runPayrollBtn" onclick="runManualPayroll()">💸 Pagar Folha Salarial (Rodada)</button>
+       <button class="btn sm" onclick="openModal('financeModal')">+ Lançamento</button>
+      </div>
+     </div>
      <div class="tablewrap"><table><thead><tr><th>Data</th><th>Clube</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="ledgerRows"></tbody></table></div>
     </div>
    </section>
@@ -1053,7 +1069,13 @@ tr:last-child td{border:0}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
        <button class="btn secondary sm" onclick="copyInvite()">Copiar Convite</button>
        <button class="btn gold sm" onclick="downloadSelfHtml()">⬇️ Baixar index.html</button>
-       <button class="btn sm" onclick="applyOfficialRosters()">🔄 Atualizar Elencos (5 Clubes / 90 Atletas)</button>
+       <button class="btn sm" onclick="openTransfermarktModal()">📊 Sincronizar Transfermarkt</button>
+       <button class="btn secondary sm" onclick="applyOfficialRosters()">🔄 Atualizar Elencos (5 Clubes / 90 Atletas)</button>
+      </div>
+      <div class="newsitem" style="margin-top:12px;margin-bottom:0">
+       <span class="tag cyan">REGRA SALARIAL ATIVA</span>
+       <h4>Salário automático: 0,05% do Valor de Mercado</h4>
+       <p>Cada atleta custa <b>0,05%</b> do seu valor de mercado por partida jogada, atualizado automaticamente sempre que o valor de mercado muda pelo Transfermarkt.</p>
       </div>
       <div class="field" style="margin-top:14px"><label>Nome da Liga</label><input id="adminLeagueName"></div>
       <button class="btn secondary sm" onclick="saveLeagueName()">Atualizar Nome</button>
@@ -1144,17 +1166,74 @@ tr:last-child td{border:0}
   <input type="file" id="pPhotoFile" accept="image/*" onchange="handlePhotoFile(this)">
   <input id="pPhotoUrl" placeholder="Ou cole o link da foto (opcional)">
  </div>
- <div class="field"><label>Nome do Jogador</label><input id="pName" placeholder="Ex.: Yuri Alberto"></div>
+ <div class="field"><label>Nome do Jogador</label>
+  <div style="display:flex;gap:6px">
+   <input id="pName" placeholder="Ex.: Yuri Alberto" style="flex:1">
+   <button type="button" class="btn gold sm" id="tmSingleLookupBtn" onclick="lookupSinglePlayerTransfermarkt()" title="Buscar valor atualizado no Transfermarkt">📊 Transfermarkt</button>
+  </div>
+ </div>
  <div class="grid two">
   <div class="field"><label>Posição</label><select id="pPos"><option>ATA</option><option>PE</option><option>PD</option><option>MEI</option><option>MC</option><option>VOL</option><option>LE</option><option>LD</option><option>ZAG</option><option>GOL</option></select></div>
   <div class="field"><label>Overall (1 a 99)</label><input id="pOvr" type="number" min="1" max="99" value="82"></div>
  </div>
- <div class="grid two">
+ <div class="grid three">
   <div class="field"><label>Valor de Mercado (R$)</label><input id="pValue" type="number" value="1000000" oninput="autoCalcClause()"></div>
-  <div class="field"><label>Multa Rescisória (Padrão 4x)</label><input id="pClause" type="number" value="4000000"></div>
+  <div class="field"><label>Salário (0,05% / jogo)</label><input id="pSalary" type="text" value="R$ 500" readonly style="color:var(--cyan);font-weight:800"></div>
+  <div class="field"><label>Multa Rescisória (4x)</label><input id="pClause" type="number" value="4000000"></div>
  </div>
+ <div id="pTmHint" class="sub" style="margin:-6px 0 10px;font-size:11px"></div>
  <div class="field"><label>Clube Atual</label><select id="pClub"></select></div>
  <div class="modalfoot"><button class="btn danger hidden" id="delPlayerBtn" style="margin-right:auto" onclick="deletePlayer()">Excluir</button><button class="btn secondary" onclick="closeModal('playerModal')">Cancelar</button><button class="btn" onclick="savePlayer()">Salvar Jogador</button></div>
+</div></div>
+
+<!-- MODAL: SINCRONIZAR VALORES DE MERCADO COM TRANSFERMARKT -->
+<div class="modalbg" id="tmSyncModal"><div class="modal" style="width:min(660px,100%)">
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+  <h3 style="margin:0">📊 Sincronizar Valores — Transfermarkt</h3>
+  <span class="tag cyan" id="tmRateBadge">1 € = R$ 6,15</span>
+ </div>
+ <p class="sub" style="margin:0 0 12px">Consulta o valor de mercado no <b>Transfermarkt (€)</b>, converte para R$, recalcula o <b>salário em 0,05%</b> e preserva qualquer bônus de blindagem já investido na multa.</p>
+
+ <div class="grid two" style="margin-bottom:10px">
+  <div class="field" style="margin-bottom:0">
+   <label>Modo de Conversão (€ → R$)</label>
+   <select id="tmScaleMode" onchange="recomputeTmPreview()">
+    <option value="brl_real">Cotação Real Transfermarkt (1 € → R$ ao vivo)</option>
+    <option value="eur_1to1">Paridade Direta Transfermarkt (1 € = R$ 1,00)</option>
+    <option value="league_10pct">Escala Master Liga 10% (R$ real × 0,10)</option>
+    <option value="compact_10pct">Escala Compacta (€ 1M = R$ 100 mil)</option>
+   </select>
+  </div>
+  <div class="field" style="margin-bottom:0">
+   <label>Filtrar Clube</label>
+   <select id="tmClubFilter" onchange="renderTmPreviewList()">
+    <option value="ALL">Todos os clubes</option>
+   </select>
+  </div>
+ </div>
+
+ <div class="searchbar" style="margin-bottom:8px"><span>⌕</span><input id="tmSearchInput" type="search" placeholder="Filtrar atleta na prévia..." oninput="renderTmPreviewList()"></div>
+
+ <div id="tmProgressWrap" class="hidden">
+  <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700"><span id="tmProgressText">Consultando Transfermarkt...</span><span id="tmProgressPct">0%</span></div>
+  <div class="tm-prog"><div class="tm-prog-bar" id="tmProgressBar" style="width:0%"></div></div>
+ </div>
+
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+  <span class="sub" id="tmSummaryStats">Aguardando consulta...</span>
+  <div style="display:flex;gap:6px">
+   <button type="button" class="btn secondary sm" onclick="toggleAllTmChecks(true)">Marcar Todos</button>
+   <button type="button" class="btn secondary sm" onclick="toggleAllTmChecks(false)">Desmarcar</button>
+   <button type="button" class="btn gold sm" id="tmRefreshBtn" onclick="runTransfermarktFetch()">🔄 Reconsultar</button>
+  </div>
+ </div>
+
+ <div id="tmPreviewList" style="max-height:44vh;overflow-y:auto;padding-right:2px"></div>
+
+ <div class="modalfoot">
+  <button type="button" class="btn secondary" onclick="closeModal('tmSyncModal')">Cancelar</button>
+  <button type="button" class="btn" id="tmApplyBtn" onclick="applyTransfermarktSync()">✅ Aplicar Valores & Salários (0,05%)</button>
+ </div>
 </div></div>
 
 <!-- MODAL: BLINDAR JOGADOR (1:4) -->
@@ -1293,6 +1372,8 @@ async function runLocked(key, fn){
 
 const $ = id => document.getElementById(id);
 const money = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR');
+const SALARY_RATE = 0.0005; // 0,05% do valor de mercado
+function calcSalary(marketValue){ return Math.round((Number(marketValue) || 0) * SALARY_RATE); }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(s){ const t = $('toast'); t.textContent = s; t.style.display = 'block'; setTimeout(() => { t.style.display = 'none'; }, 3400); }
 
@@ -1596,6 +1677,8 @@ function render(){
   // Aba Patrocinadores & Contratos por Clube
   $('addSponsorBtn').classList.toggle('hidden', !isAdmin());
   if($('syncRostersClubBtn')) $('syncRostersClubBtn').classList.toggle('hidden', !isAdmin());
+  if($('tmSyncMktBtn')) $('tmSyncMktBtn').classList.toggle('hidden', !isAdmin());
+  if($('runPayrollBtn')) $('runPayrollBtn').classList.toggle('hidden', !isAdmin());
   const spClubSel = $('sponsorTargetClub');
   const manageableClubs = isAdmin() ? clubs : clubs.filter(c => c.owner_user_id === user.id);
   const displayClubs = manageableClubs.length ? manageableClubs : clubs;
@@ -1708,6 +1791,7 @@ function render(){
   $('mkt-allplayers').innerHTML = visiblePlayers.map(p => {
     const cl = clubs.find(c => c.id === p.club_id);
     const clause = Number(p.release_clause || p.market_value * 4);
+    const salary = calcSalary(p.market_value);
     const ownedByMe = p.club_id && myClubIds().includes(p.club_id);
     const canShield = p.club_id && canManageClub(p.club_id);
     const canBuyOrNegotiate = !ownedByMe && (myClubIds().length > 0 || (isAdmin() && clubs.length > 1));
@@ -1716,9 +1800,10 @@ function render(){
         <div class="pmeta">${playerAvatar(p)}<div style="min-width:0"><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • ${esc(cl?.name || 'Mercado Livre')}</span></div></div>
         <span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span>
       </div>
-      <div class="moneygrid">
+      <div class="moneygrid three-cols">
         <div><span>VALOR DE MERCADO</span><strong>${money(p.market_value)}</strong></div>
-        <div><span>MULTA (COMPRA IMEDIATA)</span><strong class="gold">${money(clause)}</strong></div>
+        <div><span>SALÁRIO (0,05%)</span><strong class="cyan">${money(salary)}</strong></div>
+        <div><span>MULTA RESCISÓRIA</span><strong class="gold">${money(clause)}</strong></div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${canShield ? `<button class="btn secondary sm" style="flex:1" onclick="openShieldModal('${p.id}')">🛡️ Blindar (1:4)</button>` : ''}
@@ -1756,16 +1841,18 @@ function render(){
   $('clubCards').innerHTML = visibleClubs.map(c => {
     const ps = players.filter(p => p.club_id === c.id);
     const avg = ps.length ? Math.round(ps.reduce((a, p) => a + p.overall, 0) / ps.length) : 0;
+    const payroll = ps.reduce((a, p) => a + calcSalary(p.market_value), 0);
     return `<div class="card">
       <div class="cardhead"><div class="club">${crest(c, true)}<div><b>${esc(c.name)}</b><div class="sub">${esc(c.owner_name || 'Manager')}</div></div></div>
       ${canManageClub(c.id) ? `<button class="btn secondary sm" onclick="openClubModal('${c.id}')">${isAdmin() ? 'Editar Clube' : '📷 Foto / Escudo'}</button>` : ''}
       </div>
-      <div class="moneygrid" style="margin-bottom:10px">
+      <div class="moneygrid three-cols" style="margin-bottom:10px">
         <div><span>CAIXA DISPONÍVEL</span><strong class="accent">${money(c.balance)}</strong></div>
-        <div><span>ELENCO / OVR MÉDIO</span><strong>${ps.length} atletas • ${avg}</strong></div>
+        <div><span>ELENCO / OVR</span><strong>${ps.length} atl. • ${avg}</strong></div>
+        <div><span>FOLHA (0,05%)</span><strong class="cyan">${money(payroll)}</strong></div>
       </div>
       ${getClubSeasonSponsorIds(c.id, season?.id).length ? `<div style="margin-bottom:10px"><div class="eyebrow" style="margin-bottom:4px;color:var(--gold-light)">🤝 PATROCINADORES & METAS</div>${renderClubSponsorsHtml(c.id, true)}</div>` : ''}
-      ${ps.map(p => `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div>`).join('') || '<div class="empty">Elenco vazio.</div>'}
+      ${ps.map(p => `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div>`).join('') || '<div class="empty">Elenco vazio.</div>'}
     </div>`;
   }).join('') || `<div class="empty">${clubQuery ? 'Nenhum clube encontrado para essa busca.' : 'Cadastre os clubes da liga.'}</div>`;
 
@@ -1812,11 +1899,12 @@ function render(){
   const visibleLedger = ledger.filter(x => !/\[(SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS):/.test(String(x.description || '')));
   const inc = visibleLedger.filter(x => x.entry_type === 'income').reduce((a, x) => a + Number(x.amount), 0);
   const exp = visibleLedger.filter(x => x.entry_type === 'expense').reduce((a, x) => a + Number(x.amount), 0);
+  const totalLeaguePayroll = players.filter(p => p.club_id).reduce((a, p) => a + calcSalary(p.market_value), 0);
   $('fCash').textContent = money(clubs.reduce((a, c) => a + Number(c.balance), 0));
   $('fIncome').textContent = money(inc);
   $('fExpense').textContent = money(exp);
-  $('fBalance').textContent = money(inc - exp);
-  $('ledgerRows').innerHTML = visibleLedger.map(x => `<tr><td>${new Date(x.created_at).toLocaleDateString('pt-BR')}</td><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[SPONSOR_PAYOUT:[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sem lançamentos.</td></tr>';
+  if($('fPayroll')) $('fPayroll').textContent = money(totalLeaguePayroll);
+  $('ledgerRows').innerHTML = visibleLedger.map(x => `<tr><td>${new Date(x.created_at).toLocaleDateString('pt-BR')}</td><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[(SPONSOR_PAYOUT|MATCH_WAGES):[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sem lançamentos.</td></tr>';
 
   $('seasonList').innerHTML = seasons.map(s => `<div class="fixture"><div><b>${esc(s.name)}</b><div class="sub">${new Date(s.created_at).toLocaleDateString('pt-BR')}</div></div><span class="tag ${s.status === 'active' ? 'green' : ''}">${s.status === 'active' ? 'ATIVA' : 'ENCERRADA'}</span></div>`).join('');
   $('cfgGoal').value = league.goal_bonus ?? 50000;
@@ -2721,6 +2809,7 @@ function handlePhotoFile(input){
 function autoCalcClause(){
   const v = +$('pValue').value || 0;
   $('pClause').value = v * 4;
+  if($('pSalary')) $('pSalary').value = money(calcSalary(v));
 }
 function openPlayerModal(playerId){
   if(!isAdmin()) return toast('Apenas o ADM pode cadastrar ou editar jogadores.');
@@ -2731,8 +2820,11 @@ function openPlayerModal(playerId){
   $('pName').value = p?.name || '';
   $('pPos').value = p?.position || 'ATA';
   $('pOvr').value = p?.overall || 82;
-  $('pValue').value = p?.market_value || 1000000;
-  $('pClause').value = p?.release_clause || (p?.market_value ? p.market_value * 4 : 4000000);
+  const mv = p?.market_value || 1000000;
+  $('pValue').value = mv;
+  if($('pSalary')) $('pSalary').value = money(calcSalary(mv));
+  $('pClause').value = p?.release_clause || (mv * 4);
+  if($('pTmHint')) $('pTmHint').textContent = '';
   $('pClub').innerHTML = '<option value="">Mercado Livre</option>' + clubs.map(c => `<option value="${c.id}" ${p?.club_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
   $('delPlayerBtn').classList.toggle('hidden', !p);
   openModal('playerModal');
@@ -2793,8 +2885,9 @@ function openBuyoutModal(playerId){
   if(!avail.length) return toast('Você não possui um clube comprador disponível.');
   const preferredBuyer = avail.find(c => c.owner_user_id === user.id) || avail[0];
   const clause = Number(p.release_clause || p.market_value * 4);
+  const salary = calcSalary(p.market_value);
   $('boPlayerId').value = p.id;
-  $('boDesc').innerHTML = `Contratar <b>${esc(p.name)}</b> pagando a multa rescisória integral de <b class="gold">${money(clause)}</b> (compra imediata sem troca).`;
+  $('boDesc').innerHTML = `Contratar <b>${esc(p.name)}</b> pagando a multa rescisória integral de <b class="gold">${money(clause)}</b> (compra imediata sem troca).<br><span class="cyan" style="font-weight:700">Salário do atleta (0,05%): ${money(salary)} / partida</span>`;
   $('boBuyerClub').innerHTML = avail.map(c => `<option value="${c.id}" ${c.id === preferredBuyer?.id ? 'selected' : ''}>${esc(c.name)} (Caixa: ${money(c.balance)})</option>`).join('');
   openModal('buyoutModal');
 }
@@ -3129,8 +3222,65 @@ async function saveMatchResult(){ return runLocked('match', async () => {
     } catch(_) {}
   }
 
-  closeModal('matchModal'); toast('Placar, estatísticas e metas atualizados!'); await loadAll();
+  if(savedMatchId){
+    await processMatchWages(savedMatchId, h, a);
+  }
+
+  closeModal('matchModal'); toast('Placar, estatísticas, salários (0,05%) e metas atualizados!'); await loadAll();
 }); }
+
+async function processMatchWages(matchId, homeClubId, awayClubId){
+  if(!league?.id || !season?.id || !matchId) return;
+  for(const clubId of [homeClubId, awayClubId]){
+    if(!clubId) continue;
+    const wageTag = `[MATCH_WAGES:${season.id}:${matchId}:${clubId}]`;
+    if(ledger.some(l => String(l.description || '').includes(wageTag))) continue;
+    const squad = players.filter(p => p.club_id === clubId);
+    const totalWage = squad.reduce((sum, p) => sum + calcSalary(p.market_value), 0);
+    if(totalWage <= 0) continue;
+    const clubName = clubs.find(c => c.id === clubId)?.name || 'Clube';
+    await sb.rpc('post_ledger_entry', {
+      p_league_id: league.id,
+      p_season_id: season.id,
+      p_club_id: clubId,
+      p_type: 'expense',
+      p_amount: totalWage,
+      p_description: `Folha Salarial — Partida (${squad.length} atletas • 0,05%) ${wageTag}`
+    });
+  }
+}
+
+async function runManualPayroll(){
+  return runLocked('manual-payroll', async () => {
+    if(!isAdmin()) return toast('Apenas o ADM pode processar a folha salarial.');
+    if(!clubs.length) return toast('Nenhum clube cadastrado.');
+    const summary = clubs.map(c => {
+      const w = players.filter(p => p.club_id === c.id).reduce((s, p) => s + calcSalary(p.market_value), 0);
+      return `• ${c.name}: ${money(w)}`;
+    }).join('
+');
+    if(!confirm(`Descontar a folha salarial (0,05% do valor de mercado) de todos os clubes agora?
+
+${summary}`)) return;
+    let count = 0;
+    for(const c of clubs){
+      const squad = players.filter(p => p.club_id === c.id);
+      const totalWage = squad.reduce((s, p) => s + calcSalary(p.market_value), 0);
+      if(totalWage <= 0) continue;
+      const { error } = await sb.rpc('post_ledger_entry', {
+        p_league_id: league.id,
+        p_season_id: season?.id || null,
+        p_club_id: c.id,
+        p_type: 'expense',
+        p_amount: totalWage,
+        p_description: `Folha Salarial — Rodada (${squad.length} atletas • 0,05%)`
+      });
+      if(!error) count++;
+    }
+    toast(`💸 Folha salarial descontada de ${count} clube(s)!`);
+    await loadAll();
+  });
+}
 
 async function addLedger(){
   if(!isAdmin()) return toast('Apenas o ADM pode lançar no caixa.');
@@ -3922,6 +4072,451 @@ async function applyOfficialRosters(){
 
     await loadAll();
     toast(`✅ Concluído! ${OFFICIAL_ROSTERS.length} clubes e ${totalPlayers} jogadores atualizados.`);
+  });
+}
+
+
+/* =========================================================================
+   INTEGRAÇÃO TRANSFERMARKT (VALORES DE MERCADO EM € + CONVERSÃO R$ + 0,05%)
+   ========================================================================= */
+const TRANSFERMARKT_DB_EUR = {
+  "joao pedro": 45000000,
+  "maxime dupe": 1500000,
+  "ronaldo": 1200000,
+  "agustin giay": 8000000,
+  "bruno fuchs": 3500000,
+  "richard ledezma": 3000000,
+  "berkay yilmaz": 2500000,
+  "david duarte": 1500000,
+  "aljoscha kemlein": 4000000,
+  "nicolas acevedo": 3000000,
+  "sascha horvath": 2000000,
+  "alfred duncan": 2200000,
+  "caio alexandre": 5000000,
+  "pau victor": 6000000,
+  "cristian olivera": 6000000,
+  "erick pulga": 4500000,
+  "kenedy": 1800000,
+  "marc guiu": 8000000,
+  "n'golo kante": 7000000,
+  "ngolo kante": 7000000,
+  "arnaud bodart": 2500000,
+  "marcelo lomba": 400000,
+  "khellven": 5000000,
+  "santiago ramos mingo": 5000000,
+  "olivier deman": 3500000,
+  "filip benkovic": 1200000,
+  "arthur santana": 1000000,
+  "matias galarza": 4000000,
+  "bruno nazario": 1500000,
+  "erick": 3500000,
+  "ondrej duda": 3500000,
+  "oskar pietuszewski": 4000000,
+  "christian fassnacht": 1800000,
+  "everaldo": 1500000,
+  "ilyas ansah": 3500000,
+  "luis guilherme": 18000000,
+  "bamidele yusuf": 2000000,
+  "david raum": 20000000,
+  "marcel schuhen": 1200000,
+  "leo vieira": 600000,
+  "dara o'shea": 9000000,
+  "dara oshea": 9000000,
+  "matias catalan": 2000000,
+  "maracas": 1500000,
+  "marnon busch": 1500000,
+  "nicolae stanciu": 3500000,
+  "hernani": 2200000,
+  "alex toth": 3000000,
+  "jeong woo yeong": 3500000,
+  "rodrigo nestor": 5000000,
+  "alexis sanchez": 1800000,
+  "derry scherhant": 3500000,
+  "ademir": 2200000,
+  "george ilenikhena": 15000000,
+  "klauss": 3000000,
+  "leonardo": 18000000,
+  "lucas evangelista": 4500000,
+  "filip bednarek": 450000,
+  "bruno bertinato": 350000,
+  "benedetti": 2500000,
+  "curtis nelson": 700000,
+  "malcolm jeng": 2500000,
+  "marcos victor": 1000000,
+  "renzo malanca": 1200000,
+  "andreas muller": 900000,
+  "marino illescas": 500000,
+  "adam radwanski": 700000,
+  "larson": 1000000,
+  "michel araujo": 2800000,
+  "wikelman carmona": 1800000,
+  "brenner": 4000000,
+  "christian ramirez": 800000,
+  "erick bele": 1500000,
+  "nino zugelj": 1500000,
+  "igor thiago": 18000000,
+  "arijanet muric": 6000000,
+  "kaua santos": 4000000,
+  "eduardo bauermann": 2000000,
+  "victor nelsson": 10000000,
+  "harry souttar": 5000000,
+  "kilian fischer": 4000000,
+  "gabriel xavier": 3500000,
+  "kees smit": 5000000,
+  "rokas pukstas": 5500000,
+  "junior messias": 2200000,
+  "mario stroeykens": 12000000,
+  "sam morsy": 1200000,
+  "oscar taty maritu": 1200000,
+  "caio vidal": 2200000,
+  "erick marcus": 2500000,
+  "alejo veliz": 5000000,
+  "tyrique george": 10000000,
+  "yuri alberto": 16000000,
+  "memphis depay": 10000000,
+  "rodrigo garro": 14000000,
+  "estevam": 50000000,
+  "estevao": 55000000,
+  "endrick": 40000000,
+  "vinicius junior": 200000000,
+  "rodrygo": 100000000,
+  "raphinha": 80000000,
+  "neymar": 15000000,
+  "pedro": 23000000,
+  "gerson": 20000000,
+  "arrascaeta": 14000000,
+  "hulk": 1800000,
+  "paulinho": 17000000,
+  "luiz henrique": 22000000,
+  "igor jesus": 15000000,
+  "thiago almada": 27000000,
+  "kylian mbappe": 170000000,
+  "erling haaland": 200000000,
+  "jude bellingham": 180000000,
+  "lamine yamal": 180000000
+};
+
+let tmEurBrlRate = 6.15;
+let tmSyncRows = [];
+
+const fmtEur = n => '€ ' + Number(n || 0).toLocaleString('pt-BR');
+
+function parseTransfermarktEur(raw){
+  if(raw == null) return 0;
+  if(typeof raw === 'number' && Number.isFinite(raw)) return Math.round(raw);
+  const s = String(raw).toLowerCase().replace(/\s+/g, '').replace('€', '').replace('eur', '');
+  if(!s || s === '-' || s === 'n/a') return 0;
+  let mult = 1;
+  if(s.includes('bn') || s.includes('bi')) mult = 1000000000;
+  else if(s.includes('m') || s.includes('mi')) mult = 1000000;
+  else if(s.includes('k') || s.includes('mil')) mult = 1000;
+  const numPart = s.replace(/[^0-9.,]/g, '').replace(',', '.');
+  const val = parseFloat(numPart);
+  return Number.isFinite(val) ? Math.round(val * mult) : 0;
+}
+
+async function fetchEurBrlRate(){
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3500);
+    const res = await fetch('https://economia.awesomeapi.com.br/last/EUR-BRL', { signal: ctrl.signal });
+    clearTimeout(t);
+    if(res.ok){
+      const data = await res.json();
+      const bid = parseFloat(data?.EURBRL?.bid);
+      if(Number.isFinite(bid) && bid > 1){
+        tmEurBrlRate = Number(bid.toFixed(2));
+        return tmEurBrlRate;
+      }
+    }
+  } catch(_) {}
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3500);
+    const res = await fetch('https://api.frankfurter.app/latest?from=EUR&to=BRL', { signal: ctrl.signal });
+    clearTimeout(t);
+    if(res.ok){
+      const data = await res.json();
+      const rate = parseFloat(data?.rates?.BRL);
+      if(Number.isFinite(rate) && rate > 1){
+        tmEurBrlRate = Number(rate.toFixed(2));
+        return tmEurBrlRate;
+      }
+    }
+  } catch(_) {}
+  return tmEurBrlRate;
+}
+
+async function fetchTransfermarktPlayer(playerName){
+  const cleanName = String(playerName || '').trim();
+  const key = norm(cleanName);
+  let eurValue = 0;
+  let source = '';
+  let tmClub = '';
+  let tmPhoto = '';
+
+  // 1. Consulta direta na API pública do Transfermarkt
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4500);
+    const url = `https://transfermarkt-api.fly.dev/players/search/${encodeURIComponent(cleanName)}?page_number=1`;
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if(res.ok){
+      const json = await res.json();
+      const list = Array.isArray(json?.results) ? json.results : [];
+      if(list.length){
+        const exact = list.find(r => norm(r.name) === key)
+          || list.find(r => norm(r.name).includes(key) || key.includes(norm(r.name)))
+          || list[0];
+        const parsed = parseTransfermarktEur(exact?.marketValue ?? exact?.market_value);
+        if(parsed > 0){
+          eurValue = parsed;
+          source = '🌐 Transfermarkt Ao Vivo';
+          tmClub = exact?.club?.name || '';
+          tmPhoto = exact?.playerImage || exact?.image || '';
+        }
+      }
+    }
+  } catch(_) {}
+
+  // 2. Fallback para Base Oficial Transfermarkt (2026) se a API estiver indisponível ou sem retorno
+  if(!eurValue){
+    const dbVal = TRANSFERMARKT_DB_EUR[key]
+      || Object.entries(TRANSFERMARKT_DB_EUR).find(([k]) => k.includes(key) || key.includes(k))?.[1]
+      || 0;
+    if(dbVal > 0){
+      eurValue = dbVal;
+      source = '📊 Transfermarkt Base 2026';
+    }
+  }
+
+  return { eurValue, source, tmClub, tmPhoto };
+}
+
+function convertEurToLeagueBrl(eurValue, mode){
+  const eur = Number(eurValue) || 0;
+  if(eur <= 0) return 0;
+  if(mode === 'eur_1to1') return Math.round(eur);
+  if(mode === 'league_10pct') return Math.round(eur * tmEurBrlRate * 0.10);
+  if(mode === 'compact_10pct') return Math.round(eur * 0.10);
+  return Math.round(eur * tmEurBrlRate); // 'brl_real'
+}
+
+async function lookupSinglePlayerTransfermarkt(){
+  const name = $('pName').value.trim();
+  if(!name) return toast('Digite o nome do jogador antes de buscar no Transfermarkt.');
+  const btn = $('tmSingleLookupBtn');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Buscando...';
+  try {
+    await fetchEurBrlRate();
+    const res = await fetchTransfermarktPlayer(name);
+    if(!res.eurValue){
+      if($('pTmHint')) $('pTmHint').innerHTML = `<span class="danger-txt">Atleta "${esc(name)}" não encontrado automaticamente no Transfermarkt. Preencha o valor manualmente.</span>`;
+      return toast('Jogador não encontrado no Transfermarkt.');
+    }
+    const mode = localStorage.getItem('ml_tm_scale') || 'brl_real';
+    const brlVal = convertEurToLeagueBrl(res.eurValue, mode);
+    const oldVal = Number($('pValue').value) || 0;
+    const oldClause = Number($('pClause').value) || (oldVal * 4);
+    const shieldBonus = Math.max(0, oldClause - (oldVal * 4));
+    $('pValue').value = brlVal;
+    $('pClause').value = (brlVal * 4) + shieldBonus;
+    if($('pSalary')) $('pSalary').value = money(calcSalary(brlVal));
+    if(res.tmPhoto && !$('pPhotoUrl').value.trim()) $('pPhotoUrl').value = res.tmPhoto;
+    if($('pTmHint')){
+      $('pTmHint').innerHTML = `<span class="accent">${res.source}: <b>${fmtEur(res.eurValue)}</b> (1 € = R$ ${tmEurBrlRate.toFixed(2).replace('.', ',')}) → <b>${money(brlVal)}</b> • Salário (0,05%): <b>${money(calcSalary(brlVal))}</b></span>`;
+    }
+    toast(`Transfermarkt: ${fmtEur(res.eurValue)} → ${money(brlVal)}!`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function openTransfermarktModal(){
+  if(!isAdmin()) return toast('Apenas o ADM pode sincronizar valores com o Transfermarkt.');
+  if(!players.length) return toast('Cadastre jogadores na liga antes de sincronizar.');
+  const savedMode = localStorage.getItem('ml_tm_scale') || 'brl_real';
+  if($('tmScaleMode')) $('tmScaleMode').value = savedMode;
+  if($('tmClubFilter')){
+    $('tmClubFilter').innerHTML = `<option value="ALL">Todos os clubes (${players.length})</option>`
+      + clubs.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  }
+  if($('tmSearchInput')) $('tmSearchInput').value = '';
+  openModal('tmSyncModal');
+  await runTransfermarktFetch();
+}
+
+async function runTransfermarktFetch(){
+  const btn = $('tmRefreshBtn');
+  if(btn) btn.disabled = true;
+  $('tmProgressWrap').classList.remove('hidden');
+  $('tmPreviewList').innerHTML = '<div class="empty">Consultando cotações e valores de mercado no Transfermarkt...</div>';
+
+  await fetchEurBrlRate();
+  if($('tmRateBadge')) $('tmRateBadge').textContent = `1 € = R$ ${tmEurBrlRate.toFixed(2).replace('.', ',')}`;
+
+  const mode = $('tmScaleMode')?.value || 'brl_real';
+  localStorage.setItem('ml_tm_scale', mode);
+
+  const results = [];
+  const batchSize = 6;
+  for(let i = 0; i < players.length; i += batchSize){
+    const slice = players.slice(i, i + batchSize);
+    const chunk = await Promise.all(slice.map(async p => {
+      const tm = await fetchTransfermarktPlayer(p.name);
+      const oldVal = Number(p.market_value) || 0;
+      const oldClause = Number(p.release_clause) || (oldVal * 4);
+      const shieldBonus = Math.max(0, oldClause - (oldVal * 4));
+      const newVal = tm.eurValue > 0 ? convertEurToLeagueBrl(tm.eurValue, mode) : oldVal;
+      const newClause = (newVal * 4) + shieldBonus;
+      return {
+        player: p,
+        clubName: clubs.find(c => c.id === p.club_id)?.name || 'Mercado Livre',
+        eurValue: tm.eurValue,
+        source: tm.source || 'Sem alteração (mantido)',
+        tmClub: tm.tmClub,
+        tmPhoto: tm.tmPhoto,
+        oldVal,
+        newVal,
+        oldSalary: calcSalary(oldVal),
+        newSalary: calcSalary(newVal),
+        shieldBonus,
+        newClause,
+        checked: tm.eurValue > 0
+      };
+    }));
+    results.push(...chunk);
+    const done = Math.min(players.length, i + batchSize);
+    const pct = Math.round((done / players.length) * 100);
+    $('tmProgressText').textContent = `Consultando Transfermarkt... ${done} de ${players.length} atletas`;
+    $('tmProgressPct').textContent = `${pct}%`;
+    $('tmProgressBar').style.width = `${pct}%`;
+  }
+
+  tmSyncRows = results;
+  $('tmProgressWrap').classList.add('hidden');
+  if(btn) btn.disabled = false;
+  renderTmPreviewList();
+}
+
+function recomputeTmPreview(){
+  const mode = $('tmScaleMode')?.value || 'brl_real';
+  localStorage.setItem('ml_tm_scale', mode);
+  tmSyncRows.forEach(row => {
+    row.newVal = row.eurValue > 0 ? convertEurToLeagueBrl(row.eurValue, mode) : row.oldVal;
+    row.newSalary = calcSalary(row.newVal);
+    row.newClause = (row.newVal * 4) + row.shieldBonus;
+  });
+  renderTmPreviewList();
+}
+
+function toggleAllTmChecks(state){
+  const clubF = $('tmClubFilter')?.value || 'ALL';
+  const q = norm($('tmSearchInput')?.value || '');
+  tmSyncRows.forEach(r => {
+    const matchClub = clubF === 'ALL' || r.player.club_id === clubF;
+    const matchQ = !q || norm(r.player.name).includes(q) || norm(r.clubName).includes(q);
+    if(matchClub && matchQ && r.eurValue > 0) r.checked = state;
+  });
+  renderTmPreviewList();
+}
+
+function toggleTmRowCheck(playerId, checked){
+  const row = tmSyncRows.find(r => r.player.id === playerId);
+  if(row) row.checked = checked;
+  updateTmSummaryText();
+}
+
+function updateTmSummaryText(){
+  const matched = tmSyncRows.filter(r => r.eurValue > 0).length;
+  const selected = tmSyncRows.filter(r => r.checked).length;
+  if($('tmSummaryStats')){
+    $('tmSummaryStats').textContent = `${matched} de ${tmSyncRows.length} encontrados no Transfermarkt • ${selected} selecionados para atualizar`;
+  }
+  if($('tmApplyBtn')){
+    $('tmApplyBtn').textContent = `✅ Aplicar Valores & Salários (${selected})`;
+    $('tmApplyBtn').disabled = selected === 0;
+  }
+}
+
+function renderTmPreviewList(){
+  const clubF = $('tmClubFilter')?.value || 'ALL';
+  const q = norm($('tmSearchInput')?.value || '');
+  const filtered = tmSyncRows.filter(r => {
+    if(clubF !== 'ALL' && r.player.club_id !== clubF) return false;
+    if(q && !norm(r.player.name).includes(q) && !norm(r.clubName).includes(q)) return false;
+    return true;
+  });
+
+  updateTmSummaryText();
+
+  $('tmPreviewList').innerHTML = filtered.map(r => {
+    const diff = r.newVal - r.oldVal;
+    const diffTag = r.eurValue <= 0
+      ? `<span class="tag">Não encontrado</span>`
+      : (diff > 0
+        ? `<span class="tag green">▲ +${money(diff)}</span>`
+        : (diff < 0 ? `<span class="tag red">▼ ${money(diff)}</span>` : `<span class="tag cyan">= Mantido</span>`));
+    return `<div class="tm-row ${r.checked ? 'changed' : ''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-width:0;flex:1">
+          <input type="checkbox" ${r.checked ? 'checked' : ''} ${r.eurValue <= 0 ? 'disabled' : ''} onchange="toggleTmRowCheck('${r.player.id}', this.checked)" style="width:16px;height:16px;accent-color:var(--emerald)">
+          <div style="min-width:0">
+            <b style="font-size:13px">${esc(r.player.name)}</b> <span class="sub">(${esc(r.player.position)} • ${esc(r.clubName)})</span>
+            <div class="sub" style="font-size:10px">${esc(r.source)}${r.tmClub ? ' • ' + esc(r.tmClub) : ''}</div>
+          </div>
+        </label>
+        ${diffTag}
+      </div>
+      <div class="moneygrid three-cols">
+        <div><span>ATUAL → TRANSFERMARKT</span><strong>${money(r.oldVal)} → <span class="accent">${r.eurValue > 0 ? money(r.newVal) : '—'}</span></strong><span style="font-size:9px">${r.eurValue > 0 ? fmtEur(r.eurValue) : ''}</span></div>
+        <div><span>NOVO SALÁRIO (0,05%)</span><strong class="cyan">${money(r.newSalary)} / jogo</strong><span style="font-size:9px">Antes: ${money(r.oldSalary)}</span></div>
+        <div><span>NOVA MULTA (4X${r.shieldBonus > 0 ? ' + BLIND.' : ''})</span><strong class="gold">${money(r.newClause)}</strong></div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty">Nenhum atleta corresponde ao filtro selecionado.</div>';
+}
+
+async function applyTransfermarktSync(){
+  return runLocked('tm-sync-apply', async () => {
+    if(!isAdmin()) return toast('Apenas o ADM pode aplicar atualizações de mercado.');
+    const toUpdate = tmSyncRows.filter(r => r.checked && r.eurValue > 0);
+    if(!toUpdate.length) return toast('Selecione pelo menos um atleta para atualizar.');
+
+    const btn = $('tmApplyBtn');
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Salvando no banco...';
+
+    let okCount = 0;
+    for(const r of toUpdate){
+      const payload = {
+        market_value: r.newVal,
+        release_clause: r.newClause
+      };
+      if(r.tmPhoto && !r.player.photo_url) payload.photo_url = r.tmPhoto;
+      const { error } = await sb.from('players').update(payload).eq('id', r.player.id);
+      if(!error) okCount++;
+    }
+
+    try {
+      await sb.from('league_news').insert({
+        league_id: league.id,
+        category: 'TRANSFERMARKT',
+        title: `📊 Valores de Mercado Atualizados (Transfermarkt)!`,
+        body: `${okCount} atletas tiveram seus valores de mercado, multas rescisórias e salários (0,05%) atualizados com base no Transfermarkt.`
+      });
+    } catch(_) {}
+
+    btn.disabled = false;
+    btn.textContent = orig;
+    closeModal('tmSyncModal');
+    toast(`✅ ${okCount} jogadores atualizados com dados do Transfermarkt e salários de 0,05%!`);
+    await loadAll();
   });
 }
 
