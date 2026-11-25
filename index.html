@@ -1742,8 +1742,9 @@ async function loadAll(){
     sb.from('transfer_proposals').select('*').eq('league_id', id).order('created_at', { ascending: false }),
     sb.from('ledger_entries').select('*').eq('league_id', id).order('created_at', { ascending: false }),
     sb.from('league_members').select('role,user_id,profiles(email)').eq('league_id', id),
-    sb.from('league_news').select('*').eq('league_id', id).order('created_at', { ascending: false }).limit(500),
-    sb.from('league_sponsors').select('*').eq('league_id', id).order('created_at', { ascending: false })
+    sb.from('league_news').select('*').eq('league_id', id).neq('category', 'SISTEMA').order('created_at', { ascending: false }).limit(500),
+    sb.from('league_sponsors').select('*').eq('league_id', id).order('created_at', { ascending: false }),
+    sb.from('league_news').select('*').eq('league_id', id).eq('category', 'SISTEMA').order('created_at', { ascending: false })
   ]);
   for(let i = 0; i < q.length; i++){
     if(q[i].error){ console.warn('Falha ao carregar dados da liga:', q[i].error); toast('Falha ao carregar dados: ' + q[i].error.message); }
@@ -1759,7 +1760,7 @@ async function loadAll(){
   proposals = q[7].data || [];
   ledger = q[8].data || [];
   members = q[9].data || [];
-  news = q[10].data || [];
+  news = [...(q[10].data || []), ...(q[12].data || [])].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   sponsors = q[11].data || [];
   render();
   $('noLeague').classList.add('hidden');
@@ -3368,7 +3369,11 @@ function handlePhotoFile(input){
 }
 function autoCalcClause(){
   const v = +$('pValue').value || 0;
-  $('pClause').value = v * 4;
+  const editId = $('editPlayerId')?.value;
+  const existing = editId ? players.find(x => x.id === editId) : null;
+  const oldBase = existing ? (Number(existing.market_value) || 0) * 4 : 0;
+  const shieldBonus = existing ? Math.max(0, Number(existing.release_clause || oldBase) - oldBase) : 0;
+  $('pClause').value = (v * 4) + shieldBonus;
   if($('pSalary')) $('pSalary').value = money(calcSalary(v));
 }
 function openPlayerModal(playerId){
@@ -3974,33 +3979,40 @@ async function saveMatchResult(){ return runLocked('match', async () => {
 
 async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, wasEdited = false){
   if(!league?.id || !season?.id || !matchId) return;
-  const { data: freshLedger } = await sb.from('ledger_entries').select('id,club_id,entry_type,amount,description,created_at').eq('league_id', league.id).eq('season_id', season.id).order('created_at', { ascending: false }).limit(40);
-  const recent = freshLedger || [];
   const stadiumRate = Math.round(Number(league.home_stadium_income) || 0);
-  const hName = clubs.find(c => c.id === homeClubId)?.name || 'Mandante';
+  if(stadiumRate <= 0 || !homeClubId) return;
 
-  if(stadiumRate > 0 && homeClubId){
-    const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${homeClubId}]`;
-    const alreadyTagged = recent.some(l => String(l.description || '').includes(bilhTag));
-    // Verifica se o RPC acabou de lançar a bilheteria (nos últimos 15s) para este clube
-    const nowMs = Date.now();
-    const rpcInsertedBilh = !wasEdited && recent.some(l =>
-      l.club_id === homeClubId &&
-      l.entry_type === 'income' &&
-      Math.round(Number(l.amount)) === stadiumRate &&
-      (nowMs - new Date(l.created_at).getTime()) < 15000 &&
-      !String(l.description || '').includes('[MATCH_WAGES:')
-    );
-    if(!alreadyTagged && !rpcInsertedBilh){
-      await sb.rpc('post_ledger_entry', {
-        p_league_id: league.id,
-        p_season_id: season.id,
-        p_club_id: homeClubId,
-        p_type: 'income',
-        p_amount: stadiumRate,
-        p_description: `Bilheteria Jogo em Casa — ${hName} ${bilhTag}`
-      });
-    }
+  const hName = clubs.find(c => c.id === homeClubId)?.name || 'Mandante';
+  const aName = clubs.find(c => c.id === awayClubId)?.name || 'Visitante';
+  const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${homeClubId}]`;
+
+  const { data: existingBilh } = await sb
+    .from('ledger_entries')
+    .select('id,description,created_at')
+    .eq('league_id', league.id)
+    .eq('season_id', season.id)
+    .eq('club_id', homeClubId)
+    .eq('entry_type', 'income')
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  const recent = existingBilh || [];
+  const alreadyTagged = recent.some(l => String(l.description || '').includes(bilhTag));
+  const rpcMatchLabel = `${hName} x ${aName}`;
+  const alreadyRecordedByRpc = !wasEdited && recent.some(l => {
+    const desc = String(l.description || '');
+    return desc.includes('Bilheteria') && (desc.includes(matchId) || desc.includes(rpcMatchLabel));
+  });
+
+  if(!alreadyTagged && !alreadyRecordedByRpc){
+    await sb.rpc('post_ledger_entry', {
+      p_league_id: league.id,
+      p_season_id: season.id,
+      p_club_id: homeClubId,
+      p_type: 'income',
+      p_amount: stadiumRate,
+      p_description: `Bilheteria Jogo em Casa — ${hName} ${bilhTag}`
+    });
   }
 }
 
@@ -5376,9 +5388,11 @@ async function applyTransfermarktSync(){
 
     let okCount = 0;
     for(const r of toUpdate){
+      const oldBase = Number(r.player.market_value || 0) * 4;
+      const shieldBonus = Math.max(0, Number(r.player.release_clause || oldBase) - oldBase);
       const payload = {
         market_value: r.newVal,
-        release_clause: r.newClause
+        release_clause: (r.newVal * 4) + shieldBonus
       };
       if(r.tmPhoto && !r.player.photo_url) payload.photo_url = r.tmPhoto;
       const { error } = await sb.from('players').update(payload).eq('id', r.player.id);
