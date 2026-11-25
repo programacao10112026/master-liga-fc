@@ -1687,13 +1687,14 @@ async function boot(){
 async function loadMemberships(){
   const { data, error } = await sb.from('league_members').select('league_id,role,leagues(*)').eq('user_id', user.id);
   if(error){ toast('Erro ao carregar ligas: ' + error.message); return; }
-  if(!data || !data.length){
+  const validRows = (data || []).filter(m => m.leagues && m.leagues.id);
+  if(!validRows.length){
     $('noLeague').classList.remove('hidden');
     $('leagueContent').classList.add('hidden');
     return;
   }
-  league = data[0].leagues;
-  membership = data[0];
+  league = validRows[0].leagues;
+  membership = validRows[0];
   await loadAll();
 }
 
@@ -1705,7 +1706,7 @@ async function createLeague(){
   const { data, error } = await sb.from('leagues').insert({ name, invite_code: code, created_by: user.id }).select().single();
   if(error) return toast('Não foi possível criar a liga: ' + error.message);
   const memberResult = await sb.from('league_members').insert({ league_id: data.id, user_id: user.id, role: 'admin' });
-  if(memberResult.error){
+  if(memberResult.error && memberResult.error.code !== '23505'){
     console.error(memberResult.error);
     await sb.from('leagues').delete().eq('id', data.id);
     return toast('A liga foi criada, mas não foi possível registrar você como administrador. Verifique as políticas do banco e tente novamente.');
@@ -1736,7 +1737,7 @@ async function loadAll(){
     sb.from('seasons').select('*').eq('league_id', id).order('created_at', { ascending: false }),
     sb.from('clubs').select('*').eq('league_id', id).order('name'),
     sb.from('players').select('*').eq('league_id', id).order('overall', { ascending: false }),
-    sb.from('matches').select('*').eq('league_id', id).order('match_order', { ascending: true }),
+    sb.from('matches').select('*').eq('league_id', id).order('match_order', { ascending: true }).order('round_number', { ascending: true }).order('created_at', { ascending: true }),
     sb.from('match_events').select('*').eq('league_id', id),
     sb.from('transfers').select('*').eq('league_id', id).order('created_at', { ascending: false }),
     sb.from('transfer_proposals').select('*').eq('league_id', id).order('created_at', { ascending: false }),
@@ -1838,11 +1839,12 @@ function render(){
   $('notifBadge').textContent = pendingProps.length;
   $('notifBadge').classList.toggle('hidden', pendingProps.length === 0);
 
+  const cleanNewsText = txt => String(txt || '').replace(/\s*\[(?:SPONSOR_SIGN|SPONSOR_UNSIGN|SPONSOR_RATE|ROUND_DATES|MATCH_FLAGS|GOAL_TIMING|SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|REVERSAL|AUDIT_FIX[^\]]*):[^\]]+\]/g, '').trim();
   const visibleNews = news.filter(n => String(n.category || '').toUpperCase() !== 'SISTEMA');
   if(visibleNews.length){
-    $('tickerTitle').textContent = `${visibleNews[0].title} — ${visibleNews[0].body}`;
-    $('dashNews').innerHTML = visibleNews.slice(0, 4).map(n => `<div class="newsitem"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
-    $('allNewsList').innerHTML = visibleNews.map(n => `<div class="newsitem"><div style="display:flex;justify-content:space-between"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><span class="sub">${new Date(n.created_at).toLocaleString('pt-BR')}</span></div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
+    $('tickerTitle').textContent = `${visibleNews[0].title} — ${cleanNewsText(visibleNews[0].body)}`;
+    $('dashNews').innerHTML = visibleNews.slice(0, 4).map(n => `<div class="newsitem"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><h4>${esc(n.title)}</h4><p>${esc(cleanNewsText(n.body))}</p></div>`).join('');
+    $('allNewsList').innerHTML = visibleNews.map(n => `<div class="newsitem"><div style="display:flex;justify-content:space-between"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><span class="sub">${new Date(n.created_at).toLocaleString('pt-BR')}</span></div><h4>${esc(n.title)}</h4><p>${esc(cleanNewsText(n.body))}</p></div>`).join('');
   } else {
     $('dashNews').innerHTML = '<div class="empty">Nenhuma notícia registrada ainda.</div>';
     $('allNewsList').innerHTML = '<div class="empty">As notícias aparecerão automaticamente conforme os jogos e negócios acontecerem.</div>';
@@ -2256,7 +2258,11 @@ function render(){
 
 function go(page){
   document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === page));
-  document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('[data-page]').forEach(b => {
+    const active = b.dataset.page === page;
+    b.classList.toggle('active', active);
+    if(active && b.closest('.mobilebar')) b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  });
   const titles = {
     dashboard: ['Início & Ao Vivo', 'Acompanhe a liga em tempo real.'],
     news: ['Plantão ao Vivo', 'Todas as movimentações e placares.'],
@@ -2329,7 +2335,20 @@ const paidSponsorCache = new Set();
 
 function downloadSelfHtml(){
   try {
-    const docHtml = '<!doctype html>\n' + document.documentElement.outerHTML;
+    const clone = document.documentElement.cloneNode(true);
+    const authEl = clone.querySelector('#authScreen');
+    const appEl = clone.querySelector('#app');
+    const noLeagueEl = clone.querySelector('#noLeague');
+    const leagueContentEl = clone.querySelector('#leagueContent');
+    if(authEl) authEl.classList.remove('hidden');
+    if(appEl) appEl.classList.add('hidden');
+    if(noLeagueEl) noLeagueEl.classList.add('hidden');
+    if(leagueContentEl) leagueContentEl.classList.add('hidden');
+    ['miniTable','fullTable','scorersList','assistsList','mkt-allplayers','transferHistory','clubCards','matchesScheduled','matchesPlayed','matchFinanceRows','ledgerRows','sponsorsList','activeClubSponsorsWrap','dashNews','allNewsList','seasonList','membersList'].forEach(id => {
+      const el = clone.querySelector('#' + id);
+      if(el) el.innerHTML = '';
+    });
+    const docHtml = '<!doctype html>\n' + clone.outerHTML;
     const blob = new Blob([docHtml], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -3135,11 +3154,15 @@ function populateSponsorGoalSelects(){
 
 function randomizeSponsorGoals(){
   populateSponsorGoalSelects();
-  const idx1 = Math.floor(Math.random() * SPONSOR_MISSIONS.length);
-  let idx2 = Math.floor(Math.random() * (SPONSOR_MISSIONS.length - 1));
+  const plannedGames = clubs.length > 1 ? (clubs.length - 1) * 2 : 10;
+  const pool = plannedGames < 10
+    ? SPONSOR_MISSIONS.filter(m => m.id !== 'defesa_aco' && m.id !== 'campeao_regularidade')
+    : SPONSOR_MISSIONS;
+  const idx1 = Math.floor(Math.random() * pool.length);
+  let idx2 = Math.floor(Math.random() * (pool.length - 1));
   if(idx2 >= idx1) idx2++;
-  $('spGoal1').value = SPONSOR_MISSIONS[idx1].id;
-  $('spGoal2').value = SPONSOR_MISSIONS[idx2].id;
+  $('spGoal1').value = pool[idx1].id;
+  $('spGoal2').value = pool[idx2].id;
   updateSponsorMissionsPreview();
 }
 
@@ -3536,6 +3559,11 @@ function openDrawModal(){
   openModal('drawModal');
 }
 async function runFixtureDraw(){ return runLocked('draw', async () => {
+  if(!isAdmin()) return toast('Apenas o ADM pode sortear os jogos.');
+  if(!season) return toast('Crie uma temporada primeiro.');
+  if(clubs.length < 2) return toast('Cadastre pelo menos 2 clubes antes de sortear a tabela.');
+  const existingSeasonMatches = matches.filter(m => m.season_id === season.id);
+  if(existingSeasonMatches.length > 0 && !confirm(`Já existem ${existingSeasonMatches.length} jogo(s) cadastrados nesta temporada. Deseja sortear os confrontos mesmo assim?`)) return;
   const dbl = $('drawFormat').value === 'true';
   const { error } = await sb.rpc('generate_season_fixtures', { p_league_id: league.id, p_season_id: season.id, p_double_round: dbl });
   if(error) return toast(error.message);
@@ -3689,10 +3717,17 @@ function syncScoreFromGoalEvents(){
 function stepScore(side, delta){
   const input = side === 'home' ? $('mHG') : $('mAG');
   const list = side === 'home' ? $('homeEventsList') : $('awayEventsList');
+  const clubId = side === 'home' ? $('mHome').value : $('mAway').value;
+  const hasPlayers = players.some(p => p.club_id === clubId);
   const current = Math.max(0, parseInt(input.value, 10) || 0);
   const next = Math.max(0, current + delta);
   if(delta > 0){
-    addSideEvent(side, 'goal');
+    if(hasPlayers){
+      addSideEvent(side, 'goal');
+    } else {
+      input.value = next;
+      updateMatchFinancePreview();
+    }
   } else if(delta < 0){
     const goalCards = list.querySelectorAll('.side-ev-card[data-type="goal"]');
     if(goalCards.length > 0){
@@ -3950,14 +3985,19 @@ async function saveMatchResult(){ return runLocked('match', async () => {
     await revertMatchFinancials(oldMatch, 'Estorno Edição de Placar');
   }
 
-  const { error } = await sb.rpc('record_match_with_events', {
+  const beforeSaveTs = Date.now() - 2500;
+  const { data: rpcData, error } = await sb.rpc('record_match_with_events', {
     p_league_id: league.id, p_season_id: season.id, p_match_id: editMatchId,
     p_home_club_id: h, p_away_club_id: a, p_home_goals: hg, p_away_goals: ag, p_round_number: rnd, p_events: evs
   });
   if(error) return toast(error.message);
 
-  const { data: latestMatches } = await sb.from('matches').select('id,home_club_id,away_club_id,round_number').eq('league_id', league.id).eq('season_id', season.id).eq('home_club_id', h).eq('away_club_id', a).eq('round_number', rnd).order('created_at', { ascending: false }).limit(1);
-  const savedMatchId = editMatchId || latestMatches?.[0]?.id;
+  const rpcReturnedId = typeof rpcData === 'string' ? rpcData : (rpcData?.id || rpcData?.match_id || null);
+  let savedMatchId = editMatchId || rpcReturnedId;
+  if(!savedMatchId){
+    const { data: latestMatches } = await sb.from('matches').select('id,home_club_id,away_club_id,round_number').eq('league_id', league.id).eq('season_id', season.id).eq('home_club_id', h).eq('away_club_id', a).eq('round_number', rnd).order('created_at', { ascending: false }).limit(1);
+    savedMatchId = latestMatches?.[0]?.id;
+  }
 
   if(savedMatchId && (editMatchId || isDerby === '1' || hCome === '1' || aCome === '1' || timingTokens.length)){
     try {
@@ -3971,19 +4011,18 @@ async function saveMatchResult(){ return runLocked('match', async () => {
 
   if(savedMatchId){
     await processMatchWages(savedMatchId, h, a, wasAlreadyPlayed);
-    await ensureMatchBilheteriaAndBonuses(savedMatchId, h, a, wasAlreadyPlayed);
+    await ensureMatchBilheteriaAndBonuses(savedMatchId, h, a, beforeSaveTs);
   }
 
   closeModal('matchModal'); toast('Placar, bilheteria, salários (0,05%) e lucro atualizados com exatidão!'); await loadAll();
 }); }
 
-async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, wasEdited = false){
+async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, beforeSaveTs = 0){
   if(!league?.id || !season?.id || !matchId) return;
   const stadiumRate = Math.round(Number(league.home_stadium_income) || 0);
   if(stadiumRate <= 0 || !homeClubId) return;
 
   const hName = clubs.find(c => c.id === homeClubId)?.name || 'Mandante';
-  const aName = clubs.find(c => c.id === awayClubId)?.name || 'Visitante';
   const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${homeClubId}]`;
 
   const { data: existingBilh } = await sb
@@ -3994,17 +4033,21 @@ async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, 
     .eq('club_id', homeClubId)
     .eq('entry_type', 'income')
     .order('created_at', { ascending: false })
-    .limit(30);
+    .limit(25);
 
   const recent = existingBilh || [];
-  const alreadyTagged = recent.some(l => String(l.description || '').includes(bilhTag));
-  const rpcMatchLabel = `${hName} x ${aName}`;
-  const alreadyRecordedByRpc = !wasEdited && recent.some(l => {
+  const alreadyRecorded = recent.some(l => {
     const desc = String(l.description || '');
-    return desc.includes('Bilheteria') && (desc.includes(matchId) || desc.includes(rpcMatchLabel));
+    if(desc.includes(bilhTag)) return true;
+    if(desc.includes('Bilheteria')){
+      if(desc.includes(matchId)) return true;
+      const createdMs = new Date(l.created_at || 0).getTime();
+      if(beforeSaveTs > 0 && createdMs >= beforeSaveTs) return true;
+    }
+    return false;
   });
 
-  if(!alreadyTagged && !alreadyRecordedByRpc){
+  if(!alreadyRecorded){
     await sb.rpc('post_ledger_entry', {
       p_league_id: league.id,
       p_season_id: season.id,
@@ -4079,11 +4122,18 @@ async function auditAndFixLeagueFinances(){
       });
 
       // 2. Receita e despesa efetivamente registradas no livro-caixa para partidas (excluindo transferências, blindagens e prêmios)
-      const isNonMatchEntry = (desc) => /\[(SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS|SPONSOR_PAYOUT|AUDIT_FIX_INC|AUDIT_FIX_EXP):/.test(desc)
+      const isNonMatchEntry = (desc) => /\[(SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS|SPONSOR_PAYOUT|AUDIT_FIX_INC|AUDIT_FIX_EXP|REVERSAL):/.test(desc)
         || /(Transferência|Multa rescisória|Blindagem|Prêmio|Campeão|Artilheiro|Assistências|Rodada \()/i.test(desc);
 
       const allClubSeasonLedger = ledger.filter(l => l.club_id === c.id && (!l.season_id || l.season_id === season.id));
       const baseMatchLedger = allClubSeasonLedger.filter(l => !isNonMatchEntry(String(l.description || '')));
+
+      const revIncNet = allClubSeasonLedger
+        .filter(l => String(l.description || '').includes('[REVERSAL:') && l.entry_type === 'expense')
+        .reduce((s, l) => s - Number(l.amount || 0), 0);
+      const revExpNet = allClubSeasonLedger
+        .filter(l => String(l.description || '').includes('[REVERSAL:') && l.entry_type === 'income')
+        .reduce((s, l) => s - Number(l.amount || 0), 0);
 
       const auditIncNet = allClubSeasonLedger
         .filter(l => String(l.description || '').includes('[AUDIT_FIX_INC:'))
@@ -4092,8 +4142,8 @@ async function auditAndFixLeagueFinances(){
         .filter(l => String(l.description || '').includes('[AUDIT_FIX_EXP:'))
         .reduce((s, l) => s + (l.entry_type === 'expense' ? Number(l.amount || 0) : -Number(l.amount || 0)), 0);
 
-      const actualMatchIncome = Math.round(baseMatchLedger.filter(l => l.entry_type === 'income').reduce((s, l) => s + Number(l.amount || 0), 0) + auditIncNet);
-      const actualMatchExpense = Math.round(baseMatchLedger.filter(l => l.entry_type === 'expense').reduce((s, l) => s + Number(l.amount || 0), 0) + auditExpNet);
+      const actualMatchIncome = Math.round(baseMatchLedger.filter(l => l.entry_type === 'income').reduce((s, l) => s + Number(l.amount || 0), 0) + revIncNet + auditIncNet);
+      const actualMatchExpense = Math.round(baseMatchLedger.filter(l => l.entry_type === 'expense').reduce((s, l) => s + Number(l.amount || 0), 0) + revExpNet + auditExpNet);
 
       const diffIncome = expectedMatchIncome - actualMatchIncome;
       const diffExpense = expectedMatchExpense - actualMatchExpense;
@@ -5132,9 +5182,10 @@ async function fetchEurBrlRate(){
 
 let tmLiveApiAvailable = true;
 
-async function fetchTransfermarktPlayer(playerName, tryLive = true){
+async function fetchTransfermarktPlayer(playerName, tryLive = true, expectedPos = ''){
   const cleanName = String(playerName || '').trim();
   const key = norm(cleanName);
+  const isGk = norm(expectedPos) === 'gol';
   let eurValue = 0;
   let source = '';
   let tmClub = '';
@@ -5152,10 +5203,16 @@ async function fetchTransfermarktPlayer(playerName, tryLive = true){
       if(res.ok){
         const json = await res.json();
         const list = Array.isArray(json?.results) ? json.results : [];
-        if(list.length){
-          const exact = list.find(r => norm(r.name) === key)
-            || list.find(r => norm(r.name).includes(key) || key.includes(norm(r.name)))
-            || list[0];
+        const compatible = list.filter(r => {
+          const rPos = norm(r?.position || '');
+          if(!rPos || !expectedPos) return true;
+          return isGk ? rPos.includes('goalkeeper') : !rPos.includes('goalkeeper');
+        });
+        const pool = compatible.length ? compatible : [];
+        if(pool.length){
+          const exact = pool.find(r => norm(r.name) === key)
+            || pool.find(r => norm(r.name).includes(key) || key.includes(norm(r.name)))
+            || pool[0];
           const parsed = parseTransfermarktEur(exact?.marketValue ?? exact?.market_value);
           if(parsed > 0){
             eurValue = parsed;
@@ -5204,7 +5261,7 @@ async function lookupSinglePlayerTransfermarkt(){
   btn.textContent = 'Buscando...';
   try {
     await fetchEurBrlRate();
-    const res = await fetchTransfermarktPlayer(name);
+    const res = await fetchTransfermarktPlayer(name, true, $('pPos')?.value || '');
     if(!res.eurValue){
       if($('pTmHint')) $('pTmHint').innerHTML = `<span class="danger-txt">Atleta "${esc(name)}" não encontrado automaticamente no Transfermarkt. Preencha o valor manualmente.</span>`;
       return toast('Jogador não encontrado no Transfermarkt.');
@@ -5260,7 +5317,7 @@ async function runTransfermarktFetch(){
   for(let i = 0; i < players.length; i += batchSize){
     const slice = players.slice(i, i + batchSize);
     const chunk = await Promise.all(slice.map(async p => {
-      const tm = await fetchTransfermarktPlayer(p.name, tmLiveApiAvailable);
+      const tm = await fetchTransfermarktPlayer(p.name, tmLiveApiAvailable, p.position || '');
       if(tm.liveFailed) tmLiveApiAvailable = false;
       const oldVal = Number(p.market_value) || 0;
       const oldClause = Number(p.release_clause) || (oldVal * 4);
@@ -5445,13 +5502,7 @@ async function installMasterLigaApp(){
     ? 'No Safari: toque em Compartilhar (□↑) e depois em "Adicionar à Tela de Início".'
     : 'No menu do Chrome (⋮): toque em "Instalar aplicativo" ou "Adicionar à tela inicial".');
 }
-if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')){
-  window.addEventListener('load', () => {
-    const swScript = "self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});";
-    const swUrl = URL.createObjectURL(new Blob([swScript], { type: 'application/javascript' }));
-    navigator.serviceWorker.register(swUrl).catch(() => {});
-  });
-}
+// PWA instalável via Web App Manifest inline.
 
 window.addEventListener('DOMContentLoaded', async () => {
   $('playerSearch')?.addEventListener('input', () => render());
