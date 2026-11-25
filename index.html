@@ -1008,15 +1008,42 @@ tr:last-child td{border:0}
 
    <!-- FINANCEIRO -->
    <section class="section" id="finance">
-    <div class="grid stats">
-     <div class="card stat"><label>CAIXA TOTAL CLUBES</label><strong id="fCash">R$ 0</strong></div>
-     <div class="card stat"><label>RECEITAS</label><strong id="fIncome" class="accent">R$ 0</strong></div>
-     <div class="card stat"><label>DESPESAS</label><strong id="fExpense" class="danger-txt">R$ 0</strong></div>
-     <div class="card stat"><label>FOLHA SALARIAL (0,05% / JOGO)</label><strong id="fPayroll" class="cyan">R$ 0</strong><small>Soma dos salários da liga</small></div>
+    <div class="card" style="margin-bottom:14px;padding:12px 14px">
+     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div>
+       <b style="font-size:13px">📊 Filtro Financeiro & Auditoria Exata</b>
+       <div class="sub">Bilheteria é paga exclusivamente ao <b>Mandante (Casa)</b>. Salário = <b>0,05%</b> do passe por jogo.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+       <select id="finClubFilter" onchange="render()" aria-label="Filtrar financeiro por clube" style="padding:8px 11px;border-radius:10px;background:rgba(5,9,19,.88);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700">
+        <option value="ALL">Todos os clubes</option>
+       </select>
+       <select id="finSeasonFilter" onchange="render()" aria-label="Filtrar financeiro por temporada" style="padding:8px 11px;border-radius:10px;background:rgba(5,9,19,.88);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700">
+        <option value="CURRENT">Temporada Atual</option>
+        <option value="ALL">Todas as Temporadas</option>
+       </select>
+      </div>
+     </div>
     </div>
+
+    <div class="grid stats">
+     <div class="card stat"><label>CAIXA DISPONÍVEL</label><strong id="fCash">R$ 0</strong><small id="fCashSub">Saldo atual em caixa</small></div>
+     <div class="card stat"><label>RECEITAS</label><strong id="fIncome" class="accent">R$ 0</strong><small>Bilheteria, gols, assist., prêmios</small></div>
+     <div class="card stat"><label>DESPESAS</label><strong id="fExpense" class="danger-txt">R$ 0</strong><small>Folha 0,05%, cartões, blindagem</small></div>
+     <div class="card stat"><label>LUCRO / PREJUÍZO LÍQUIDO</label><strong id="fNetProfit">R$ 0</strong><small id="fPayrollSub">Folha/jogo: R$ 0</small></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+     <div class="cardhead">
+      <div><h2>⚽ Balanço Exato por Partida (Receitas × Despesas × Lucro)</h2><div class="sub">Conferência matemática jogo a jogo: Bilheteria (Casa) + Bônus − Folha (0,05%) − Cartões.</div></div>
+      <button class="btn secondary sm hidden" id="auditFinBtn" onclick="auditAndFixLeagueFinances()">🔍 Auditar & Corrigir Discrepâncias</button>
+     </div>
+     <div class="tablewrap"><table><thead><tr><th>Jogo</th><th>Clube / Mando</th><th>Bilheteria</th><th>Bônus Gols/Ass.</th><th>Folha (0,05%)</th><th>Cartões</th><th>Receitas</th><th>Despesas</th><th>Lucro Líquido</th></tr></thead><tbody id="matchFinanceRows"></tbody></table></div>
+    </div>
+
     <div class="card">
      <div class="cardhead">
-      <div><h2>Livro-Caixa Automático & Manual</h2><div class="sub">Salários de 0,05% do valor de mercado são descontados por partida disputada.</div></div>
+      <div><h2>Livro-Caixa Automático & Manual</h2><div class="sub">Histórico completo de movimentações financeiras registradas.</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
        <button class="btn gold sm hidden" id="runPayrollBtn" onclick="runManualPayroll()">💸 Pagar Folha Salarial (Rodada)</button>
        <button class="btn sm" onclick="openModal('financeModal')">+ Lançamento</button>
@@ -1293,8 +1320,9 @@ tr:last-child td{border:0}
 <!-- MODAL: LANÇAR PLACAR + GOLS, ASSISTÊNCIAS E CARTÕES -->
 <div class="modalbg" id="matchModal"><div class="modal" style="width:min(540px,100%)"><h3>⚽ Placar & Eventos da Partida</h3><input type="hidden" id="mEditId">
  <div class="scoreboard-box">
-  <div class="sb-top-row">
+  <div class="sb-top-row" style="gap:8px;flex-wrap:wrap">
    <label class="sb-round-pill">RODADA <input id="mRound" type="number" min="1" value="1"></label>
+   <button type="button" class="btn secondary sm" onclick="swapMatchSides()" title="Inverter Mandante (Casa) e Visitante">⇄ Inverter Casa / Visitante</button>
   </div>
   <div class="sb-teams">
    <div class="sb-side home">
@@ -1351,6 +1379,8 @@ tr:last-child td{border:0}
    <div id="awayEventsList"><div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols do visitante.</div></div>
   </div>
  </div>
+
+ <div id="matchFinancePreview" class="card" style="background:rgba(5,9,18,0.88);margin-top:10px;padding:11px;border-color:rgba(16,185,129,0.28)"></div>
 
  <div class="modalfoot"><button class="btn danger hidden" id="delMatchBtn" style="margin-right:auto" onclick="deleteMatch($('mEditId').value)">🗑️ Excluir Jogo</button><button class="btn secondary" onclick="closeModal('matchModal')">Cancelar</button><button class="btn" onclick="saveMatchResult()">Salvar Placar e Atualizar Tudo</button></div>
 </div></div>
@@ -1672,10 +1702,11 @@ function render(){
   $('notifBadge').textContent = pendingProps.length;
   $('notifBadge').classList.toggle('hidden', pendingProps.length === 0);
 
-  if(news.length){
-    $('tickerTitle').textContent = `${news[0].title} — ${news[0].body}`;
-    $('dashNews').innerHTML = news.slice(0, 4).map(n => `<div class="newsitem"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
-    $('allNewsList').innerHTML = news.map(n => `<div class="newsitem"><div style="display:flex;justify-content:space-between"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><span class="sub">${new Date(n.created_at).toLocaleString('pt-BR')}</span></div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
+  const visibleNews = news.filter(n => String(n.category || '').toUpperCase() !== 'SISTEMA');
+  if(visibleNews.length){
+    $('tickerTitle').textContent = `${visibleNews[0].title} — ${visibleNews[0].body}`;
+    $('dashNews').innerHTML = visibleNews.slice(0, 4).map(n => `<div class="newsitem"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
+    $('allNewsList').innerHTML = visibleNews.map(n => `<div class="newsitem"><div style="display:flex;justify-content:space-between"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><span class="sub">${new Date(n.created_at).toLocaleString('pt-BR')}</span></div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p></div>`).join('');
   } else {
     $('dashNews').innerHTML = '<div class="empty">Nenhuma notícia registrada ainda.</div>';
     $('allNewsList').innerHTML = '<div class="empty">As notícias aparecerão automaticamente conforme os jogos e negócios acontecerem.</div>';
@@ -1905,19 +1936,95 @@ function render(){
         <span class="score">${m.home_goals} : ${m.away_goals}</span>
         <div class="match-team-side away"><span class="match-team-name">${esc(a?.name || '?')}</span>${crest(a)}</div>
       </div>
+      ${(() => {
+        const hf = h ? calcMatchClubFinance(m, h.id) : null;
+        const af = a ? calcMatchClubFinance(m, a.id) : null;
+        if(!hf || !af) return '';
+        const hCls = hf.lucroLiquido >= 0 ? 'accent' : 'danger-txt';
+        const aCls = af.lucroLiquido >= 0 ? 'accent' : 'danger-txt';
+        return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(4,7,15,0.72);padding:8px 9px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:11px">
+          <div><span class="sub" style="display:block;font-size:10px">🏠 ${esc(h?.name || 'Casa')} (Bilheteria: ${money(hf.bilheteria)})</span><span>Rec: <b class="accent">${money(hf.totalReceitas)}</b> • Desp: <b class="danger-txt">${money(hf.totalDespesas)}</b> • Lucro: <b class="${hCls}">${money(hf.lucroLiquido)}</b></span></div>
+          <div><span class="sub" style="display:block;font-size:10px">✈️ ${esc(a?.name || 'Visitante')} (Sem bilheteria)</span><span>Rec: <b class="accent">${money(af.totalReceitas)}</b> • Desp: <b class="danger-txt">${money(af.totalDespesas)}</b> • Lucro: <b class="${aCls}">${money(af.lucroLiquido)}</b></span></div>
+        </div>`;
+      })()}
       <div class="match-card-foot"><div class="sub">${esc(summary || 'Sem eventos individuais registrados')}</div></div>
     </div>`;
   }).join('') || '<div class="empty">Nenhuma partida realizada ainda.</div>') + `</div>`;
 
-  const visibleLedger = ledger.filter(x => !/\[(SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS):/.test(String(x.description || '')));
-  const inc = visibleLedger.filter(x => x.entry_type === 'income').reduce((a, x) => a + Number(x.amount), 0);
-  const exp = visibleLedger.filter(x => x.entry_type === 'expense').reduce((a, x) => a + Number(x.amount), 0);
-  const totalLeaguePayroll = players.filter(p => p.club_id).reduce((a, p) => a + calcSalary(p.market_value), 0);
-  $('fCash').textContent = money(clubs.reduce((a, c) => a + Number(c.balance), 0));
+  if($('auditFinBtn')) $('auditFinBtn').classList.toggle('hidden', !isAdmin());
+  const finClubEl = $('finClubFilter');
+  const prevFinClub = finClubEl?.value || 'ALL';
+  if(finClubEl){
+    finClubEl.innerHTML = `<option value="ALL">Todos os clubes (${clubs.length})</option>`
+      + clubs.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    if([...finClubEl.options].some(o => o.value === prevFinClub)) finClubEl.value = prevFinClub;
+  }
+  const selectedFinClub = finClubEl?.value || 'ALL';
+  const selectedFinSeason = $('finSeasonFilter')?.value || 'CURRENT';
+
+  const visibleLedger = ledger.filter(x => {
+    if(/\[(SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS):/.test(String(x.description || ''))) return false;
+    if(selectedFinClub !== 'ALL' && x.club_id !== selectedFinClub) return false;
+    if(selectedFinSeason === 'CURRENT' && season?.id && x.season_id && x.season_id !== season.id) return false;
+    return true;
+  });
+
+  const inc = Math.round(visibleLedger.filter(x => x.entry_type === 'income').reduce((a, x) => a + Number(x.amount || 0), 0));
+  const exp = Math.round(visibleLedger.filter(x => x.entry_type === 'expense').reduce((a, x) => a + Number(x.amount || 0), 0));
+  const netProfit = inc - exp;
+
+  const filteredClubsForFin = selectedFinClub === 'ALL' ? clubs : clubs.filter(c => c.id === selectedFinClub);
+  const cashSum = Math.round(filteredClubsForFin.reduce((a, c) => a + Number(c.balance || 0), 0));
+  const payrollPerGame = players
+    .filter(p => p.club_id && (selectedFinClub === 'ALL' || p.club_id === selectedFinClub))
+    .reduce((a, p) => a + calcSalary(p.market_value), 0);
+
+  $('fCash').textContent = money(cashSum);
+  if($('fCashSub')) $('fCashSub').textContent = selectedFinClub === 'ALL' ? 'Soma do caixa de todos os clubes' : `Caixa atual — ${filteredClubsForFin[0]?.name || ''}`;
   $('fIncome').textContent = money(inc);
   $('fExpense').textContent = money(exp);
-  if($('fPayroll')) $('fPayroll').textContent = money(totalLeaguePayroll);
-  $('ledgerRows').innerHTML = visibleLedger.map(x => `<tr><td>${new Date(x.created_at).toLocaleDateString('pt-BR')}</td><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[(SPONSOR_PAYOUT|MATCH_WAGES):[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sem lançamentos.</td></tr>';
+  if($('fNetProfit')){
+    $('fNetProfit').textContent = (netProfit > 0 ? '+' : '') + money(netProfit);
+    $('fNetProfit').className = netProfit >= 0 ? 'accent' : 'danger-txt';
+  }
+  if($('fPayrollSub')) $('fPayrollSub').textContent = `Folha/jogo (0,05%): ${money(payrollPerGame)}`;
+
+  const finMatchesPool = (selectedFinSeason === 'CURRENT' ? playedMatches : matches.filter(m => m.status === 'played' && m.home_goals !== null))
+    .filter(m => selectedFinClub === 'ALL' || m.home_club_id === selectedFinClub || m.away_club_id === selectedFinClub)
+    .slice()
+    .reverse();
+
+  const matchFinRowsHtml = [];
+  finMatchesPool.forEach(m => {
+    const hClub = clubs.find(c => c.id === m.home_club_id);
+    const aClub = clubs.find(c => c.id === m.away_club_id);
+    const targetIds = selectedFinClub === 'ALL' ? [m.home_club_id, m.away_club_id] : [selectedFinClub];
+    targetIds.forEach(cid => {
+      if(!cid) return;
+      const fin = calcMatchClubFinance(m, cid);
+      if(!fin) return;
+      const cObj = clubs.find(c => c.id === cid);
+      const bonusTotal = fin.bonusGols + fin.bonusAssists;
+      const cardsTotal = fin.multaAmarelo + fin.multaVermelho;
+      const pCls = fin.lucroLiquido >= 0 ? 'accent' : 'danger-txt';
+      matchFinRowsHtml.push(`<tr>
+        <td><b>${esc(hClub?.name || '?')} ${m.home_goals}×${m.away_goals} ${esc(aClub?.name || '?')}</b><div class="sub">Rodada ${m.round_number || 1}</div></td>
+        <td><b>${esc(cObj?.name || '?')}</b><div class="sub">${fin.isHome ? '🏠 Mandante (Casa)' : '✈️ Visitante (Fora)'}</div></td>
+        <td class="${fin.isHome ? 'accent' : 'sub'}">${fin.isHome ? '+' + money(fin.bilheteria) : 'R$ 0 (Fora)'}</td>
+        <td class="accent">+${money(bonusTotal)}<div class="sub">${fin.goalsCount}G / ${fin.assistsCount}A</div></td>
+        <td class="danger-txt">-${money(fin.folhaSalarial)}</td>
+        <td class="${cardsTotal > 0 ? 'danger-txt' : 'sub'}">${cardsTotal > 0 ? '-' + money(cardsTotal) : 'R$ 0'}</td>
+        <td class="accent"><b>+${money(fin.totalReceitas)}</b></td>
+        <td class="danger-txt"><b>-${money(fin.totalDespesas)}</b></td>
+        <td class="${pCls}"><b>${fin.lucroLiquido > 0 ? '+' : ''}${money(fin.lucroLiquido)}</b></td>
+      </tr>`);
+    });
+  });
+  if($('matchFinanceRows')){
+    $('matchFinanceRows').innerHTML = matchFinRowsHtml.join('') || '<tr><td colspan="9" class="empty">Nenhuma partida realizada para o filtro selecionado.</td></tr>';
+  }
+
+  $('ledgerRows').innerHTML = visibleLedger.map(x => `<tr><td>${new Date(x.created_at).toLocaleDateString('pt-BR')}</td><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[(SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|REVERSAL|AUDIT_FIX):[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sem lançamentos.</td></tr>';
 
   $('seasonList').innerHTML = seasons.map(s => `<div class="fixture"><div><b>${esc(s.name)}</b><div class="sub">${new Date(s.created_at).toLocaleDateString('pt-BR')}</div></div><span class="tag ${s.status === 'active' ? 'green' : ''}">${s.status === 'active' ? 'ATIVA' : 'ENCERRADA'}</span></div>`).join('');
   $('cfgGoal').value = league.goal_bonus ?? 50000;
@@ -2043,12 +2150,19 @@ function cleanSponsorDesc(sp){
   return String(sp?.description || '').replace(/\s*\[\[GOALS:[^\]]+\]\]/g, '').trim();
 }
 
+function getAllMetaRecords(){
+  const fromNews = news.map(n => ({ text: `${n.title || ''} ${n.body || ''}`, ts: new Date(n.created_at || 0).getTime() }));
+  const fromLedger = ledger.map(l => ({ text: String(l.description || ''), ts: new Date(l.created_at || 0).getTime() }));
+  return [...fromNews, ...fromLedger].sort((a, b) => a.ts - b.ts);
+}
+
 function getMatchFlags(matchId){
   if(!matchId) return { derby: false, homeComeback: false, awayComeback: false };
   const tag = `[MATCH_FLAGS:${matchId}:`;
-  const entry = ledger.find(l => String(l.description || '').includes(tag));
+  const recs = getAllMetaRecords().reverse();
+  const entry = recs.find(r => r.text.includes(tag));
   if(entry){
-    const m = String(entry.description).match(/\[MATCH_FLAGS:[^:]+:([01]):([01]):([01])\]/);
+    const m = entry.text.match(/\[MATCH_FLAGS:[^:]+:([01]):([01]):([01])\]/);
     if(m) return { derby: m[1] === '1', homeComeback: m[2] === '1', awayComeback: m[3] === '1' };
   }
   try {
@@ -2064,9 +2178,10 @@ function getGoalTiming(ev){
     if(Number(ev.minute) >= 75) return 'late';
   }
   if(!ev?.match_id) return 'normal';
-  const entry = ledger.find(l => String(l.description || '').includes(`[GOAL_TIMING:${ev.match_id}:`));
+  const recs = getAllMetaRecords().reverse();
+  const entry = recs.find(r => r.text.includes(`[GOAL_TIMING:${ev.match_id}:`));
   if(entry){
-    const m = String(entry.description).match(/\[GOAL_TIMING:[^:]+:([^\]]+)\]/);
+    const m = entry.text.match(/\[GOAL_TIMING:[^:]+:([^\]]+)\]/);
     if(m){
       const tokens = m[1].split(',');
       const hit = tokens.find(t => t.startsWith(ev.player_id + ':'));
@@ -2080,10 +2195,10 @@ function getClubSeasonSponsorIds(clubId, seasonId){
   if(!clubId || !seasonId) return [];
   const prefixSign = `[SPONSOR_SIGN:${seasonId}:${clubId}:`;
   const prefixUnsign = `[SPONSOR_UNSIGN:${seasonId}:${clubId}:`;
-  const chron = ledger.slice().reverse();
+  const chron = getAllMetaRecords();
   const chosen = [];
-  chron.forEach(l => {
-    const d = String(l.description || '');
+  chron.forEach(r => {
+    const d = r.text;
     if(d.includes(prefixSign)){
       const m = d.match(/\[SPONSOR_SIGN:[^:]+:[^:]+:([^\]]+)\]/);
       if(m && !chosen.includes(m[1]) && sponsors.some(s => s.id === m[1])) chosen.push(m[1]);
@@ -2475,15 +2590,14 @@ function sponsorContractRate(clubId, sponsorId){
 }
 function getSponsorContractRate(clubId, sponsorId, seasonId){
   const tag = `[SPONSOR_RATE:${seasonId}:${clubId}:${sponsorId}:`;
-  const row = ledger.find(x => String(x.description || '').includes(tag));
-  const match = row && String(row.description).match(/\[SPONSOR_RATE:[^:]+:[^:]+:[^:]+:([0-9.]+)\]/);
+  const recs = getAllMetaRecords().reverse();
+  const row = recs.find(x => x.text.includes(tag));
+  const match = row && row.text.match(/\[SPONSOR_RATE:[^:]+:[^:]+:[^:]+:([0-9.]+)\]/);
   return match ? Math.max(.5, Math.min(1.5, Number(match[1]) || 1)) : 1;
 }
 
 async function signClubSponsor(clubId, sponsorId){
   if(!season) return toast('Crie uma temporada antes de assinar patrocínio.');
-  // O bloqueio depende exclusivamente de partida efetivamente disputada nesta temporada.
-  // Jogos agendados e o rótulo/status da temporada não impedem a contratação.
   if(isSeasonStarted()) return toast('Os contratos só podem ser escolhidos antes da primeira partida da temporada.');
   if(!canManageClub(clubId)) return toast('Você não tem permissão para gerenciar os patrocínios deste clube.');
   const current = getClubSeasonSponsorIds(clubId, season.id);
@@ -2493,18 +2607,13 @@ async function signClubSponsor(clubId, sponsorId){
   if(!club || !sp) return;
   const deal = sponsorContractRate(clubId, sponsorId);
   const rate = Number(deal.rate.toFixed(2));
-  const desc = `Contrato de Patrocínio: ${sp.name} [SPONSOR_SIGN:${season.id}:${clubId}:${sponsorId}] [SPONSOR_RATE:${season.id}:${clubId}:${sponsorId}:${rate}]`;
-  const { error } = await sb.from('ledger_entries').insert({
-    league_id: league.id, season_id: season.id, club_id: clubId, entry_type: 'income', amount: 1, description: desc
+  const metaTags = `[SPONSOR_SIGN:${season.id}:${clubId}:${sponsorId}] [SPONSOR_RATE:${season.id}:${clubId}:${sponsorId}:${rate}]`;
+  const { error } = await sb.from('league_news').insert({
+    league_id: league.id, category: 'PATROCÍNIO',
+    title: `🤝 ${club.name} fechou com ${sp.name}!`,
+    body: `${club.name}: ${deal.label}. Bônus por metas ajustado para ${Math.round(rate*100)}% do valor-base (${money(Math.round((Number(sp.bonus_amount)||0)*rate))}). ${metaTags}`
   });
   if(error) return toast('Erro ao assinar patrocínio: ' + error.message);
-  try {
-    await sb.from('league_news').insert({
-      league_id: league.id, category: 'PATROCÍNIO',
-      title: `🤝 ${club.name} fechou com ${sp.name}!`,
-      body: `${club.name}: ${deal.label}. Bônus por metas ajustado para ${Math.round(rate*100)}% do valor-base (${money(Math.round((Number(sp.bonus_amount)||0)*rate))}).`
-    });
-  } catch(_) {}
   toast(`${sp.name} assinado! ${deal.label}.`);
   await loadAll();
 }
@@ -2513,10 +2622,11 @@ async function unsignClubSponsor(clubId, sponsorId){
   if(!season) return;
   if(isSeasonStarted()) return toast('Não é possível cancelar patrocínio após o início da temporada.');
   if(!canManageClub(clubId)) return toast('Sem permissão.');
-  const sp = sponsors.find(s => s.id === sponsorId);
-  const desc = `Distrato de Patrocínio: ${sp?.name || ''} [SPONSOR_UNSIGN:${season.id}:${clubId}:${sponsorId}]`;
-  const { error } = await sb.from('ledger_entries').insert({
-    league_id: league.id, season_id: season.id, club_id: clubId, entry_type: 'expense', amount: 1, description: desc
+  const club = clubs.find(c => c.id === clubId), sp = sponsors.find(s => s.id === sponsorId);
+  const { error } = await sb.from('league_news').insert({
+    league_id: league.id, category: 'SISTEMA',
+    title: `Distrato de Patrocínio: ${club?.name || ''} — ${sp?.name || ''}`,
+    body: `[SPONSOR_UNSIGN:${season.id}:${clubId}:${sponsorId}]`
   });
   if(error) return toast(error.message);
   toast('Contrato cancelado.');
@@ -2990,6 +3100,132 @@ async function runFixtureDraw(){ return runLocked('draw', async () => {
   closeModal('drawModal'); toast('Tabela sorteada com sucesso!'); await loadAll();
 }); }
 
+function calcMatchClubFinance(m, clubId){
+  const isHome = m.home_club_id === clubId;
+  const isAway = m.away_club_id === clubId;
+  if(!isHome && !isAway) return null;
+
+  const stadiumRate = Math.round(Number(league?.home_stadium_income) || 0);
+  const goalRate = Math.round(Number(league?.goal_bonus) || 0);
+  const assistRate = Math.round(Number(league?.assist_bonus) || 0);
+  const yellowRate = Math.round(Number(league?.yellow_card_fine) || 0);
+  const redRate = Math.round(Number(league?.red_card_fine) || 0);
+
+  const evs = matchEvents.filter(e => e.match_id === m.id && e.club_id === clubId);
+  const goalsCount = evs.filter(e => e.event_type === 'goal').length;
+  const assistsCount = evs.filter(e => e.event_type === 'goal' && e.assist_player_id).length;
+  const yellowCount = evs.filter(e => e.event_type === 'yellow_card').length;
+  const redCount = evs.filter(e => e.event_type === 'red_card').length;
+
+  const bilheteria = isHome ? stadiumRate : 0;
+  const bonusGols = goalsCount * goalRate;
+  const bonusAssists = assistsCount * assistRate;
+  const multaAmarelo = yellowCount * yellowRate;
+  const multaVermelho = redCount * redRate;
+
+  const wageTag = `[MATCH_WAGES:${m.season_id}:${m.id}:${clubId}]`;
+  const wageEntry = ledger.find(l => l.club_id === clubId && String(l.description || '').includes(wageTag));
+  const folhaSalarial = wageEntry
+    ? Math.round(Number(wageEntry.amount) || 0)
+    : players.filter(p => p.club_id === clubId).reduce((sum, p) => sum + calcSalary(p.market_value), 0);
+
+  const totalReceitas = bilheteria + bonusGols + bonusAssists;
+  const totalDespesas = folhaSalarial + multaAmarelo + multaVermelho;
+  const lucroLiquido = totalReceitas - totalDespesas;
+
+  return {
+    isHome, bilheteria, goalsCount, bonusGols, assistsCount, bonusAssists,
+    yellowCount, multaAmarelo, redCount, multaVermelho, folhaSalarial,
+    totalReceitas, totalDespesas, lucroLiquido
+  };
+}
+
+function updateMatchFinancePreview(){
+  const box = $('matchFinancePreview');
+  if(!box || !league) return;
+  const hId = $('mHome')?.value;
+  const aId = $('mAway')?.value;
+  const hClub = clubs.find(c => c.id === hId);
+  const aClub = clubs.find(c => c.id === aId);
+
+  const stadiumRate = Math.round(Number(league.home_stadium_income) || 0);
+  const goalRate = Math.round(Number(league.goal_bonus) || 0);
+  const assistRate = Math.round(Number(league.assist_bonus) || 0);
+  const yellowRate = Math.round(Number(league.yellow_card_fine) || 0);
+  const redRate = Math.round(Number(league.red_card_fine) || 0);
+
+  const calcSide = (side, clubId, isHomeSide) => {
+    const container = side === 'home' ? $('homeEventsList') : $('awayEventsList');
+    const cards = container ? [...container.querySelectorAll('.side-ev-card')] : [];
+    const goals = cards.filter(c => c.dataset.type === 'goal').length;
+    const assists = cards.filter(c => c.dataset.type === 'goal' && c.querySelector('.ev-assist')?.value).length;
+    const yellows = cards.filter(c => c.dataset.type === 'yellow_card').length;
+    const reds = cards.filter(c => c.dataset.type === 'red_card').length;
+
+    const bilheteria = isHomeSide ? stadiumRate : 0;
+    const bonus = (goals * goalRate) + (assists * assistRate);
+    const folha = players.filter(p => p.club_id === clubId).reduce((s, p) => s + calcSalary(p.market_value), 0);
+    const multas = (yellows * yellowRate) + (reds * redRate);
+    const rec = bilheteria + bonus;
+    const desp = folha + multas;
+    const lucro = rec - desp;
+    return { bilheteria, bonus, folha, multas, rec, desp, lucro };
+  };
+
+  const hf = calcSide('home', hId, true);
+  const af = calcSide('away', aId, false);
+
+  box.innerHTML = `<div class="eyebrow" style="color:var(--gold-light);margin-bottom:6px">💰 PRÉVIA FINANCEIRA EXATA DA PARTIDA</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+      <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:7px 8px">
+        <b style="display:block;color:#6ee7b7">🏠 ${esc(hClub?.name || 'Casa')}</b>
+        <div class="sub">Bilheteria: <b class="accent">+${money(hf.bilheteria)}</b> • Bônus: <b class="accent">+${money(hf.bonus)}</b></div>
+        <div class="sub">Folha: <b class="danger-txt">-${money(hf.folha)}</b> • Cartões: <b class="danger-txt">-${money(hf.multas)}</b></div>
+        <div style="margin-top:3px">Lucro: <b class="${hf.lucro >= 0 ? 'accent' : 'danger-txt'}">${hf.lucro > 0 ? '+' : ''}${money(hf.lucro)}</b></div>
+      </div>
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:7px 8px">
+        <b style="display:block;color:var(--gold-light)">✈️ ${esc(aClub?.name || 'Visitante')}</b>
+        <div class="sub">Bilheteria: <b>R$ 0 (Fora)</b> • Bônus: <b class="accent">+${money(af.bonus)}</b></div>
+        <div class="sub">Folha: <b class="danger-txt">-${money(af.folha)}</b> • Cartões: <b class="danger-txt">-${money(af.multas)}</b></div>
+        <div style="margin-top:3px">Lucro: <b class="${af.lucro >= 0 ? 'accent' : 'danger-txt'}">${af.lucro > 0 ? '+' : ''}${money(af.lucro)}</b></div>
+      </div>
+    </div>`;
+}
+
+function swapMatchSides(){
+  const hSel = $('mHome'), aSel = $('mAway');
+  const oldH = hSel.value, oldA = aSel.value;
+  if(!oldH || !oldA || oldH === oldA) return;
+
+  const extractCards = (container) => [...container.querySelectorAll('.side-ev-card')].map(card => ({
+    event_type: card.dataset.type,
+    player_id: card.querySelector('.ev-player')?.value || '',
+    assist_player_id: card.querySelector('.ev-assist')?.value || null,
+    timing: card.querySelector('.ev-timing')?.value || 'normal'
+  }));
+
+  const homeCards = extractCards($('homeEventsList'));
+  const awayCards = extractCards($('awayEventsList'));
+  const oldHG = $('mHG').value, oldAG = $('mAG').value;
+
+  hSel.value = oldA;
+  aSel.value = oldH;
+  $('mHG').value = oldAG;
+  $('mAG').value = oldHG;
+
+  $('homeEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols da casa.</div>';
+  $('awayEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols do visitante.</div>';
+
+  awayCards.forEach(ev => addSideEvent('home', ev.event_type, ev, true));
+  homeCards.forEach(ev => addSideEvent('away', ev.event_type, ev, true));
+
+  $('mHG').value = oldAG;
+  $('mAG').value = oldHG;
+  updateScoreboardHeader();
+  updateMatchFinancePreview();
+  toast('Mando de campo invertido! Agora ' + (clubs.find(c => c.id === oldA)?.name || '') + ' é o Mandante (recebe bilheteria).');
+}
+
 function updateScoreboardHeader(){
   const hClub = clubs.find(c => c.id === $('mHome').value);
   const aClub = clubs.find(c => c.id === $('mAway').value);
@@ -2997,6 +3233,7 @@ function updateScoreboardHeader(){
   $('mAwayCrest').innerHTML = crest(aClub, true);
   $('homeSideTitle').textContent = `🏠 ${hClub?.name || 'Mandante'}`;
   $('awaySideTitle').textContent = `✈️ ${aClub?.name || 'Visitante'}`;
+  updateMatchFinancePreview();
 }
 
 function syncScoreFromGoalEvents(){
@@ -3004,6 +3241,7 @@ function syncScoreFromGoalEvents(){
   const awayGoals = $('awayEventsList').querySelectorAll('.side-ev-card[data-type="goal"]').length;
   $('mHG').value = homeGoals;
   $('mAG').value = awayGoals;
+  updateMatchFinancePreview();
 }
 
 function stepScore(side, delta){
@@ -3020,6 +3258,7 @@ function stepScore(side, delta){
       syncScoreFromGoalEvents();
     } else {
       input.value = next;
+      updateMatchFinancePreview();
     }
   }
 }
@@ -3029,6 +3268,7 @@ function onManualScoreChange(){
   const ag = Math.max(0, parseInt($('mAG').value, 10) || 0);
   $('mHG').value = hg;
   $('mAG').value = ag;
+  updateMatchFinancePreview();
 }
 
 function openMatchModal(matchId){
@@ -3059,6 +3299,7 @@ function openMatchModal(matchId){
     if(m.home_goals !== null) $('mHG').value = m.home_goals;
     if(m.away_goals !== null) $('mAG').value = m.away_goals;
   }
+  updateMatchFinancePreview();
   openModal('matchModal');
 }
 
@@ -3081,8 +3322,8 @@ function addSideEvent(side, type, existing = null, skipAutoScore = false){
         <button type="button" class="side-ev-del" onclick="removeSideEvent(this)">✕</button>
       </div>
       <div class="side-ev-grid">
-        <div class="side-ev-field"><label>⚽ Autor do Gol</label><select class="ev-player" aria-label="Autor do gol">${playerOpts}</select></div>
-        <div class="side-ev-field"><label>👟 Assistência</label><select class="ev-assist" aria-label="Assistência"><option value="">Sem assistência</option>${playerOpts}</select></div>
+        <div class="side-ev-field"><label>⚽ Autor do Gol</label><select class="ev-player" onchange="updateMatchFinancePreview()" aria-label="Autor do gol">${playerOpts}</select></div>
+        <div class="side-ev-field"><label>👟 Assistência</label><select class="ev-assist" onchange="updateMatchFinancePreview()" aria-label="Assistência"><option value="">Sem assistência</option>${playerOpts}</select></div>
       </div>
       <div class="side-ev-field"><label>⏱️ Momento do Gol (Opcional — p/ metas)</label><select class="ev-timing"><option value="normal">Normal (16' a 74')</option><option value="early">⚡ Gol Relâmpago (Antes dos 15')</option><option value="late">⏱️ Poder de Reação (Últimos 15')</option></select></div>
     `;
@@ -3094,7 +3335,7 @@ function addSideEvent(side, type, existing = null, skipAutoScore = false){
         <span class="tag ${cls}">${label}</span>
         <button type="button" class="side-ev-del" onclick="removeSideEvent(this)">✕</button>
       </div>
-      <div class="side-ev-field"><label>Atleta</label><select class="ev-player" aria-label="Jogador punido">${playerOpts}</select></div>
+      <div class="side-ev-field"><label>Atleta</label><select class="ev-player" onchange="updateMatchFinancePreview()" aria-label="Jogador punido">${playerOpts}</select></div>
     `;
   }
 
@@ -3120,7 +3361,7 @@ function addSideEvent(side, type, existing = null, skipAutoScore = false){
       assistSelect.value = existing.assist_player_id;
     }
     const timingSelect = card.querySelector('.ev-timing');
-    if(timingSelect) timingSelect.value = getGoalTiming(existing);
+    if(timingSelect) timingSelect.value = existing.timing || getGoalTiming(existing);
   } else if(type === 'goal' && clubPlayers.length > 1){
     const assistSelect = card.querySelector('.ev-assist');
     if(assistSelect) assistSelect.value = '';
@@ -3128,6 +3369,8 @@ function addSideEvent(side, type, existing = null, skipAutoScore = false){
 
   if(type === 'goal' && !skipAutoScore){
     syncScoreFromGoalEvents();
+  } else {
+    updateMatchFinancePreview();
   }
 }
 
@@ -3136,6 +3379,7 @@ function removeSideEvent(btn){
   const wasGoal = card?.dataset.type === 'goal';
   card?.remove();
   if(wasGoal) syncScoreFromGoalEvents();
+  else updateMatchFinancePreview();
 }
 
 function refreshMatchEventSelects(){
@@ -3146,6 +3390,39 @@ function refreshMatchEventSelects(){
   updateScoreboardHeader();
 }
 
+async function revertMatchFinancials(m, reasonLabel = 'Estorno Partida'){
+  if(!m || m.status !== 'played' || m.home_goals === null) return;
+  const hName = clubs.find(c => c.id === m.home_club_id)?.name || 'Casa';
+  const aName = clubs.find(c => c.id === m.away_club_id)?.name || 'Visitante';
+  const matchLabel = `${hName} ${m.home_goals}×${m.away_goals} ${aName}`;
+
+  for(const clubId of [m.home_club_id, m.away_club_id]){
+    if(!clubId) continue;
+    const fin = calcMatchClubFinance(m, clubId);
+    if(!fin) continue;
+    if(fin.totalReceitas > 0){
+      await sb.rpc('post_ledger_entry', {
+        p_league_id: league.id,
+        p_season_id: m.season_id || season?.id || null,
+        p_club_id: clubId,
+        p_type: 'expense',
+        p_amount: fin.totalReceitas,
+        p_description: `${reasonLabel} (Receitas: ${matchLabel}) [REVERSAL:${m.id}:${clubId}]`
+      });
+    }
+    if(fin.totalDespesas > 0){
+      await sb.rpc('post_ledger_entry', {
+        p_league_id: league.id,
+        p_season_id: m.season_id || season?.id || null,
+        p_club_id: clubId,
+        p_type: 'income',
+        p_amount: fin.totalDespesas,
+        p_description: `${reasonLabel} (Despesas: ${matchLabel}) [REVERSAL:${m.id}:${clubId}]`
+      });
+    }
+  }
+}
+
 async function deleteMatch(matchId){ return runLocked('delmatch-' + matchId, async () => {
   if(!isAdmin()) return toast('Apenas o ADM pode excluir jogos.');
   const m = matches.find(x => x.id === matchId);
@@ -3154,24 +3431,33 @@ async function deleteMatch(matchId){ return runLocked('delmatch-' + matchId, asy
   const a = clubs.find(c => c.id === m.away_club_id)?.name || 'Visitante';
   const isPlayed = m.status === 'played' && m.home_goals !== null;
   const msg = isPlayed
-    ? `Excluir o jogo realizado ${h} ${m.home_goals} x ${m.away_goals} ${a}? Os pontos, gols, assistências e cartões desta partida serão removidos.`
+    ? `Excluir o jogo realizado ${h} ${m.home_goals} x ${m.away_goals} ${a}? Os pontos, gols, assistências, bilheteria, salários e cartões desta partida serão estornados exatamente.`
     : `Excluir o jogo agendado ${h} x ${a}?`;
   if(!confirm(msg)) return;
+
+  if(isPlayed){
+    await revertMatchFinancials(m, 'Estorno Jogo Excluído');
+  }
 
   await sb.from('match_events').delete().eq('match_id', matchId);
   const { error } = await sb.from('matches').delete().eq('id', matchId);
   if(error) return toast('Não foi possível excluir o jogo: ' + error.message);
 
   closeModal('matchModal');
-  toast('Jogo excluído com sucesso!');
+  toast('Jogo excluído e valores financeiros estornados!');
   await loadAll();
 }); }
 
 async function saveMatchResult(){ return runLocked('match', async () => {
   if(!isAdmin()) return toast('Apenas o ADM pode lançar ou editar placares.');
+  const editMatchId = $('mEditId').value || null;
+  const oldMatch = editMatchId ? matches.find(x => x.id === editMatchId) : null;
+  const wasAlreadyPlayed = Boolean(oldMatch && oldMatch.status === 'played' && oldMatch.home_goals !== null);
+
   const h = $('mHome').value, a = $('mAway').value, hg = Number($('mHG').value), ag = Number($('mAG').value), rnd = Number($('mRound').value);
   if(!h || !a || h === a) return toast('Escolha clubes diferentes.');
   if(!Number.isInteger(hg) || hg < 0 || !Number.isInteger(ag) || ag < 0 || !Number.isInteger(rnd) || rnd < 1) return toast('Placar e rodada devem ser números inteiros válidos.');
+
   const evs = [];
   ['home', 'away'].forEach(side => {
     const clubId = side === 'home' ? h : a;
@@ -3216,42 +3502,81 @@ async function saveMatchResult(){ return runLocked('match', async () => {
   const hCome = $('mHomeComeback')?.checked ? '1' : '0';
   const aCome = $('mAwayComeback')?.checked ? '1' : '0';
 
+  // Se for edição de partida já realizada, estorna o lançamento financeiro anterior para evitar duplicidade ou divergência
+  if(wasAlreadyPlayed){
+    await revertMatchFinancials(oldMatch, 'Estorno Edição de Placar');
+  }
+
   const { error } = await sb.rpc('record_match_with_events', {
-    p_league_id: league.id, p_season_id: season.id, p_match_id: $('mEditId').value || null,
+    p_league_id: league.id, p_season_id: season.id, p_match_id: editMatchId,
     p_home_club_id: h, p_away_club_id: a, p_home_goals: hg, p_away_goals: ag, p_round_number: rnd, p_events: evs
   });
   if(error) return toast(error.message);
 
-  // Persist optional derby / comeback / goal-timing metadata
   const { data: latestMatches } = await sb.from('matches').select('id,home_club_id,away_club_id,round_number').eq('league_id', league.id).eq('season_id', season.id).eq('home_club_id', h).eq('away_club_id', a).eq('round_number', rnd).order('created_at', { ascending: false }).limit(1);
-  const savedMatchId = $('mEditId').value || latestMatches?.[0]?.id;
+  const savedMatchId = editMatchId || latestMatches?.[0]?.id;
+
   if(savedMatchId && (isDerby === '1' || hCome === '1' || aCome === '1' || timingTokens.length)){
     try {
-      await sb.from('ledger_entries').delete().eq('league_id', league.id).ilike('description', `%[MATCH_FLAGS:${savedMatchId}:%`);
-      await sb.from('ledger_entries').insert({
-        league_id: league.id, season_id: season.id, club_id: h, entry_type: 'income', amount: 1,
-        description: `Dados da Partida [MATCH_FLAGS:${savedMatchId}:${isDerby}:${hCome}:${aCome}]` + (timingTokens.length ? ` [GOAL_TIMING:${savedMatchId}:${timingTokens.join(',')}]` : '')
+      await sb.from('league_news').insert({
+        league_id: league.id, category: 'SISTEMA',
+        title: `Metadados Partida ${savedMatchId}`,
+        body: `[MATCH_FLAGS:${savedMatchId}:${isDerby}:${hCome}:${aCome}]` + (timingTokens.length ? ` [GOAL_TIMING:${savedMatchId}:${timingTokens.join(',')}]` : '')
       });
     } catch(_) {}
   }
 
   if(savedMatchId){
-    await processMatchWages(savedMatchId, h, a);
+    await processMatchWages(savedMatchId, h, a, wasAlreadyPlayed);
+    await ensureMatchBilheteriaAndBonuses(savedMatchId, h, a, wasAlreadyPlayed);
   }
 
-  closeModal('matchModal'); toast('Placar, estatísticas, salários (0,05%) e metas atualizados!'); await loadAll();
+  closeModal('matchModal'); toast('Placar, bilheteria, salários (0,05%) e lucro atualizados com exatidão!'); await loadAll();
 }); }
 
-async function processMatchWages(matchId, homeClubId, awayClubId){
+async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, wasEdited = false){
   if(!league?.id || !season?.id || !matchId) return;
+  const { data: freshLedger } = await sb.from('ledger_entries').select('id,club_id,entry_type,amount,description,created_at').eq('league_id', league.id).eq('season_id', season.id).order('created_at', { ascending: false }).limit(40);
+  const recent = freshLedger || [];
+  const stadiumRate = Math.round(Number(league.home_stadium_income) || 0);
+  const hName = clubs.find(c => c.id === homeClubId)?.name || 'Mandante';
+
+  if(stadiumRate > 0 && homeClubId){
+    const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${homeClubId}]`;
+    const alreadyTagged = recent.some(l => String(l.description || '').includes(bilhTag));
+    // Verifica se o RPC acabou de lançar a bilheteria (nos últimos 15s) para este clube
+    const nowMs = Date.now();
+    const rpcInsertedBilh = !wasEdited && recent.some(l =>
+      l.club_id === homeClubId &&
+      l.entry_type === 'income' &&
+      Math.round(Number(l.amount)) === stadiumRate &&
+      (nowMs - new Date(l.created_at).getTime()) < 15000 &&
+      !String(l.description || '').includes('[MATCH_WAGES:')
+    );
+    if(!alreadyTagged && !rpcInsertedBilh){
+      await sb.rpc('post_ledger_entry', {
+        p_league_id: league.id,
+        p_season_id: season.id,
+        p_club_id: homeClubId,
+        p_type: 'income',
+        p_amount: stadiumRate,
+        p_description: `Bilheteria Jogo em Casa — ${hName} ${bilhTag}`
+      });
+    }
+  }
+}
+
+async function processMatchWages(matchId, homeClubId, awayClubId, forceNewEntry = false){
+  if(!league?.id || !season?.id || !matchId) return;
+  const { data: freshLedger } = await sb.from('ledger_entries').select('id,description').eq('league_id', league.id).eq('season_id', season.id);
+  const currentLedger = freshLedger || ledger;
   for(const clubId of [homeClubId, awayClubId]){
     if(!clubId) continue;
     const wageTag = `[MATCH_WAGES:${season.id}:${matchId}:${clubId}]`;
-    if(ledger.some(l => String(l.description || '').includes(wageTag))) continue;
+    if(!forceNewEntry && currentLedger.some(l => String(l.description || '').includes(wageTag))) continue;
     const squad = players.filter(p => p.club_id === clubId);
     const totalWage = squad.reduce((sum, p) => sum + calcSalary(p.market_value), 0);
     if(totalWage <= 0) continue;
-    const clubName = clubs.find(c => c.id === clubId)?.name || 'Clube';
     await sb.rpc('post_ledger_entry', {
       p_league_id: league.id,
       p_season_id: season.id,
@@ -3261,6 +3586,104 @@ async function processMatchWages(matchId, homeClubId, awayClubId){
       p_description: `Folha Salarial — Partida (${squad.length} atletas • 0,05%) ${wageTag}`
     });
   }
+}
+
+async function auditAndFixLeagueFinances(){
+  return runLocked('audit-finances', async () => {
+    if(!isAdmin()) return toast('Apenas o ADM pode executar a auditoria financeira.');
+    if(!league?.id || !season?.id) return toast('Nenhuma temporada ativa encontrada.');
+
+    const seasonPlayed = matches.filter(m => m.season_id === season.id && m.status === 'played' && m.home_goals !== null);
+    if(!seasonPlayed.length) return toast('Nenhuma partida realizada na temporada atual para auditar.');
+
+    const stadiumRate = Math.round(Number(league.home_stadium_income) || 0);
+    const goalRate = Math.round(Number(league.goal_bonus) || 0);
+    const assistRate = Math.round(Number(league.assist_bonus) || 0);
+    const yellowRate = Math.round(Number(league.yellow_card_fine) || 0);
+    const redRate = Math.round(Number(league.red_card_fine) || 0);
+
+    const adjustments = [];
+
+    for(const c of clubs){
+      const clubPlayed = seasonPlayed.filter(m => m.home_club_id === c.id || m.away_club_id === c.id);
+      const clubHomePlayed = seasonPlayed.filter(m => m.home_club_id === c.id);
+
+      // 1. Receita esperada das partidas deste clube na temporada
+      let expectedMatchIncome = clubHomePlayed.length * stadiumRate;
+      let expectedMatchExpense = 0;
+
+      clubPlayed.forEach(m => {
+        const evs = matchEvents.filter(e => e.match_id === m.id && e.club_id === c.id);
+        const g = evs.filter(e => e.event_type === 'goal').length;
+        const a = evs.filter(e => e.event_type === 'goal' && e.assist_player_id).length;
+        const y = evs.filter(e => e.event_type === 'yellow_card').length;
+        const r = evs.filter(e => e.event_type === 'red_card').length;
+        expectedMatchIncome += (g * goalRate) + (a * assistRate);
+
+        const wageTag = `[MATCH_WAGES:${season.id}:${m.id}:${c.id}]`;
+        const wageEntry = ledger.find(l => l.club_id === c.id && String(l.description || '').includes(wageTag));
+        const wageVal = wageEntry
+          ? Math.round(Number(wageEntry.amount) || 0)
+          : players.filter(p => p.club_id === c.id).reduce((s, p) => s + calcSalary(p.market_value), 0);
+        expectedMatchExpense += wageVal + (y * yellowRate) + (r * redRate);
+      });
+
+      // 2. Receita e despesa efetivamente registradas no livro-caixa para partidas (excluindo transferências, blindagens e prêmios)
+      const isNonMatchEntry = (desc) => /\[(SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS|SPONSOR_PAYOUT|AUDIT_FIX_INC|AUDIT_FIX_EXP):/.test(desc)
+        || /(Transferência|Multa rescisória|Blindagem|Prêmio|Campeão|Artilheiro|Assistências|Rodada \()/i.test(desc);
+
+      const allClubSeasonLedger = ledger.filter(l => l.club_id === c.id && (!l.season_id || l.season_id === season.id));
+      const baseMatchLedger = allClubSeasonLedger.filter(l => !isNonMatchEntry(String(l.description || '')));
+
+      const auditIncNet = allClubSeasonLedger
+        .filter(l => String(l.description || '').includes('[AUDIT_FIX_INC:'))
+        .reduce((s, l) => s + (l.entry_type === 'income' ? Number(l.amount || 0) : -Number(l.amount || 0)), 0);
+      const auditExpNet = allClubSeasonLedger
+        .filter(l => String(l.description || '').includes('[AUDIT_FIX_EXP:'))
+        .reduce((s, l) => s + (l.entry_type === 'expense' ? Number(l.amount || 0) : -Number(l.amount || 0)), 0);
+
+      const actualMatchIncome = Math.round(baseMatchLedger.filter(l => l.entry_type === 'income').reduce((s, l) => s + Number(l.amount || 0), 0) + auditIncNet);
+      const actualMatchExpense = Math.round(baseMatchLedger.filter(l => l.entry_type === 'expense').reduce((s, l) => s + Number(l.amount || 0), 0) + auditExpNet);
+
+      const diffIncome = expectedMatchIncome - actualMatchIncome;
+      const diffExpense = expectedMatchExpense - actualMatchExpense;
+
+      if(Math.abs(diffIncome) >= 1) adjustments.push({ club: c, kind: 'income', diff: diffIncome });
+      if(Math.abs(diffExpense) >= 1) adjustments.push({ club: c, kind: 'expense', diff: diffExpense });
+    }
+
+    if(!adjustments.length){
+      return toast('✅ Matemática 100% exata! Nenhuma discrepância de bilheteria, bônus, cartões ou folha salarial encontrada.');
+    }
+
+    const report = adjustments.map(adj => {
+      const label = adj.kind === 'income' ? 'Receitas de Jogos' : 'Despesas de Jogos';
+      return `• ${adj.club.name} (${label}): ${adj.diff > 0 ? '+' : ''}${money(adj.diff)}`;
+    }).join('\n');
+
+    if(!confirm(`Foram encontradas as seguintes diferenças entre os jogos realizados e o livro-caixa:\n\n${report}\n\nDeseja lançar os ajustes matemáticos exatos agora?`)) return;
+
+    for(const adj of adjustments){
+      const isPositive = adj.diff > 0;
+      const entryType = adj.kind === 'income'
+        ? (isPositive ? 'income' : 'expense')
+        : (isPositive ? 'expense' : 'income');
+      const absAmt = Math.abs(Math.round(adj.diff));
+      const label = adj.kind === 'income' ? 'Receitas/Bilheteria de Jogos' : 'Despesas/Folha de Jogos';
+      const fixTag = adj.kind === 'income' ? 'AUDIT_FIX_INC' : 'AUDIT_FIX_EXP';
+      await sb.rpc('post_ledger_entry', {
+        p_league_id: league.id,
+        p_season_id: season.id,
+        p_club_id: adj.club.id,
+        p_type: entryType,
+        p_amount: absAmt,
+        p_description: `Ajuste Auditoria Exata (${label}) [${fixTag}:${season.id}:${adj.club.id}]`
+      });
+    }
+
+    toast(`✅ ${adjustments.length} ajuste(s) aplicado(s)! Caixa e lucro 100% reconciliados.`);
+    await loadAll();
+  });
 }
 
 async function runManualPayroll(){
