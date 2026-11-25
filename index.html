@@ -873,6 +873,71 @@ tr:last-child td{border:0}
 @media all and (display-mode: standalone) {
   #pwaInstallBtn { display: none !important; }
 }
+
+/* ABA CLUBES: GRADE SOMENTE IMAGEM + PLANTEL ORDENADO POR POSIÇÃO */
+.clubs-image-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(122px,1fr));
+  gap:12px;
+}
+.club-img-tile{
+  position:relative;
+  aspect-ratio:1 / 1;
+  border-radius:18px;
+  background:linear-gradient(155deg,rgba(20,30,52,0.92),rgba(8,13,26,0.96));
+  border:1px solid rgba(255,255,255,0.10);
+  padding:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  box-shadow:0 12px 28px rgba(0,0,0,0.45);
+}
+.club-img-tile:hover{
+  transform:translateY(-3px);
+  border-color:var(--border-gold);
+  box-shadow:0 16px 34px rgba(245,158,11,0.14);
+}
+.club-img-tile img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:12px;
+  display:block;
+}
+.club-img-fallback{
+  width:100%;
+  height:100%;
+  border-radius:14px;
+  background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(16,185,129,0.16));
+  border:1px solid var(--border-gold);
+  display:grid;
+  place-items:center;
+  font-family:'Teko',sans-serif;
+  font-size:38px;
+  font-weight:700;
+  color:var(--gold-light);
+  letter-spacing:1px;
+}
+.pos-group-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.9px;
+  text-transform:uppercase;
+  color:var(--gold-light);
+  margin:12px 0 6px;
+  padding-bottom:4px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.pos-group-title:first-child{margin-top:0}
+@media(max-width:520px){
+  .clubs-image-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .club-img-tile{padding:9px;border-radius:15px}
+}
+
 </style>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1149,7 +1214,7 @@ tr:last-child td{border:0}
        <button class="btn sm" onclick="openModal('financeModal')">+ Lançamento</button>
       </div>
      </div>
-     <div class="tablewrap"><table><thead><tr><th>Data</th><th>Clube</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="ledgerRows"></tbody></table></div>
+     <div class="tablewrap"><table><thead><tr><th>Clube</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody id="ledgerRows"></tbody></table></div>
     </div>
    </section>
 
@@ -1520,6 +1585,28 @@ tr:last-child td{border:0}
  <div class="modalfoot"><button class="btn danger hidden" id="delMatchBtn" style="margin-right:auto" onclick="deleteMatch($('mEditId').value)">🗑️ Excluir Jogo</button><button class="btn secondary" onclick="closeModal('matchModal')">Cancelar</button><button class="btn" onclick="saveMatchResult()">Salvar Placar e Atualizar Tudo</button></div>
 </div></div>
 
+<!-- MODAL: PLANTEL COMPLETO DO CLUBE (ORDENADO POR POSIÇÃO) -->
+<div class="modalbg" id="clubSquadModal"><div class="modal" style="width:min(560px,100%)">
+ <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+  <div class="club" style="gap:11px;min-width:0">
+   <div id="sqClubCrest"></div>
+   <div style="min-width:0">
+    <h3 id="sqClubTitle" style="margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Clube</h3>
+    <div class="sub" id="sqClubMeta">Plantel completo</div>
+   </div>
+  </div>
+  <div style="display:flex;gap:6px;flex-shrink:0" id="sqClubActions"></div>
+ </div>
+ <div class="moneygrid three-cols" style="margin-bottom:12px">
+  <div><span>CAIXA</span><strong class="accent" id="sqClubCash">R$ 0</strong></div>
+  <div><span>ATLETAS / OVR</span><strong id="sqClubStats">0 • 0</strong></div>
+  <div><span>FOLHA (0,05%)</span><strong class="cyan" id="sqClubPayroll">R$ 0</strong></div>
+ </div>
+ <div id="sqClubSponsors"></div>
+ <div id="sqPlayersByPos" style="max-height:52vh;overflow-y:auto;padding-right:2px;margin-top:8px"></div>
+ <div class="modalfoot"><button type="button" class="btn secondary" onclick="closeModal('clubSquadModal')">Fechar</button></div>
+</div></div>
+
 <!-- MODAL: LANÇAMENTO FINANCEIRO MANUAL -->
 <div class="modalbg" id="financeModal"><div class="modal"><h3>Lançamento Financeiro</h3>
  <div class="field"><label>Clube</label><select id="fClub"></select></div>
@@ -1844,7 +1931,7 @@ function render(){
   if(visibleNews.length){
     $('tickerTitle').textContent = `${visibleNews[0].title} — ${cleanNewsText(visibleNews[0].body)}`;
     $('dashNews').innerHTML = visibleNews.slice(0, 4).map(n => `<div class="newsitem"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><h4>${esc(n.title)}</h4><p>${esc(cleanNewsText(n.body))}</p></div>`).join('');
-    $('allNewsList').innerHTML = visibleNews.map(n => `<div class="newsitem"><div style="display:flex;justify-content:space-between"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span><span class="sub">${new Date(n.created_at).toLocaleString('pt-BR')}</span></div><h4>${esc(n.title)}</h4><p>${esc(cleanNewsText(n.body))}</p></div>`).join('');
+    $('allNewsList').innerHTML = visibleNews.map(n => `<div class="newsitem"><div style="display:flex;justify-content:space-between"><span class="tag cyan">${esc(String(n.category || 'GERAL').toUpperCase())}</span></div><h4>${esc(n.title)}</h4><p>${esc(cleanNewsText(n.body))}</p></div>`).join('');
   } else {
     $('dashNews').innerHTML = '<div class="empty">Nenhuma notícia registrada ainda.</div>';
     $('allNewsList').innerHTML = '<div class="empty">As notícias aparecerão automaticamente conforme os jogos e negócios acontecerem.</div>';
@@ -2019,24 +2106,16 @@ function render(){
 
   const clubQuery = norm($('clubSearch')?.value || '');
   const visibleClubs = clubs.filter(c => !clubQuery || [c.name,c.owner_name].some(v => norm(v).includes(clubQuery)));
-  if($('clubSearchMeta')) $('clubSearchMeta').textContent = `${visibleClubs.length} de ${clubs.length} clubes`;
-  $('clubCards').innerHTML = visibleClubs.map(c => {
-    const ps = players.filter(p => p.club_id === c.id);
-    const avg = ps.length ? Math.round(ps.reduce((a, p) => a + p.overall, 0) / ps.length) : 0;
-    const payroll = ps.reduce((a, p) => a + calcSalary(p.market_value), 0);
-    return `<div class="card">
-      <div class="cardhead"><div class="club">${crest(c, true)}<div><b>${esc(c.name)}</b><div class="sub">${esc(c.owner_name || 'Manager')}</div></div></div>
-      ${canManageClub(c.id) ? `<button class="btn secondary sm" onclick="openClubModal('${c.id}')">${isAdmin() ? 'Editar Clube' : '📷 Foto / Escudo'}</button>` : ''}
-      </div>
-      <div class="moneygrid three-cols" style="margin-bottom:10px">
-        <div><span>CAIXA DISPONÍVEL</span><strong class="accent">${money(c.balance)}</strong></div>
-        <div><span>ELENCO / OVR</span><strong>${ps.length} atl. • ${avg}</strong></div>
-        <div><span>FOLHA (0,05%)</span><strong class="cyan">${money(payroll)}</strong></div>
-      </div>
-      ${getClubSeasonSponsorIds(c.id, season?.id).length ? `<div style="margin-bottom:10px"><div class="eyebrow" style="margin-bottom:4px;color:var(--gold-light)">🤝 PATROCINADORES & METAS</div>${renderClubSponsorsHtml(c.id, true)}</div>` : ''}
-      ${ps.map(p => `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div>`).join('') || '<div class="empty">Elenco vazio.</div>'}
-    </div>`;
-  }).join('') || `<div class="empty">${clubQuery ? 'Nenhum clube encontrado para essa busca.' : 'Cadastre os clubes da liga.'}</div>`;
+  if($('clubSearchMeta')) $('clubSearchMeta').textContent = `${visibleClubs.length} de ${clubs.length} clubes • Toque na imagem para ver o plantel por posição`;
+  const clubCardsEl = $('clubCards');
+  clubCardsEl.className = 'clubs-image-grid';
+  clubCardsEl.innerHTML = visibleClubs.map(c => {
+    const initials = esc((c?.name || 'CL').split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase());
+    const mediaHtml = c?.logo_url
+      ? `<img src="${esc(c.logo_url)}" alt="${esc(c.name || 'Clube')}" onerror="this.outerHTML='<div class=\'club-img-fallback\'>${initials}</div>'">`
+      : `<div class="club-img-fallback">${initials}</div>`;
+    return `<button type="button" class="club-img-tile" onclick="openClubSquadModal('${c.id}')" title="${esc(c.name)}" aria-label="${esc(c.name)}">${mediaHtml}</button>`;
+  }).join('') || `<div class="empty" style="grid-column:1/-1">${clubQuery ? 'Nenhum clube encontrado para essa busca.' : 'Cadastre os clubes da liga.'}</div>`;
 
   // Filtros de Rodada, Datas das Rodadas e Clube em Jogos & Resultados
   const allRounds = getSeasonRoundNumbers();
@@ -2239,9 +2318,10 @@ function render(){
     $('matchFinanceRows').innerHTML = matchFinRowsHtml.join('') || '<tr><td colspan="9" class="empty">Nenhuma partida realizada para o filtro selecionado.</td></tr>';
   }
 
-  $('ledgerRows').innerHTML = visibleLedger.map(x => `<tr><td>${new Date(x.created_at).toLocaleDateString('pt-BR')}</td><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[(SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|REVERSAL|AUDIT_FIX):[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sem lançamentos.</td></tr>';
+  const last10Ledger = visibleLedger.slice(0, 10);
+  $('ledgerRows').innerHTML = last10Ledger.map(x => `<tr><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[(SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|REVERSAL|AUDIT_FIX):[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="4" class="empty">Sem lançamentos.</td></tr>';
 
-  $('seasonList').innerHTML = seasons.map(s => `<div class="fixture"><div><b>${esc(s.name)}</b><div class="sub">${new Date(s.created_at).toLocaleDateString('pt-BR')}</div></div><span class="tag ${s.status === 'active' ? 'green' : ''}">${s.status === 'active' ? 'ATIVA' : 'ENCERRADA'}</span></div>`).join('');
+  $('seasonList').innerHTML = seasons.map(s => `<div class="fixture"><div><b>${esc(s.name)}</b></div><span class="tag ${s.status === 'active' ? 'green' : ''}">${s.status === 'active' ? 'ATIVA' : 'ENCERRADA'}</span></div>`).join('');
   $('cfgGoal').value = league.goal_bonus ?? 50000;
   $('cfgAssist').value = league.assist_bonus ?? 25000;
   $('cfgYellow').value = league.yellow_card_fine ?? 15000;
@@ -2254,6 +2334,83 @@ function render(){
   $('adminLeagueName').value = league.name;
   $('membersList').innerHTML = members.map(m => `<div class="fixture"><span>${esc(m.profiles?.email || 'Participante')}</span><span class="tag">${m.role === 'admin' ? 'ADM' : 'MEMBRO'}</span></div>`).join('');
   $('fClub').innerHTML = clubs.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+
+const POSITION_ORDER = ['GOL', 'ZAG', 'LD', 'LE', 'VOL', 'MC', 'MEI', 'PD', 'PE', 'ATA'];
+const POSITION_LABELS = {
+  GOL: '🧤 Goleiros',
+  ZAG: '🛡️ Zagueiros',
+  LD: '↗️ Laterais Direitos',
+  LE: '↖️ Laterais Esquerdos',
+  VOL: '⚓ Volantes',
+  MC: '⚙️ Meio-Campistas',
+  MEI: '🎯 Meias-Atacantes',
+  PD: '⚡ Pontas Direitos',
+  PE: '⚡ Pontas Esquerdos',
+  ATA: '⚽ Atacantes'
+};
+
+function openClubSquadModal(clubId){
+  const c = clubs.find(x => x.id === clubId);
+  if(!c) return;
+  const ps = players
+    .filter(p => p.club_id === c.id)
+    .slice()
+    .sort((a, b) => {
+      const ia = POSITION_ORDER.indexOf(String(a.position || '').toUpperCase());
+      const ib = POSITION_ORDER.indexOf(String(b.position || '').toUpperCase());
+      const ra = ia === -1 ? 99 : ia;
+      const rb = ib === -1 ? 99 : ib;
+      return ra - rb || (Number(b.overall) || 0) - (Number(a.overall) || 0) || String(a.name).localeCompare(String(b.name), 'pt-BR');
+    });
+
+  const avg = ps.length ? Math.round(ps.reduce((a, p) => a + (Number(p.overall) || 0), 0) / ps.length) : 0;
+  const payroll = ps.reduce((a, p) => a + calcSalary(p.market_value), 0);
+
+  $('sqClubCrest').innerHTML = crest(c, true);
+  $('sqClubTitle').textContent = c.name;
+  $('sqClubMeta').textContent = c.owner_name || 'Plantel completo';
+  $('sqClubCash').textContent = money(c.balance);
+  $('sqClubStats').textContent = `${ps.length} atl. • ${avg}`;
+  $('sqClubPayroll').textContent = money(payroll);
+
+  const actions = [];
+  if(canManageClub(c.id)){
+    actions.push(`<button type="button" class="btn secondary sm" onclick="closeModal('clubSquadModal');openClubModal('${c.id}')">${isAdmin() ? '✏️ Editar' : '📷 Foto'}</button>`);
+  }
+  $('sqClubActions').innerHTML = actions.join('');
+
+  $('sqClubSponsors').innerHTML = getClubSeasonSponsorIds(c.id, season?.id).length
+    ? `<div style="margin-bottom:8px"><div class="eyebrow" style="margin-bottom:4px;color:var(--gold-light)">🤝 PATROCINADORES & METAS</div>${renderClubSponsorsHtml(c.id, true)}</div>`
+    : '';
+
+  if(!ps.length){
+    $('sqPlayersByPos').innerHTML = '<div class="empty">Elenco vazio.</div>';
+  } else {
+    const groups = new Map();
+    ps.forEach(p => {
+      const pos = String(p.position || 'OUT').toUpperCase();
+      if(!groups.has(pos)) groups.set(pos, []);
+      groups.get(pos).push(p);
+    });
+    const orderedKeys = [...groups.keys()].sort((a, b) => {
+      const ia = POSITION_ORDER.indexOf(a);
+      const ib = POSITION_ORDER.indexOf(b);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
+    });
+
+    $('sqPlayersByPos').innerHTML = orderedKeys.map(pos => {
+      const list = groups.get(pos);
+      const grpTitle = POSITION_LABELS[pos] || pos;
+      return `<div>
+        <div class="pos-group-title"><span>${grpTitle}</span><span>${list.length}</span></div>
+        ${list.map(p => `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div>`).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  openModal('clubSquadModal');
 }
 
 function go(page){
@@ -3539,7 +3696,7 @@ function openNotifications(){
     const target = players.find(p => p.id === pr.target_player_id), offered = players.find(p => p.id === pr.offered_player_id);
     const canAnswer = pr.status === 'pending' && (isAdmin() || myIds.includes(pr.from_club_id));
     return `<div class="newsitem">
-      <div style="display:flex;justify-content:space-between"><span class="tag ${pr.status === 'pending' ? 'gold' : pr.status === 'accepted' ? 'green' : 'red'}">${pr.status === 'pending' ? 'PENDENTE' : pr.status === 'accepted' ? 'ACEITA' : 'RECUSADA'}</span><span class="sub">${new Date(pr.created_at).toLocaleDateString('pt-BR')}</span></div>
+      <div style="display:flex;justify-content:space-between"><span class="tag ${pr.status === 'pending' ? 'gold' : pr.status === 'accepted' ? 'green' : 'red'}">${pr.status === 'pending' ? 'PENDENTE' : pr.status === 'accepted' ? 'ACEITA' : 'RECUSADA'}</span></div>
       <h4>${esc(buyer?.name || '?')} quer ${esc(target?.name || '?')} (do ${esc(seller?.name || '?')})</h4>
       <p>Oferta: ${offered ? `<b>${esc(offered.name)}</b> (OVR ${offered.overall})` : 'Sem troca de atleta'} ${Number(pr.cash_offer) > 0 ? `+ <b>${money(pr.cash_offer)}</b>` : ''}</p>
       ${canAnswer ? `<div style="display:flex;gap:8px;margin-top:9px"><button class="btn sm" onclick="answerProposal('${pr.id}',true)">✅ Aceitar</button><button class="btn danger sm" onclick="answerProposal('${pr.id}',false)">❌ Recusar</button></div>` : ''}
@@ -4215,13 +4372,32 @@ async function runManualPayroll(){
   });
 }
 
+async function pruneLedgerToLast10(){
+  if(!league?.id || !isAdmin()) return;
+  try {
+    const { data: rows, error } = await sb
+      .from('ledger_entries')
+      .select('id,created_at,description')
+      .eq('league_id', league.id)
+      .order('created_at', { ascending: false });
+    if(error || !Array.isArray(rows)) return;
+    const kept = rows.slice(0, 10);
+    const toDelete = rows.slice(10).map(r => r.id).filter(Boolean);
+    if(toDelete.length){
+      await sb.from('ledger_entries').delete().in('id', toDelete);
+    }
+    try { localStorage.setItem('ml_ledger_keep10_' + league.id, JSON.stringify(kept.map(x => x.id))); } catch(_) {}
+  } catch(_) {}
+}
+
 async function addLedger(){
   if(!isAdmin()) return toast('Apenas o ADM pode lançar no caixa.');
   const clubId = $('fClub').value, type = $('fType').value, amount = Number($('fAmount').value), desc = $('fDesc').value.trim();
   if(!clubId || !Number.isFinite(amount) || amount <= 0 || !desc) return toast('Preencha todos os campos com valores válidos.');
   const { error } = await sb.rpc('post_ledger_entry', { p_league_id: league.id, p_season_id: season?.id || null, p_club_id: clubId, p_type: type, p_amount: amount, p_description: desc });
   if(error) return toast(error.message);
-  closeModal('financeModal'); toast('Lançamento registrado!'); await loadAll();
+  await pruneLedgerToLast10();
+  closeModal('financeModal'); toast('Lançamento registrado (mantendo os últimos 10 no histórico)!'); await loadAll();
 }
 
 async function finalizeSeason(){ return runLocked('finalize', async () => {
