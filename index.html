@@ -485,6 +485,7 @@ tr:last-child td{border:0}
   padding:0;
   flex-shrink:0;
   -moz-appearance:textfield;
+  appearance:textfield;
 }
 .sb-score-num::-webkit-outer-spin-button,
 .sb-score-num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -622,6 +623,7 @@ tr:last-child td{border:0}
   text-overflow:ellipsis;
   display:-webkit-box;
   -webkit-line-clamp:2;
+  line-clamp:2;
   -webkit-box-orient:vertical;
   line-height:1.25;
 }
@@ -643,6 +645,93 @@ tr:last-child td{border:0}
   gap:8px;
   padding-top:8px;
   border-top:1px solid rgba(255,255,255,0.06);
+}
+.match-filters-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  gap:8px;
+  margin-bottom:10px;
+}
+.match-filter-select{
+  width:100%;
+  min-width:0;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(5,9,19,.85);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-size:12px;
+  font-weight:700;
+}
+.round-pills-strip{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:2px 0 8px;
+  margin-bottom:8px;
+  scrollbar-width:thin;
+}
+.round-pill-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:6px 11px;
+  border-radius:10px;
+  background:rgba(7,12,24,0.88);
+  border:1px solid rgba(255,255,255,0.09);
+  color:#cbd5e1;
+  font-size:11px;
+  font-weight:800;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.round-pill-btn:hover{border-color:var(--border-gold);color:#fff}
+.round-pill-btn.active{
+  background:linear-gradient(135deg, rgba(16,185,129,0.24), rgba(245,158,11,0.22));
+  border-color:var(--gold);
+  color:#fff;
+}
+.round-pill-date{
+  color:var(--gold-light);
+  font-weight:700;
+  font-size:10px;
+}
+.round-info-banner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  background:linear-gradient(135deg, rgba(245,158,11,0.14), rgba(16,185,129,0.10));
+  border:1px solid var(--border-gold);
+  border-radius:13px;
+  padding:10px 12px;
+  margin-bottom:12px;
+}
+.rd-edit-row{
+  display:grid;
+  grid-template-columns:minmax(95px,1fr) minmax(120px,1.2fr) minmax(90px,.9fr) auto;
+  gap:6px;
+  align-items:center;
+  background:rgba(5,9,18,0.85);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:11px;
+  padding:8px 10px;
+  margin-bottom:7px;
+}
+.rd-edit-row input{
+  width:100%;
+  min-width:0;
+  padding:7px 8px;
+  border-radius:8px;
+  background:rgba(13,20,37,0.95);
+  border:1px solid rgba(148,163,184,0.24);
+  color:#f8fafc;
+  font-size:12px;
+}
+@media(max-width:520px){
+  .match-filters-grid{grid-template-columns:1fr}
+  .rd-edit-row{grid-template-columns:1fr 1fr;gap:6px}
 }
 @media(max-width:420px){
   .side-ev-grid{grid-template-columns:1fr}
@@ -992,12 +1081,23 @@ tr:last-child td{border:0}
    <!-- JOGOS & RESULTADOS -->
    <section class="section" id="matches">
     <div class="cardhead">
-     <div><h2>Jogos & Resultados</h2><div class="sub">Antecipe qualquer partida ou lance placares com gols, assistências e cartões.</div></div>
+     <div><h2>Jogos & Resultados</h2><div class="sub">Filtre por rodada e data, antecipe confrontos ou lance placares com gols, assistências e cartões.</div></div>
      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn gold sm" onclick="openRoundDatesModal()">📅 Datas das Rodadas</button>
       <button class="btn secondary sm" onclick="openDrawModal()">🎲 Sortear Tabela</button>
       <button class="btn sm" onclick="openMatchModal(null)">+ Jogo Avulso</button>
      </div>
     </div>
+    <div class="match-filters-grid">
+     <select id="matchRoundFilter" class="match-filter-select" onchange="onMatchRoundFilterChange()" aria-label="Filtrar jogos por rodada e data">
+      <option value="ALL">📅 Todas as rodadas</option>
+     </select>
+     <select id="matchClubFilter" class="match-filter-select" onchange="render()" aria-label="Filtrar jogos por clube">
+      <option value="ALL">🛡️ Todos os clubes</option>
+     </select>
+    </div>
+    <div id="roundDatesStrip" class="round-pills-strip hidden"></div>
+    <div id="matchRoundBanner" class="round-info-banner hidden"></div>
     <div class="tabs">
      <button class="active" onclick="setMatchTab('scheduled',this)">📅 Próximos Jogos (<span id="cntSched">0</span>)</button>
      <button onclick="setMatchTab('played',this)">✅ Realizados (<span id="cntPlayed">0</span>)</button>
@@ -1317,11 +1417,46 @@ tr:last-child td{border:0}
  <div class="modalfoot"><button class="btn secondary" onclick="closeModal('drawModal')">Cancelar</button><button class="btn" onclick="runFixtureDraw()">Sortear Agora</button></div>
 </div></div>
 
+<!-- MODAL: DATAS DAS RODADAS -->
+<div class="modalbg" id="roundDatesModal"><div class="modal" style="width:min(560px,100%)">
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+  <h3 style="margin:0">📅 Calendário & Datas das Rodadas</h3>
+  <span class="tag gold" id="rdSeasonBadge">Temporada</span>
+ </div>
+ <p class="sub" style="margin:0 0 12px">Defina a data (e horário opcional) de cada rodada da temporada. As datas aparecem automaticamente no filtro e nos cards dos jogos.</p>
+
+ <div id="rdAutoBox" class="card" style="background:rgba(5,9,18,0.85);margin-bottom:12px;padding:11px">
+  <div class="eyebrow" style="color:var(--gold-light);margin-bottom:8px">⚡ GERADOR RÁPIDO DE DATAS (OPCIONAL)</div>
+  <div class="grid three" style="gap:8px;margin-bottom:8px">
+   <div class="field" style="margin-bottom:0"><label>Data 1ª Rodada</label><input id="rdAutoStart" type="date"></div>
+   <div class="field" style="margin-bottom:0"><label>Intervalo</label>
+    <select id="rdAutoStep">
+     <option value="7">Semanal (7 dias)</option>
+     <option value="3">2x Semana (3 dias)</option>
+     <option value="4">2x Semana (4 dias)</option>
+     <option value="1">Diário (1 dia)</option>
+     <option value="14">Quinzenal (14 dias)</option>
+    </select>
+   </div>
+   <div class="field" style="margin-bottom:0"><label>Horário Padrão</label><input id="rdAutoTime" type="time" value="20:00"></div>
+  </div>
+  <button type="button" class="btn secondary sm" style="width:100%" onclick="autoFillRoundDates()">⚡ Preencher Todas as Rodadas Automaticamente</button>
+ </div>
+
+ <div id="rdRowsList" style="max-height:44vh;overflow-y:auto;padding-right:2px"></div>
+
+ <div class="modalfoot">
+  <button type="button" class="btn secondary" onclick="closeModal('roundDatesModal')">Fechar</button>
+  <button type="button" class="btn gold hidden" id="rdSaveBtn" onclick="saveRoundDates()">💾 Salvar Datas das Rodadas</button>
+ </div>
+</div></div>
+
 <!-- MODAL: LANÇAR PLACAR + GOLS, ASSISTÊNCIAS E CARTÕES -->
 <div class="modalbg" id="matchModal"><div class="modal" style="width:min(540px,100%)"><h3>⚽ Placar & Eventos da Partida</h3><input type="hidden" id="mEditId">
  <div class="scoreboard-box">
   <div class="sb-top-row" style="gap:8px;flex-wrap:wrap">
-   <label class="sb-round-pill">RODADA <input id="mRound" type="number" min="1" value="1"></label>
+   <label class="sb-round-pill">RODADA <input id="mRound" type="number" min="1" value="1" oninput="updateMatchModalRoundDateBadge()"></label>
+   <span class="tag gold hidden" id="mRoundDateBadge"></span>
    <button type="button" class="btn secondary sm" onclick="swapMatchSides()" title="Inverter Mandante (Casa) e Visitante">⇄ Inverter Casa / Visitante</button>
   </div>
   <div class="sb-teams">
@@ -1607,7 +1742,7 @@ async function loadAll(){
     sb.from('transfer_proposals').select('*').eq('league_id', id).order('created_at', { ascending: false }),
     sb.from('ledger_entries').select('*').eq('league_id', id).order('created_at', { ascending: false }),
     sb.from('league_members').select('role,user_id,profiles(email)').eq('league_id', id),
-    sb.from('league_news').select('*').eq('league_id', id).order('created_at', { ascending: false }).limit(30),
+    sb.from('league_news').select('*').eq('league_id', id).order('created_at', { ascending: false }).limit(500),
     sb.from('league_sponsors').select('*').eq('league_id', id).order('created_at', { ascending: false })
   ]);
   for(let i = 0; i < q.length; i++){
@@ -1748,7 +1883,7 @@ function render(){
       : '<div class="empty">Cadastre um clube para gerenciar patrocínios.</div>';
   }
 
-  const sponsorCatalogVisible = activeClubChosen.length >= 2
+  const sponsorCatalogVisible = (!isAdmin() && activeClubChosen.length >= 2)
     ? sponsors.filter(s => activeClubChosen.includes(s.id))
     : sponsors;
   $('sponsorsList').innerHTML = sponsorCatalogVisible.map(s => {
@@ -1767,11 +1902,11 @@ function render(){
       <div>
         <b style="font-size:15px;display:block">${esc(s.name)}</b>
         ${cleanDesc ? `<span class="sub" style="display:block;margin-top:3px">${esc(cleanDesc)}</span>` : ''}
-        ${activeClubId ? `<span class="sub" style="display:block;margin-top:4px;color:var(--gold-light)">${esc(sponsorContractRate(activeClubId, s.id).label)} • ${Math.round(sponsorContractRate(activeClubId, s.id).rate*100)}% do valor-base</span>` : ''}
+        ${activeClubId ? (() => { const d = alreadySigned ? { rate: getSponsorContractRate(activeClubId, s.id, season?.id), label: 'Contrato assinado' } : sponsorContractRate(activeClubId, s.id); return `<span class="sub" style="display:block;margin-top:4px;color:var(--gold-light)">${esc(d.label)} • ${Math.round(d.rate*100)}% do valor-base</span>`; })() : ''}
       </div>
       <div class="mission-list">
         ${goals.map((g, idx) => `<div class="mission-box">
-          <div class="mission-top"><span class="mission-name">🎯 Meta ${idx + 1}: ${esc(g.name)}</span><span class="tag gold">${money(Math.round((Number(s.bonus_amount) || 0) * (activeClubId ? sponsorContractRate(activeClubId, s.id).rate : 1) / 2))}</span></div>
+          <div class="mission-top"><span class="mission-name">🎯 Meta ${idx + 1}: ${esc(g.name)}</span><span class="tag gold">${money(Math.round((Number(s.bonus_amount) || 0) * (activeClubId ? (alreadySigned ? getSponsorContractRate(activeClubId, s.id, season?.id) : sponsorContractRate(activeClubId, s.id).rate) : 1) / 2))}</span></div>
           <div class="mission-desc">${esc(g.desc)}</div>
         </div>`).join('')}
       </div>
@@ -1900,13 +2035,85 @@ function render(){
     </div>`;
   }).join('') || `<div class="empty">${clubQuery ? 'Nenhum clube encontrado para essa busca.' : 'Cadastre os clubes da liga.'}</div>`;
 
-  $('cntSched').textContent = schedMatches.length;
-  $('cntPlayed').textContent = playedMatches.length;
-  $('matchesScheduled').innerHTML = `<div class="match-card-list">` + (schedMatches.map((m, idx) => {
+  // Filtros de Rodada, Datas das Rodadas e Clube em Jogos & Resultados
+  const allRounds = getSeasonRoundNumbers();
+  const roundFilterEl = $('matchRoundFilter');
+  const prevRoundFilter = roundFilterEl?.value || 'ALL';
+  if(roundFilterEl){
+    roundFilterEl.innerHTML = `<option value="ALL">📅 Todas as rodadas (${seasonMatches.length} jogos)</option>`
+      + allRounds.map(r => {
+        const info = getRoundDateInfo(r);
+        const cnt = seasonMatches.filter(m => (Number(m.round_number) || 1) === r).length;
+        const datePart = info ? ` • ${info.compactLabel}` : ' • Sem data';
+        return `<option value="${r}">Rodada ${r}${datePart} (${cnt})</option>`;
+      }).join('');
+    if([...roundFilterEl.options].some(o => o.value === prevRoundFilter)) roundFilterEl.value = prevRoundFilter;
+  }
+  const selectedRoundFilter = roundFilterEl?.value || 'ALL';
+
+  const matchClubEl = $('matchClubFilter');
+  const prevMatchClub = matchClubEl?.value || 'ALL';
+  if(matchClubEl){
+    matchClubEl.innerHTML = `<option value="ALL">🛡️ Todos os clubes</option>`
+      + clubs.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    if([...matchClubEl.options].some(o => o.value === prevMatchClub)) matchClubEl.value = prevMatchClub;
+  }
+  const selectedMatchClub = matchClubEl?.value || 'ALL';
+
+  const stripEl = $('roundDatesStrip');
+  if(stripEl){
+    stripEl.classList.toggle('hidden', allRounds.length === 0);
+    stripEl.innerHTML = `<button type="button" class="round-pill-btn ${selectedRoundFilter === 'ALL' ? 'active' : ''}" onclick="selectRoundFilter('ALL')">Todas (${seasonMatches.length})</button>`
+      + allRounds.map(r => {
+        const info = getRoundDateInfo(r);
+        const isAct = selectedRoundFilter === String(r);
+        return `<button type="button" class="round-pill-btn ${isAct ? 'active' : ''}" onclick="selectRoundFilter(${r})">R${r}${info ? ` <span class="round-pill-date">• ${esc(info.dayMonth)}</span>` : ''}</button>`;
+      }).join('');
+  }
+
+  const bannerEl = $('matchRoundBanner');
+  if(bannerEl){
+    if(selectedRoundFilter !== 'ALL'){
+      const rNum = Number(selectedRoundFilter) || 1;
+      const rInfo = getRoundDateInfo(rNum);
+      const rMatches = seasonMatches.filter(m => (Number(m.round_number) || 1) === rNum);
+      const rDone = rMatches.filter(m => m.status === 'played' && m.home_goals !== null).length;
+      bannerEl.classList.remove('hidden');
+      bannerEl.innerHTML = `<div>
+          <b style="font-size:13px;color:#fff">📅 Rodada ${rNum} — ${rInfo ? `<span class="gold">${esc(rInfo.fullLabel)}</span>` : '<span class="sub">Data ainda não definida</span>'}</b>
+          <div class="sub">${rMatches.length} ${rMatches.length === 1 ? 'jogo' : 'jogos'} na rodada • ${rDone} realizado(s) • ${rMatches.length - rDone} pendente(s)</div>
+        </div>
+        ${isAdmin() ? `<button type="button" class="btn gold sm" onclick="openRoundDatesModal(${rNum})">✏️ ${rInfo ? 'Alterar Data' : 'Definir Data'}</button>` : ''}`;
+    } else {
+      bannerEl.classList.add('hidden');
+      bannerEl.innerHTML = '';
+    }
+  }
+
+  const filterMatchItem = (m) => {
+    if(selectedRoundFilter !== 'ALL' && String(Number(m.round_number) || 1) !== selectedRoundFilter) return false;
+    if(selectedMatchClub !== 'ALL' && m.home_club_id !== selectedMatchClub && m.away_club_id !== selectedMatchClub) return false;
+    return true;
+  };
+
+  const filteredSchedMatches = schedMatches.filter(filterMatchItem);
+  const filteredPlayedMatches = playedMatches.filter(filterMatchItem);
+
+  $('cntSched').textContent = filteredSchedMatches.length;
+  $('cntPlayed').textContent = filteredPlayedMatches.length;
+  $('matchesScheduled').innerHTML = `<div class="match-card-list">` + (filteredSchedMatches.map((m, idx) => {
     const h = clubs.find(c => c.id === m.home_club_id), a = clubs.find(c => c.id === m.away_club_id);
+    const rnd = Number(m.round_number) || 1;
+    const rInfo = getRoundDateInfo(rnd);
+    const dateBadge = rInfo
+      ? `<span class="tag gold">📅 ${esc(rInfo.compactLabel)}</span>`
+      : (isAdmin() ? `<button type="button" class="tag" onclick="openRoundDatesModal(${rnd})" title="Definir data da rodada">+ 📅 Data</button>` : '');
     return `<div class="match-card">
       <div class="match-card-top">
-        <span class="tag">Jogo #${m.match_order || idx + 1} • Rodada ${m.round_number || 1}</span>
+        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+          <span class="tag">Jogo #${m.match_order || idx + 1} • Rodada ${rnd}</span>
+          ${dateBadge}
+        </div>
         ${isAdmin() ? `<div style="display:flex;gap:6px;align-items:center"><button class="btn sm" onclick="openMatchModal('${m.id}')">⚽ Lançar Placar</button><button class="btn danger sm" onclick="deleteMatch('${m.id}')" title="Excluir jogo" aria-label="Excluir jogo">🗑️</button></div>` : '<span class="sub">Aguardando</span>'}
       </div>
       <div class="match-card-teams">
@@ -1915,10 +2122,12 @@ function render(){
         <div class="match-team-side away"><span class="match-team-name">${esc(a?.name || '?')}</span>${crest(a)}</div>
       </div>
     </div>`;
-  }).join('') || '<div class="empty">Nenhum jogo pendente. Toque em "Sortear Tabela" para gerar os confrontos.</div>') + `</div>`;
+  }).join('') || `<div class="empty">${(selectedRoundFilter !== 'ALL' || selectedMatchClub !== 'ALL') ? 'Nenhum jogo pendente encontrado para este filtro.' : 'Nenhum jogo pendente. Toque em "Sortear Tabela" para gerar os confrontos.'}</div>`) + `</div>`;
 
-  $('matchesPlayed').innerHTML = `<div class="match-card-list">` + (playedMatches.slice().reverse().map(m => {
+  $('matchesPlayed').innerHTML = `<div class="match-card-list">` + (filteredPlayedMatches.slice().reverse().map(m => {
     const h = clubs.find(c => c.id === m.home_club_id), a = clubs.find(c => c.id === m.away_club_id);
+    const rnd = Number(m.round_number) || 1;
+    const rInfo = getRoundDateInfo(rnd);
     const evs = matchEvents.filter(e => e.match_id === m.id);
     const summary = evs.map(e => {
       const pl = players.find(x => x.id === e.player_id);
@@ -1928,7 +2137,10 @@ function render(){
     }).join(' • ');
     return `<div class="match-card">
       <div class="match-card-top">
-        <span class="tag green">Rodada ${m.round_number || 1} • Encerrado</span>
+        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+          <span class="tag green">Rodada ${rnd} • Encerrado</span>
+          ${rInfo ? `<span class="tag gold">📅 ${esc(rInfo.compactLabel)}</span>` : ''}
+        </div>
         ${isAdmin() ? `<div style="display:flex;gap:6px;align-items:center"><button class="btn secondary sm" onclick="openMatchModal('${m.id}')">✏️ Editar</button><button class="btn danger sm" onclick="deleteMatch('${m.id}')" title="Excluir jogo" aria-label="Excluir jogo">🗑️</button></div>` : ''}
       </div>
       <div class="match-card-teams">
@@ -1949,7 +2161,7 @@ function render(){
       })()}
       <div class="match-card-foot"><div class="sub">${esc(summary || 'Sem eventos individuais registrados')}</div></div>
     </div>`;
-  }).join('') || '<div class="empty">Nenhuma partida realizada ainda.</div>') + `</div>`;
+  }).join('') || `<div class="empty">${(selectedRoundFilter !== 'ALL' || selectedMatchClub !== 'ALL') ? 'Nenhuma partida realizada encontrada para este filtro.' : 'Nenhuma partida realizada ainda.'}</div>`) + `</div>`;
 
   if($('auditFinBtn')) $('auditFinBtn').classList.toggle('hidden', !isAdmin());
   const finClubEl = $('finClubFilter');
@@ -2154,6 +2366,222 @@ function getAllMetaRecords(){
   const fromNews = news.map(n => ({ text: `${n.title || ''} ${n.body || ''}`, ts: new Date(n.created_at || 0).getTime() }));
   const fromLedger = ledger.map(l => ({ text: String(l.description || ''), ts: new Date(l.created_at || 0).getTime() }));
   return [...fromNews, ...fromLedger].sort((a, b) => a.ts - b.ts);
+}
+
+
+/* CALENDÁRIO & DATAS DAS RODADAS */
+const WEEKDAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const WEEKDAYS_FULL_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+function formatRoundDateInfo(dateStr, timeStr = ''){
+  if(!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d, 12, 0, 0);
+  if(Number.isNaN(dt.getTime())) return null;
+  const dd = String(d).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  const wdShort = WEEKDAYS_PT[dt.getDay()];
+  const wdFull = WEEKDAYS_FULL_PT[dt.getDay()];
+  const cleanTime = (timeStr && /^\d{2}:\d{2}$/.test(timeStr)) ? timeStr : '';
+  return {
+    date: dateStr,
+    time: cleanTime,
+    dayMonth: `${dd}/${mm}`,
+    shortLabel: `${dd}/${mm}/${y}${cleanTime ? ' • ' + cleanTime : ''}`,
+    compactLabel: `${dd}/${mm} (${wdShort})${cleanTime ? ' ' + cleanTime : ''}`,
+    fullLabel: `${wdFull}, ${dd}/${mm}/${y}${cleanTime ? ' às ' + cleanTime : ''}`
+  };
+}
+
+function getSeasonRoundDates(seasonId){
+  if(!seasonId) return {};
+  const tag = `[ROUND_DATES:${seasonId}:`;
+  const recs = getAllMetaRecords().reverse();
+  const entry = recs.find(r => r.text.includes(tag));
+  if(entry){
+    const m = entry.text.match(/\[ROUND_DATES:[^:]+:([^\]]*)\]/);
+    if(m){
+      const map = {};
+      m[1].split(',').map(x => x.trim()).filter(Boolean).forEach(tok => {
+        const eqIdx = tok.indexOf('=');
+        if(eqIdx <= 0) return;
+        const rnd = parseInt(tok.slice(0, eqIdx), 10);
+        const val = tok.slice(eqIdx + 1).trim();
+        if(!Number.isInteger(rnd) || rnd < 1 || !val) return;
+        const [dPart, tPart] = val.split('@');
+        if(/^\d{4}-\d{2}-\d{2}$/.test(dPart)){
+          map[rnd] = { date: dPart, time: (tPart && /^\d{2}:\d{2}$/.test(tPart)) ? tPart : '' };
+        }
+      });
+      return map;
+    }
+  }
+  try {
+    const raw = localStorage.getItem('ml_rdates_' + seasonId);
+    if(raw) return JSON.parse(raw) || {};
+  } catch(_) {}
+  return {};
+}
+
+function getRoundDateInfo(roundNum, seasonId = season?.id){
+  const rnd = Number(roundNum) || 1;
+  const map = getSeasonRoundDates(seasonId);
+  const item = map[rnd];
+  if(item?.date) return formatRoundDateInfo(item.date, item.time || '');
+  const sampleMatch = matches.find(m => m.season_id === seasonId && (Number(m.round_number) || 1) === rnd && (m.match_date || m.scheduled_date));
+  const fallbackRaw = sampleMatch?.match_date || sampleMatch?.scheduled_date;
+  if(fallbackRaw && /^\d{4}-\d{2}-\d{2}/.test(String(fallbackRaw))){
+    return formatRoundDateInfo(String(fallbackRaw).slice(0, 10), '');
+  }
+  return null;
+}
+
+function selectRoundFilter(val){
+  const el = $('matchRoundFilter');
+  if(el){
+    el.value = String(val);
+    render();
+  }
+}
+
+function onMatchRoundFilterChange(){
+  render();
+}
+
+function updateMatchModalRoundDateBadge(){
+  const badge = $('mRoundDateBadge');
+  if(!badge) return;
+  const rnd = Number($('mRound')?.value) || 1;
+  const info = getRoundDateInfo(rnd);
+  if(info){
+    badge.textContent = `📅 ${info.compactLabel}`;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function getSeasonRoundNumbers(){
+  const seasonMatches = matches.filter(m => m.season_id === season?.id);
+  const set = new Set();
+  seasonMatches.forEach(m => set.add(Number(m.round_number) || 1));
+  const saved = getSeasonRoundDates(season?.id);
+  Object.keys(saved).forEach(k => { const n = Number(k); if(n >= 1) set.add(n); });
+  if(!set.size && clubs.length > 1){
+    const estRounds = (clubs.length % 2 === 0 ? clubs.length - 1 : clubs.length) * 2;
+    for(let r = 1; r <= estRounds; r++) set.add(r);
+  }
+  if(!set.size) set.add(1);
+  return [...set].sort((a, b) => a - b);
+}
+
+function openRoundDatesModal(focusRound = null){
+  if(!season) return toast('Crie uma temporada primeiro.');
+  const admin = isAdmin();
+  $('rdSeasonBadge').textContent = season.name || 'Temporada';
+  $('rdAutoBox').classList.toggle('hidden', !admin);
+  $('rdSaveBtn').classList.toggle('hidden', !admin);
+
+  const rounds = getSeasonRoundNumbers();
+  const saved = getSeasonRoundDates(season.id);
+  const seasonMatches = matches.filter(m => m.season_id === season.id);
+
+  if(!$('rdAutoStart').value){
+    const firstDate = saved[rounds[0]]?.date || new Date().toISOString().slice(0, 10);
+    $('rdAutoStart').value = firstDate;
+  }
+
+  $('rdRowsList').innerHTML = rounds.map(r => {
+    const cnt = seasonMatches.filter(m => (Number(m.round_number) || 1) === r).length;
+    const cur = saved[r] || { date: '', time: '' };
+    const info = cur.date ? formatRoundDateInfo(cur.date, cur.time) : null;
+    if(!admin){
+      return `<div class="fixture">
+        <div><b>Rodada ${r}</b><div class="sub">${cnt} ${cnt === 1 ? 'jogo' : 'jogos'}</div></div>
+        <span class="tag ${info ? 'gold' : ''}">${info ? '📅 ' + esc(info.fullLabel) : 'Sem data definida'}</span>
+      </div>`;
+    }
+    return `<div class="rd-edit-row" data-round="${r}" id="rdRow-${r}">
+      <div><b style="font-size:12px">Rodada ${r}</b><div class="sub" style="font-size:10px">${cnt} ${cnt === 1 ? 'jogo' : 'jogos'}</div></div>
+      <input type="date" class="rd-date-inp" value="${esc(cur.date || '')}" aria-label="Data da Rodada ${r}">
+      <input type="time" class="rd-time-inp" value="${esc(cur.time || '')}" aria-label="Horário da Rodada ${r}">
+      <button type="button" class="side-ev-del" onclick="clearRoundDateRow(${r})" title="Limpar data">✕</button>
+    </div>`;
+  }).join('');
+
+  openModal('roundDatesModal');
+  if(focusRound){
+    setTimeout(() => {
+      const row = $('rdRow-' + focusRound);
+      if(row){
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.querySelector('.rd-date-inp')?.focus();
+      }
+    }, 80);
+  }
+}
+
+function clearRoundDateRow(rnd){
+  const row = $('rdRow-' + rnd);
+  if(!row) return;
+  const d = row.querySelector('.rd-date-inp');
+  const t = row.querySelector('.rd-time-inp');
+  if(d) d.value = '';
+  if(t) t.value = '';
+}
+
+function autoFillRoundDates(){
+  const startStr = $('rdAutoStart')?.value;
+  if(!startStr || !/^\d{4}-\d{2}-\d{2}$/.test(startStr)) return toast('Escolha a data da 1ª rodada primeiro.');
+  const stepDays = Math.max(1, parseInt($('rdAutoStep')?.value, 10) || 7);
+  const defTime = $('rdAutoTime')?.value || '';
+  const [y, m, d] = startStr.split('-').map(Number);
+  const rows = [...document.querySelectorAll('#rdRowsList .rd-edit-row')];
+  rows.forEach((row, idx) => {
+    const dt = new Date(y, m - 1, d + (idx * stepDays), 12, 0, 0);
+    const yyyy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const dateInp = row.querySelector('.rd-date-inp');
+    const timeInp = row.querySelector('.rd-time-inp');
+    if(dateInp) dateInp.value = `${yyyy}-${mm}-${dd}`;
+    if(timeInp && defTime) timeInp.value = defTime;
+  });
+  toast('Datas preenchidas! Confira e clique em "Salvar Datas das Rodadas".');
+}
+
+async function saveRoundDates(){
+  return runLocked('save-round-dates', async () => {
+    if(!isAdmin()) return toast('Apenas o ADM pode salvar as datas das rodadas.');
+    if(!league?.id || !season?.id) return toast('Nenhuma temporada ativa.');
+    const rows = [...document.querySelectorAll('#rdRowsList .rd-edit-row')];
+    const map = {};
+    const tokens = [];
+    rows.forEach(row => {
+      const rnd = parseInt(row.dataset.round, 10);
+      const d = row.querySelector('.rd-date-inp')?.value.trim() || '';
+      const t = row.querySelector('.rd-time-inp')?.value.trim() || '';
+      if(rnd >= 1 && /^\d{4}-\d{2}-\d{2}$/.test(d)){
+        const cleanT = /^\d{2}:\d{2}$/.test(t) ? t : '';
+        map[rnd] = { date: d, time: cleanT };
+        tokens.push(`${rnd}=${d}${cleanT ? '@' + cleanT : ''}`);
+      }
+    });
+
+    try { localStorage.setItem('ml_rdates_' + season.id, JSON.stringify(map)); } catch(_) {}
+
+    const { error } = await sb.from('league_news').insert({
+      league_id: league.id,
+      category: 'SISTEMA',
+      title: `Calendário de Rodadas (${season.name})`,
+      body: `[ROUND_DATES:${season.id}:${tokens.join(',')}]`
+    });
+    if(error) return toast('Erro ao salvar datas das rodadas: ' + error.message);
+
+    closeModal('roundDatesModal');
+    toast(`📅 Datas de ${tokens.length} rodada(s) salvas e sincronizadas!`);
+    await loadAll();
+  });
 }
 
 function getMatchFlags(matchId){
@@ -2566,24 +2994,33 @@ function sponsorContractRate(clubId, sponsorId){
   if(sameSponsor){
     const sp = sponsors.find(x => x.id === sponsorId);
     if(!sp) return { rate: 1, achieved: 0, previousSponsor: true, label: 'Renovação' };
-    const oldSeason = season; season = previous;
-    const achieved = getSponsorGoals(sp).filter(g => evaluateSponsorMission(g, clubId, statsRows()).achieved).length;
-    season = oldSeason;
+    const oldSeason = season;
+    let achieved = 0;
+    try {
+      season = previous;
+      achieved = getSponsorGoals(sp).filter(g => evaluateSponsorMission(g, clubId, statsRows()).achieved).length;
+    } finally {
+      season = oldSeason;
+    }
     const rate = achieved === 2 ? 1.15 : (achieved === 1 ? 1.05 : .80);
     return { rate, achieved, previousSponsor: true,
       label: achieved === 2 ? 'Renovação premiada +15%' : achieved === 1 ? 'Renovação +5%' : 'Renovação com redução de 20%' };
   }
   // Ao trocar de marca, o abatimento depende do aproveitamento global dos contratos anteriores.
   let totalGoals = 0, totalAchieved = 0;
-  const oldSeason = season; season = previous;
-  previousIds.forEach(id => {
-    const oldSponsor = sponsors.find(x => x.id === id);
-    if(!oldSponsor) return;
-    const outcomes = getSponsorGoals(oldSponsor).map(g => evaluateSponsorMission(g, clubId, statsRows()).achieved);
-    totalGoals += outcomes.length;
-    totalAchieved += outcomes.filter(Boolean).length;
-  });
-  season = oldSeason;
+  const oldSeason = season;
+  try {
+    season = previous;
+    previousIds.forEach(id => {
+      const oldSponsor = sponsors.find(x => x.id === id);
+      if(!oldSponsor) return;
+      const outcomes = getSponsorGoals(oldSponsor).map(g => evaluateSponsorMission(g, clubId, statsRows()).achieved);
+      totalGoals += outcomes.length;
+      totalAchieved += outcomes.filter(Boolean).length;
+    });
+  } finally {
+    season = oldSeason;
+  }
   const poorPerformance = totalGoals > 0 && totalAchieved / totalGoals < .5;
   return { rate: poorPerformance ? .80 : 1, achieved: totalAchieved, previousSponsor: false,
     label: poorPerformance ? 'Novo contrato: desconto de 20% por metas não cumpridas' : 'Novo contrato: valor padrão' };
@@ -3283,6 +3720,7 @@ function openMatchModal(matchId){
   $('mHG').value = m?.home_goals ?? 0;
   $('mAG').value = m?.away_goals ?? 0;
   $('mRound').value = m?.round_number || 1;
+  updateMatchModalRoundDateBadge();
   $('homeEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols da casa.</div>';
   $('awayEventsList').innerHTML = '<div class="sub ev-empty-hint" style="font-size:11px">Toque em <b>+ ⚽ Gol</b> ou no <b>+</b> acima para registrar gols do visitante.</div>';
   const flags = getMatchFlags(m?.id);
@@ -3516,7 +3954,7 @@ async function saveMatchResult(){ return runLocked('match', async () => {
   const { data: latestMatches } = await sb.from('matches').select('id,home_club_id,away_club_id,round_number').eq('league_id', league.id).eq('season_id', season.id).eq('home_club_id', h).eq('away_club_id', a).eq('round_number', rnd).order('created_at', { ascending: false }).limit(1);
   const savedMatchId = editMatchId || latestMatches?.[0]?.id;
 
-  if(savedMatchId && (isDerby === '1' || hCome === '1' || aCome === '1' || timingTokens.length)){
+  if(savedMatchId && (editMatchId || isDerby === '1' || hCome === '1' || aCome === '1' || timingTokens.length)){
     try {
       await sb.from('league_news').insert({
         league_id: league.id, category: 'SISTEMA',
