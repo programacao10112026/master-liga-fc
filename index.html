@@ -3179,6 +3179,10 @@ function renderClubSponsorsHtml(clubId, compact = false){
 
 // Gestão contratual por clube: reajuste individual baseado no desempenho da temporada anterior.
 function sponsorContractRate(clubId, sponsorId){
+  const clubObj = clubs.find(c => c.id === clubId);
+  if(clubObj && norm(clubObj.name) === 'real cabanas fc'){
+    return { rate: 1, achieved: 0, previousSponsor: false, label: 'Contrato padrão (100% do valor-base)' };
+  }
   const previous = seasons.filter(x => x.id !== season?.id && x.status === 'archived')
     .sort((a,b) => new Date(b.ended_at || b.created_at) - new Date(a.ended_at || a.created_at))[0];
   if(!previous) return { rate: 1, achieved: 0, previousSponsor: false, label: 'Contrato inicial' };
