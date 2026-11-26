@@ -1137,7 +1137,7 @@ tr:last-child td{border:0}
 
    <!-- CLUBES & ELENCOS -->
    <section class="section" id="clubs">
-    <div class="cardhead"><div><h2>Clubes & Elencos</h2><div class="sub">Gerencie caixa disponível, elenco e blindagem de atletas.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn gold sm hidden" id="syncRostersClubBtn" onclick="applyOfficialRosters()">🔄 Aplicar Elencos Oficiais</button><button class="btn sm" onclick="openClubModal()">+ Novo Clube</button></div></div>
+    <div class="cardhead"><div><h2>Clubes & Elencos</h2><div class="sub">Gerencie caixa disponível, elenco e blindagem de atletas.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn secondary sm" onclick="sincronizarRecalcularTodosCaixas()">🔄 Sincronizar / Recalcular Caixa</button><button class="btn gold sm hidden" id="syncRostersClubBtn" onclick="applyOfficialRosters()">🔄 Aplicar Elencos Oficiais</button><button class="btn sm" onclick="openClubModal()">+ Novo Clube</button></div></div>
     <div class="searchbar"><span>⌕</span><input id="clubSearch" type="search" placeholder="Buscar clube ou manager..." autocomplete="off" aria-label="Buscar clubes"></div>
     <div class="searchmeta" id="clubSearchMeta">Todos os clubes da liga</div>
     <div class="grid three" id="clubCards"></div>
@@ -1210,6 +1210,7 @@ tr:last-child td{border:0}
      <div class="cardhead">
       <div><h2>Livro-Caixa Automático & Manual</h2><div class="sub">Histórico completo de movimentações financeiras registradas.</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
+       <button class="btn cyan sm" id="syncCashBtn" onclick="sincronizarRecalcularTodosCaixas()">🔄 Sincronizar / Recalcular Caixa</button>
        <button class="btn gold sm hidden" id="runPayrollBtn" onclick="runManualPayroll()">💸 Pagar Folha Salarial (Rodada)</button>
        <button class="btn sm" onclick="openModal('financeModal')">+ Lançamento</button>
       </div>
@@ -3516,6 +3517,190 @@ async function deleteClub(){
   closeModal('clubModal'); toast('Clube excluído.'); await loadAll();
 }
 
+
+/* =========================================================================
+   RECÁLCULO AUTOMÁTICO E AUDITÁVEL DO CAIXA (FONTE ÚNICA DE VERDADE)
+   ========================================================================= */
+function getInitialClubCash(clubeId){
+  const c = clubs.find(x => x.id === clubeId);
+  if(!c) return 0;
+  const tag = `[CLUB_INIT_CASH:${clubeId}:`;
+  const recs = getAllMetaRecords().reverse();
+  const entry = recs.find(r => r.text.includes(tag));
+  if(entry){
+    const m = entry.text.match(/\[CLUB_INIT_CASH:[^:]+:(-?\d+)\]/);
+    if(m) return Number(m[1]) || 0;
+  }
+  try {
+    const saved = localStorage.getItem('ml_init_cash_' + clubeId);
+    if(saved !== null && Number.isFinite(Number(saved))) return Number(saved);
+  } catch(_) {}
+  const hasExplicitInitLedger = ledger.some(l => l.club_id === clubeId && /caixa inicial|saldo inicial/i.test(String(l.description || '')));
+  if(hasExplicitInitLedger) return 0;
+  return 10000000; // Saldo inicial padrão dos clubes (R$ 10.000.000)
+}
+
+function recalcularCaixaClube(clubeId){
+  const c = clubs.find(x => x.id === clubeId);
+  if(!c) return null;
+
+  const caixaInicial = getInitialClubCash(clubeId);
+
+  // 1. Partidas realizadas envolvendo o clube (fonte única de verdade para bilheteria, gols, assistências, folha e cartões)
+  const playedClubMatches = matches.filter(m =>
+    m.status === 'played' && m.home_goals !== null && (m.home_club_id === clubeId || m.away_club_id === clubeId)
+  );
+
+  const stadiumRate = toMoneyInt(league?.home_stadium_income);
+  const goalRate = toMoneyInt(league?.goal_bonus);
+  const assistRate = toMoneyInt(league?.assist_bonus);
+  const yellowRate = toMoneyInt(league?.yellow_card_fine);
+  const redRate = toMoneyInt(league?.red_card_fine);
+
+  let totalBilheteria = 0;
+  let totalBonusGolsAssist = 0;
+  let totalFolhaPartidas = 0;
+  let totalMultasCartoes = 0;
+
+  playedClubMatches.forEach(m => {
+    const isHome = m.home_club_id === clubeId;
+    if(isHome) totalBilheteria += stadiumRate;
+
+    const evs = matchEvents.filter(e => e.match_id === m.id && e.club_id === clubeId);
+    const gols = evs.filter(e => e.event_type === 'goal').length;
+    const assists = evs.filter(e => e.event_type === 'goal' && e.assist_player_id).length;
+    const amarelos = evs.filter(e => e.event_type === 'yellow_card').length;
+    const vermelhos = evs.filter(e => e.event_type === 'red_card').length;
+
+    totalBonusGolsAssist += (gols * goalRate) + (assists * assistRate);
+    totalMultasCartoes += (amarelos * yellowRate) + (vermelhos * redRate);
+
+    const wageTagPrefix = `[MATCH_WAGES:${m.season_id}:${m.id}:${clubeId}`;
+    const wageEntry = ledger.find(l => l.club_id === clubeId && String(l.description || '').includes(wageTagPrefix));
+    const folhaJogo = wageEntry
+      ? Math.round(Number(wageEntry.amount) || 0)
+      : players.filter(p => p.club_id === clubeId).reduce((sum, p) => sum + calcSalary(p.market_value), 0);
+    totalFolhaPartidas += folhaJogo;
+  });
+
+  // 2. Transferências e multas rescisórias concluídas
+  let totalVendas = 0;
+  let totalCompras = 0;
+  transfers.forEach(t => {
+    const fee = Math.round(Number(t.fee) || 0);
+    if(fee <= 0) return;
+    if(t.from_club_id === clubeId) totalVendas += fee;
+    if(t.to_club_id === clubeId) totalCompras += fee;
+  });
+
+  // 3. Movimentações extras auditáveis no livro-caixa (Patrocínios, Blindagens 1:4, Prêmios, Folha Manual e Lançamentos Manuais)
+  const isPartidaOuEstorno = (desc) => {
+    return /\[(MATCH_BILHETERIA|MATCH_BONUS|MATCH_WAGES|REVERSAL|REVERSAL_INC|REVERSAL_EXP|AUDIT_FIX_INC|AUDIT_FIX_EXP|SPONSOR_SIGN|SPONSOR_UNSIGN|MATCH_FLAGS):/.test(desc)
+      || /^(Bilheteria Jogo em Casa|Bônus Gols\/Assist\.|Folha Salarial — Partida|Estorno )/i.test(desc);
+  };
+  const isTransferenciaLedger = (desc) => {
+    return /(Transferência|Multa rescisória|Compra imediata)/i.test(desc) && transfers.length > 0;
+  };
+
+  let totalOutrosCreditos = 0;
+  let totalOutrosDebitos = 0;
+  ledger.filter(l => l.club_id === clubeId).forEach(l => {
+    const desc = String(l.description || '').trim();
+    if(isPartidaOuEstorno(desc) || isTransferenciaLedger(desc)) return;
+    const amt = Math.round(Number(l.amount) || 0);
+    if(amt <= 0) return;
+    if(l.entry_type === 'income') totalOutrosCreditos += amt;
+    else if(l.entry_type === 'expense') totalOutrosDebitos += amt;
+  });
+
+  const saldoExato = Math.round(
+    caixaInicial
+    + totalBilheteria
+    + totalBonusGolsAssist
+    + totalVendas
+    + totalOutrosCreditos
+    - totalFolhaPartidas
+    - totalMultasCartoes
+    - totalCompras
+    - totalOutrosDebitos
+  );
+
+  const saldoAtual = Math.round(Number(c.balance) || 0);
+  const diferenca = saldoExato - saldoAtual;
+
+  return {
+    clubeId,
+    nome: c.name,
+    caixaInicial,
+    totalBilheteria,
+    totalBonusGolsAssist,
+    totalVendas,
+    totalOutrosCreditos,
+    totalFolhaPartidas,
+    totalMultasCartoes,
+    totalCompras,
+    totalOutrosDebitos,
+    saldoAtual,
+    saldoExato,
+    diferenca
+  };
+}
+
+async function sincronizarRecalcularTodosCaixas(silent = false){
+  return runLocked('sync-all-cash', async () => {
+    if(!league?.id || !clubs.length){
+      if(!silent) toast('Nenhum clube encontrado para recalcular.');
+      return;
+    }
+
+    const relatorio = clubs.map(c => recalcularCaixaClube(c.id)).filter(Boolean);
+    const divergentes = relatorio.filter(r => Math.abs(r.diferenca) >= 1);
+
+    // Atualiza o cache local e localStorage imediatamente sem perder os dados
+    try {
+      const snapshot = {};
+      relatorio.forEach(r => {
+        snapshot[r.clubeId] = {
+          nome: r.nome,
+          saldoExato: r.saldoExato,
+          atualizadoEm: new Date().toISOString()
+        };
+        const clubObj = clubs.find(c => c.id === r.clubeId);
+        if(clubObj) clubObj.balance = r.saldoExato;
+      });
+      localStorage.setItem('ml_cash_audit_' + league.id, JSON.stringify(snapshot));
+    } catch(_) {}
+
+    if(!divergentes.length){
+      render();
+      if(!silent) toast('✅ Todos os caixas já estão 100% sincronizados e exatos!');
+      return;
+    }
+
+    if(!isAdmin()){
+      render();
+      if(!silent) toast('🔄 Saldos recalculados localmente! Peça ao ADM para gravar a sincronização no banco.');
+      return;
+    }
+
+    let atualizados = 0;
+    for(const item of divergentes){
+      const { error } = await sb.from('clubs').update({ balance: item.saldoExato }).eq('id', item.clubeId);
+      if(!error) atualizados++;
+    }
+
+    const detalhes = divergentes.map(d =>
+      `• ${d.nome}: ${money(d.saldoAtual)} → ${money(d.saldoExato)} (${d.diferenca > 0 ? '+' : ''}${money(d.diferenca)})`
+    ).join('\n');
+
+    if(!silent){
+      toast(`✅ Caixa recalculado e sincronizado para ${atualizados} clube(s)!`);
+      alert(`Recálculo Auditável Concluído:\n\n${detalhes}`);
+    }
+    await loadAll();
+  });
+}
+
 async function saveClub(){
   const id = $('editClubId').value;
   const admin = isAdmin();
@@ -3536,8 +3721,27 @@ async function saveClub(){
   if(!name) return toast('Informe o nome do clube.');
   if(!Number.isFinite(balance) || balance < 0) return toast('Informe um caixa válido, igual ou maior que zero.');
   const payload = { league_id: league.id, name, owner_name: $('cOwner').value.trim(), owner_user_id: $('cUser').value || null, balance, logo_url: logo || null };
-  const { error } = id ? await sb.from('clubs').update(payload).eq('id', id) : await sb.from('clubs').insert(payload);
-  if(error) return toast(error.message);
+  const resClub = id
+    ? await sb.from('clubs').update(payload).eq('id', id).select().single()
+    : await sb.from('clubs').insert(payload).select().single();
+  if(resClub.error) return toast(resClub.error.message);
+  const savedClubId = resClub.data?.id || id;
+  if(savedClubId){
+    await loadAll();
+    const curCalc = recalcularCaixaClube(savedClubId);
+    if(curCalc){
+      const novoInit = curCalc.caixaInicial + (balance - curCalc.saldoExato);
+      try { localStorage.setItem('ml_init_cash_' + savedClubId, String(novoInit)); } catch(_) {}
+      try {
+        await sb.from('league_news').insert({
+          league_id: league.id,
+          category: 'SISTEMA',
+          title: `Ajuste Base Caixa — ${name}`,
+          body: `[CLUB_INIT_CASH:${savedClubId}:${novoInit}]`
+        });
+      } catch(_) {}
+    }
+  }
   closeModal('clubModal'); toast('Clube salvo com sucesso!'); await loadAll();
 }
 
@@ -4122,8 +4326,9 @@ async function deleteMatch(matchId){ return runLocked('delmatch-' + matchId, asy
   if(error) return toast('Não foi possível excluir o jogo: ' + error.message);
 
   closeModal('matchModal');
-  toast('Jogo excluído e valores financeiros estornados!');
   await loadAll();
+  await sincronizarRecalcularTodosCaixas(true);
+  toast('Jogo excluído e caixa recalculado automaticamente!');
 }); }
 
 async function saveMatchResult(){ return runLocked('match', async () => {
@@ -4274,8 +4479,9 @@ async function saveMatchResult(){ return runLocked('match', async () => {
 
   try { localStorage.removeItem(pendingKey); } catch(_) {}
   closeModal('matchModal');
-  toast('Resultado salvo e lançamentos financeiros processados.');
   await loadAll();
+  await sincronizarRecalcularTodosCaixas(true);
+  toast('Resultado salvo e caixa recalculado automaticamente!');
 }); }
 
 async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, operationId = null){
@@ -4520,8 +4726,9 @@ async function auditAndFixLeagueFinances(){
       });
     }
 
-    toast(`✅ ${adjustments.length} ajuste(s) aplicado(s)! Caixa e lucro 100% reconciliados.`);
     await loadAll();
+    await sincronizarRecalcularTodosCaixas(true);
+    toast(`✅ ${adjustments.length} ajuste(s) aplicado(s)! Caixa e lucro 100% reconciliados.`);
   });
 }
 
