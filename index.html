@@ -1941,7 +1941,7 @@ function render(){
   $('notifBadge').textContent = pendingProps.length;
   $('notifBadge').classList.toggle('hidden', pendingProps.length === 0);
 
-  const cleanNewsText = txt => String(txt || '').replace(/\s*\[(?:SPONSOR_SIGN|SPONSOR_UNSIGN|SPONSOR_RATE|ROUND_DATES|MATCH_FLAGS|GOAL_TIMING|SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|REVERSAL|AUDIT_FIX[^\]]*):[^\]]+\]/g, '').trim();
+  const cleanNewsText = txt => String(txt || '').replace(/\s*\[(?:SPONSOR_SIGN|SPONSOR_UNSIGN|SPONSOR_RATE|ROUND_DATES|MATCH_FLAGS|GOAL_TIMING|SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|MATCH_BONUS|REVERSAL|AUDIT_FIX[^\]]*):[^\]]+\]/g, '').trim();
   const visibleNews = news.filter(n => String(n.category || '').toUpperCase() !== 'SISTEMA');
   if(visibleNews.length){
     $('tickerTitle').textContent = `${visibleNews[0].title} — ${cleanNewsText(visibleNews[0].body)}`;
@@ -2334,7 +2334,7 @@ function render(){
   }
 
   const last10Ledger = visibleLedger.slice(0, 10);
-  $('ledgerRows').innerHTML = last10Ledger.map(x => `<tr><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[(SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|REVERSAL|AUDIT_FIX):[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="4" class="empty">Sem lançamentos.</td></tr>';
+  $('ledgerRows').innerHTML = last10Ledger.map(x => `<tr><td>${esc(clubs.find(c => c.id === x.club_id)?.name || '—')}</td><td><span class="tag ${x.entry_type === 'income' ? 'green' : 'red'}">${x.entry_type === 'income' ? 'Receita' : 'Despesa'}</span></td><td>${esc(String(x.description || '').replace(/\s*\[(SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|MATCH_BONUS|REVERSAL|AUDIT_FIX):[^\]]+\]/g, ''))}</td><td><b>${money(x.amount)}</b></td></tr>`).join('') || '<tr><td colspan="4" class="empty">Sem lançamentos.</td></tr>';
 
   $('seasonList').innerHTML = seasons.map(s => `<div class="fixture"><div><b>${esc(s.name)}</b></div><span class="tag ${s.status === 'active' ? 'green' : ''}">${s.status === 'active' ? 'ATIVA' : 'ENCERRADA'}</span></div>`).join('');
   $('cfgGoal').value = league.goal_bonus ?? 50000;
@@ -4264,7 +4264,7 @@ async function saveMatchResult(){ return runLocked('match', async () => {
 
   try {
     await processMatchWages(savedMatchId, h, a);
-    await ensureMatchBilheteriaAndBonuses(savedMatchId, h, a);
+    await ensureMatchBilheteriaAndBonuses(savedMatchId, h, a, pendingSnapshot?.operationId || null);
   } catch(error) {
     console.error('Partida salva; falha ao concluir lançamentos financeiros:', error);
     toast('Partida salva, mas houve falha no financeiro: ' + (error?.message || 'erro inesperado') + '. Corrija pelo extrato/auditoria antes de repetir.');
@@ -4278,35 +4278,89 @@ async function saveMatchResult(){ return runLocked('match', async () => {
   await loadAll();
 }); }
 
-async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId){
+async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, operationId = null){
   if(!league?.id || !season?.id || !matchId || !homeClubId) return;
+
+  // ---------- 1) BILHETERIA (somente mandante) ----------
   const stadiumRate = toMoneyInt(league.home_stadium_income);
-  if(stadiumRate <= 0) return;
+  if(stadiumRate > 0){
+    const hName = clubs.find(c => c.id === homeClubId)?.name || 'Mandante';
+    const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${homeClubId}]`;
+    const { data: existing, error: lookupError } = await sb
+      .from('ledger_entries')
+      .select('id,description')
+      .eq('league_id', league.id)
+      .eq('season_id', season.id)
+      .eq('club_id', homeClubId)
+      .eq('entry_type', 'income')
+      .ilike('description', `%${bilhTag}%`)
+      .limit(1);
 
-  const hName = clubs.find(c => c.id === homeClubId)?.name || 'Mandante';
-  const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${homeClubId}]`;
-  const { data: existing, error: lookupError } = await sb
-    .from('ledger_entries')
-    .select('id,description')
-    .eq('league_id', league.id)
-    .eq('season_id', season.id)
-    .eq('club_id', homeClubId)
-    .eq('entry_type', 'income')
-    .ilike('description', `%${bilhTag}%`)
-    .limit(1);
+    if(lookupError) throw lookupError;
+    if(!(existing || []).some(row => String(row.description || '').includes(bilhTag))){
+      const { error } = await sb.rpc('post_ledger_entry', {
+        p_league_id: league.id,
+        p_season_id: season.id,
+        p_club_id: homeClubId,
+        p_type: 'income',
+        p_amount: stadiumRate,
+        p_description: `Bilheteria Jogo em Casa — ${hName} ${bilhTag}`
+      });
+      if(error) throw error;
+    }
+  }
 
-  if(lookupError) throw lookupError;
-  if((existing || []).some(row => String(row.description || '').includes(bilhTag))) return;
+  // ---------- 2) BÔNUS POR GOL E POR ASSISTÊNCIA (os dois clubes) ----------
+  const goalRate = toMoneyInt(league.goal_bonus);
+  const assistRate = toMoneyInt(league.assist_bonus);
+  if(goalRate <= 0 && assistRate <= 0) return;
 
-  const { error } = await sb.rpc('post_ledger_entry', {
-    p_league_id: league.id,
-    p_season_id: season.id,
-    p_club_id: homeClubId,
-    p_type: 'income',
-    p_amount: stadiumRate,
-    p_description: `Bilheteria Jogo em Casa — ${hName} ${bilhTag}`
-  });
-  if(error) throw error;
+  // Lê os eventos direto do banco: a lista local (matchEvents) ainda não foi
+  // recarregada neste ponto e traria os gols/assistências antigos.
+  const { data: freshEvents, error: eventsError } = await sb
+    .from('match_events')
+    .select('club_id,event_type,assist_player_id')
+    .eq('match_id', matchId);
+  if(eventsError) throw eventsError;
+
+  // Cada salvamento/edição tem um ID de operação próprio e persistente: repetir a
+  // MESMA operação (ex.: queda de rede) não duplica o bônus, mas uma edição futura,
+  // que estorna o valor anterior, lança o bônus atualizado normalmente.
+  const opKey = operationId || 'v1';
+
+  for(const clubId of new Set([homeClubId, awayClubId].filter(Boolean))){
+    const evs = (freshEvents || []).filter(e => e.club_id === clubId);
+    const goalsCount = evs.filter(e => e.event_type === 'goal').length;
+    const assistsCount = evs.filter(e => e.event_type === 'goal' && e.assist_player_id).length;
+    const bonusTotal = (goalsCount * goalRate) + (assistsCount * assistRate);
+    if(bonusTotal <= 0) continue;
+
+    const bonusTag = `[MATCH_BONUS:${season.id}:${matchId}:${clubId}:${opKey}]`;
+    const { data: existingBonus, error: bonusLookupError } = await sb
+      .from('ledger_entries')
+      .select('id,description')
+      .eq('league_id', league.id)
+      .eq('season_id', season.id)
+      .eq('club_id', clubId)
+      .eq('entry_type', 'income')
+      .ilike('description', `%${bonusTag}%`)
+      .limit(1);
+    if(bonusLookupError) throw bonusLookupError;
+    if((existingBonus || []).some(row => String(row.description || '').includes(bonusTag))) continue;
+
+    const cName = clubs.find(c => c.id === clubId)?.name || 'Clube';
+    const { error } = await sb.rpc('post_ledger_entry', {
+      p_league_id: league.id,
+      p_season_id: season.id,
+      p_club_id: clubId,
+      p_type: 'income',
+      // Obs.: a descrição NÃO usa as palavras "Prêmio", "Artilheiro" ou "Assistências",
+      // para que a auditoria financeira a reconheça como receita de partida.
+      p_description: `Bônus Gols/Assist. — ${cName}: ${goalsCount} gol(s) × ${money(goalRate)} + ${assistsCount} assist. × ${money(assistRate)} ${bonusTag}`,
+      p_amount: bonusTotal
+    });
+    if(error) throw error;
+  }
 }
 
 async function processMatchWages(matchId, homeClubId, awayClubId){
