@@ -4491,72 +4491,96 @@ async function saveMatchResult(){ return runLocked('match', async () => {
 async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, operationId = null){
   if(!league?.id || !season?.id || !matchId || !homeClubId) return;
 
-  // ---------- 1) BILHETERIA (somente mandante) ----------
   const stadiumRate = toMoneyInt(league.home_stadium_income);
-  if(stadiumRate > 0){
-    const hName = clubs.find(c => c.id === homeClubId)?.name || 'Mandante';
-    const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${homeClubId}]`;
-    const { data: existing, error: lookupError } = await sb
-      .from('ledger_entries')
-      .select('id,description')
-      .eq('league_id', league.id)
-      .eq('season_id', season.id)
-      .eq('club_id', homeClubId)
-      .eq('entry_type', 'income')
-      .ilike('description', `%${bilhTag}%`)
-      .limit(1);
+  const goalRate = toMoneyInt(league.goal_bonus);
+  const assistRate = toMoneyInt(league.assist_bonus);
 
-    if(lookupError) throw lookupError;
-    if(!(existing || []).some(row => String(row.description || '').includes(bilhTag))){
+  const { data: matchRow, error: matchLookupError } = await sb
+    .from('matches')
+    .select('id,home_club_id,away_club_id,home_goals,away_goals,status')
+    .eq('id', matchId)
+    .maybeSingle();
+  if(matchLookupError) throw matchLookupError;
+
+  const resolvedHomeId = matchRow?.home_club_id || homeClubId;
+  const resolvedAwayId = matchRow?.away_club_id || awayClubId;
+
+  const { data: existingLedger, error: ledgerLookupError } = await sb
+    .from('ledger_entries')
+    .select('id,club_id,entry_type,amount,description')
+    .eq('league_id', league.id)
+    .eq('season_id', season.id);
+  if(ledgerLookupError) throw ledgerLookupError;
+  const seasonLedger = existingLedger || [];
+
+  const opKey = String(operationId || 'v1').trim() || 'v1';
+
+  // 1) BILHETERIA (somente mandante da partida)
+  if(stadiumRate > 0 && resolvedHomeId){
+    const hName = clubs.find(c => c.id === resolvedHomeId)?.name || 'Mandante';
+    const bilhTag = `[MATCH_BILHETERIA:${season.id}:${matchId}:${resolvedHomeId}:${opKey}]`;
+    const bilhPrefix = `[MATCH_BILHETERIA:${season.id}:${matchId}:${resolvedHomeId}`;
+    const alreadyBilh = seasonLedger.some(row =>
+      row.club_id === resolvedHomeId &&
+      row.entry_type === 'income' &&
+      String(row.description || '').includes(bilhPrefix)
+    );
+    if(!alreadyBilh){
       const { error } = await sb.rpc('post_ledger_entry', {
         p_league_id: league.id,
         p_season_id: season.id,
-        p_club_id: homeClubId,
+        p_club_id: resolvedHomeId,
         p_type: 'income',
         p_amount: stadiumRate,
         p_description: `Bilheteria Jogo em Casa — ${hName} ${bilhTag}`
       });
       if(error) throw error;
+      seasonLedger.push({
+        club_id: resolvedHomeId,
+        entry_type: 'income',
+        amount: stadiumRate,
+        description: `Bilheteria Jogo em Casa — ${hName} ${bilhTag}`
+      });
     }
   }
 
-  // ---------- 2) BÔNUS POR GOL E POR ASSISTÊNCIA (os dois clubes) ----------
-  const goalRate = toMoneyInt(league.goal_bonus);
-  const assistRate = toMoneyInt(league.assist_bonus);
+  // 2) BÔNUS POR GOL E ASSISTÊNCIA (mandante e visitante)
   if(goalRate <= 0 && assistRate <= 0) return;
 
-  // Lê os eventos direto do banco: a lista local (matchEvents) ainda não foi
-  // recarregada neste ponto e traria os gols/assistências antigos.
   const { data: freshEvents, error: eventsError } = await sb
     .from('match_events')
     .select('club_id,event_type,assist_player_id')
     .eq('match_id', matchId);
   if(eventsError) throw eventsError;
 
-  // Cada salvamento/edição tem um ID de operação próprio e persistente: repetir a
-  // MESMA operação (ex.: queda de rede) não duplica o bônus, mas uma edição futura,
-  // que estorna o valor anterior, lança o bônus atualizado normalmente.
-  const opKey = operationId || 'v1';
+  const targetClubs = [...new Set([resolvedHomeId, resolvedAwayId].filter(Boolean))];
 
-  for(const clubId of new Set([homeClubId, awayClubId].filter(Boolean))){
+  for(const clubId of targetClubs){
     const evs = (freshEvents || []).filter(e => e.club_id === clubId);
-    const goalsCount = evs.filter(e => e.event_type === 'goal').length;
+    const eventGoalsCount = evs.filter(e => e.event_type === 'goal').length;
+    const scoreboardGoals =
+      clubId === resolvedHomeId
+        ? Math.max(0, Number(matchRow?.home_goals ?? eventGoalsCount) || 0)
+        : clubId === resolvedAwayId
+          ? Math.max(0, Number(matchRow?.away_goals ?? eventGoalsCount) || 0)
+          : eventGoalsCount;
+
+    const goalsCount = eventGoalsCount > 0 ? Math.max(eventGoalsCount, scoreboardGoals) : scoreboardGoals;
     const assistsCount = evs.filter(e => e.event_type === 'goal' && e.assist_player_id).length;
-    const bonusTotal = (goalsCount * goalRate) + (assistsCount * assistRate);
+
+    const bonusTotal = toMoneyInt(
+      toMoneyInt(goalsCount * goalRate) + toMoneyInt(assistsCount * assistRate)
+    );
     if(bonusTotal <= 0) continue;
 
     const bonusTag = `[MATCH_BONUS:${season.id}:${matchId}:${clubId}:${opKey}]`;
-    const { data: existingBonus, error: bonusLookupError } = await sb
-      .from('ledger_entries')
-      .select('id,description')
-      .eq('league_id', league.id)
-      .eq('season_id', season.id)
-      .eq('club_id', clubId)
-      .eq('entry_type', 'income')
-      .ilike('description', `%${bonusTag}%`)
-      .limit(1);
-    if(bonusLookupError) throw bonusLookupError;
-    if((existingBonus || []).some(row => String(row.description || '').includes(bonusTag))) continue;
+    const bonusPrefix = `[MATCH_BONUS:${season.id}:${matchId}:${clubId}`;
+    const alreadyBonus = seasonLedger.some(row =>
+      row.club_id === clubId &&
+      row.entry_type === 'income' &&
+      String(row.description || '').includes(bonusPrefix)
+    );
+    if(alreadyBonus) continue;
 
     const cName = clubs.find(c => c.id === clubId)?.name || 'Clube';
     const { error } = await sb.rpc('post_ledger_entry', {
@@ -4564,12 +4588,16 @@ async function ensureMatchBilheteriaAndBonuses(matchId, homeClubId, awayClubId, 
       p_season_id: season.id,
       p_club_id: clubId,
       p_type: 'income',
-      // Obs.: a descrição NÃO usa as palavras "Prêmio", "Artilheiro" ou "Assistências",
-      // para que a auditoria financeira a reconheça como receita de partida.
-      p_description: `Bônus Gols/Assist. — ${cName}: ${goalsCount} gol(s) × ${money(goalRate)} + ${assistsCount} assist. × ${money(assistRate)} ${bonusTag}`,
-      p_amount: bonusTotal
+      p_amount: bonusTotal,
+      p_description: `Bônus Gols/Assist. — ${cName} (${goalsCount}G / ${assistsCount}A) ${bonusTag}`
     });
     if(error) throw error;
+    seasonLedger.push({
+      club_id: clubId,
+      entry_type: 'income',
+      amount: bonusTotal,
+      description: `Bônus Gols/Assist. — ${cName} (${goalsCount}G / ${assistsCount}A) ${bonusTag}`
+    });
   }
 }
 
