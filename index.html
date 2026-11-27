@@ -1137,7 +1137,7 @@ tr:last-child td{border:0}
 
    <!-- CLUBES & ELENCOS -->
    <section class="section" id="clubs">
-    <div class="cardhead"><div><h2>Clubes & Elencos</h2><div class="sub">Gerencie caixa disponível, elenco e blindagem de atletas.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn secondary sm" onclick="sincronizarRecalcularTodosCaixas()">🔄 Sincronizar / Recalcular Caixa</button><button class="btn gold sm hidden" id="syncRostersClubBtn" onclick="applyOfficialRosters()">🔄 Aplicar Elencos Oficiais</button><button class="btn sm" onclick="openClubModal()">+ Novo Clube</button></div></div>
+    <div class="cardhead"><div><h2>Clubes & Elencos</h2><div class="sub">Gerencie caixa disponível, elenco e blindagem de atletas.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn secondary sm" onclick="sincronizarRecalcularTodosCaixas()">🔄 Sincronizar / Recalcular Caixa</button><button class="btn cyan sm hidden" id="syncTmPhotosClubBtn" onclick="syncTransfermarktPhotos5Clubs()">📸 Fotos Transfermarkt (5 Clubes)</button><button class="btn gold sm hidden" id="syncRostersClubBtn" onclick="applyOfficialRosters()">🔄 Aplicar Elencos Oficiais</button><button class="btn sm" onclick="openClubModal()">+ Novo Clube</button></div></div>
     <div class="searchbar"><span>⌕</span><input id="clubSearch" type="search" placeholder="Buscar clube ou manager..." autocomplete="off" aria-label="Buscar clubes"></div>
     <div class="searchmeta" id="clubSearchMeta">Todos os clubes da liga</div>
     <div class="grid three" id="clubCards"></div>
@@ -1276,6 +1276,7 @@ tr:last-child td{border:0}
        <button class="btn secondary sm" onclick="copyInvite()">Copiar Convite</button>
        <button class="btn gold sm" onclick="downloadSelfHtml()">⬇️ Baixar index.html</button>
        <button class="btn sm" onclick="openTransfermarktModal()">📊 Sincronizar Transfermarkt</button>
+       <button class="btn cyan sm" onclick="syncTransfermarktPhotos5Clubs()">📸 Atualizar Fotos Transfermarkt (Real, Barça, PSG, Bayern, City)</button>
        <button class="btn secondary sm" onclick="applyOfficialRosters()">🔄 Sincronizar Elencos (10 Clubes / 205 Atletas)</button>
       </div>
       <div class="newsitem" style="margin-top:12px;margin-bottom:0">
@@ -1904,9 +1905,540 @@ function statsRows(){
   }).sort((a, b) => b.pts - a.pts || b.sg - a.sg || b.gp - a.gp);
 }
 
+const TRANSFERMARKT_PHOTOS_DB = {
+  "thibaut courtois": {
+    "tm_id": "108390",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/108390-1713526597.jpg?lm=1"
+  },
+  "jude bellingham": {
+    "tm_id": "581678",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/581678-1713526378.jpg?lm=1"
+  },
+  "vini jr.": {
+    "tm_id": "371998",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/371998-1713526305.jpg?lm=1"
+  },
+  "federico valverde": {
+    "tm_id": "369081",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/369081-1713526466.jpg?lm=1"
+  },
+  "cucurella": {
+    "tm_id": "284857",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/284857-1683297323.jpg?lm=1"
+  },
+  "trent alexander-arnold": {
+    "tm_id": "314353",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/314353-1701680958.jpg?lm=1"
+  },
+  "aurelien tchouameni": {
+    "tm_id": "413112",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/413112-1713526515.jpg?lm=1"
+  },
+  "yan diomande": {
+    "tm_id": "1166559",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1166559-1741775219.jpg?lm=1"
+  },
+  "eder militao": {
+    "tm_id": "401530",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/401530-1713526646.jpg?lm=1"
+  },
+  "bernardo silva": {
+    "tm_id": "241641",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/241641-1701681125.jpg?lm=1"
+  },
+  "rodrygo": {
+    "tm_id": "412363",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/412363-1713526342.jpg?lm=1"
+  },
+  "ibrahima konate": {
+    "tm_id": "357119",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/357119-1701680899.jpg?lm=1"
+  },
+  "denzel dumfries": {
+    "tm_id": "321528",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/321528-1695816502.jpg?lm=1"
+  },
+  "antonio rudiger": {
+    "tm_id": "86202",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/86202-1713526689.jpg?lm=1"
+  },
+  "arda guler": {
+    "tm_id": "861410",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/861410-1713526425.jpg?lm=1"
+  },
+  "eduardo camavinga": {
+    "tm_id": "640428",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/640428-1713526554.jpg?lm=1"
+  },
+  "alvaro carreras": {
+    "tm_id": "709964",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/709964-1712056091.jpg?lm=1"
+  },
+  "dean huijsen": {
+    "tm_id": "890290",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/890290-1706784785.jpg?lm=1"
+  },
+  "brahim diaz": {
+    "tm_id": "314678",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/314678-1713526398.jpg?lm=1"
+  },
+  "ferland mendy": {
+    "tm_id": "291417",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/291417-1713526729.jpg?lm=1"
+  },
+  "andriy lunin": {
+    "tm_id": "404839",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/404839-1713526619.jpg?lm=1"
+  },
+  "endrick": {
+    "tm_id": "971570",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/971570-1721899714.jpg?lm=1"
+  },
+  "raul asencio": {
+    "tm_id": "935230",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/935230-1731495736.jpg?lm=1"
+  },
+  "lamine yamal": {
+    "tm_id": "937958",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/937958-1713527180.jpg?lm=1"
+  },
+  "rodri": {
+    "tm_id": "357565",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/357565-1701681048.jpg?lm=1"
+  },
+  "pedri": {
+    "tm_id": "683840",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/683840-1713527078.jpg?lm=1"
+  },
+  "raphinha": {
+    "tm_id": "411295",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/411295-1713527147.jpg?lm=1"
+  },
+  "pau cubarsi": {
+    "tm_id": "962110",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/962110-1713527351.jpg?lm=1"
+  },
+  "joan garcia": {
+    "tm_id": "561613",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/561613-1725011346.jpg?lm=1"
+  },
+  "frenkie de jong": {
+    "tm_id": "326330",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/326330-1713527038.jpg?lm=1"
+  },
+  "fermin lopez": {
+    "tm_id": "636703",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/636703-1713527112.jpg?lm=1"
+  },
+  "eric garcia": {
+    "tm_id": "466794",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/466794-1694435362.jpg?lm=1"
+  },
+  "jules kounde": {
+    "tm_id": "411975",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/411975-1713527268.jpg?lm=1"
+  },
+  "dani olmo": {
+    "tm_id": "293385",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/293385-1723206932.jpg?lm=1"
+  },
+  "joao cancelo": {
+    "tm_id": "182712",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/182712-1713527312.jpg?lm=1"
+  },
+  "gavi": {
+    "tm_id": "646740",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/646740-1713527002.jpg?lm=1"
+  },
+  "anthony gordon": {
+    "tm_id": "503733",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/503733-1695297954.jpg?lm=1"
+  },
+  "alejandro balde": {
+    "tm_id": "636688",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/636688-1713527225.jpg?lm=1"
+  },
+  "karim adeyemi": {
+    "tm_id": "496094",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/496094-1711457885.jpg?lm=1"
+  },
+  "wojciech szczesny": {
+    "tm_id": "44058",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/44058-1727947692.jpg?lm=1"
+  },
+  "gerard martin": {
+    "tm_id": "808312",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/808312-1725368356.jpg?lm=1"
+  },
+  "andreas christensen": {
+    "tm_id": "196948",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/196948-1713527386.jpg?lm=1"
+  },
+  "marc bernal": {
+    "tm_id": "1011185",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1011185-1725368411.jpg?lm=1"
+  },
+  "marc casado": {
+    "tm_id": "636695",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/636695-1725368295.jpg?lm=1"
+  },
+  "roony bardghji": {
+    "tm_id": "792331",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/792331-1696420735.jpg?lm=1"
+  },
+  "hector fort": {
+    "tm_id": "937955",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/937955-1713527421.jpg?lm=1"
+  },
+  "gianluigi donnarumma": {
+    "tm_id": "315858",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/315858-1695817629.jpg?lm=1"
+  },
+  "ruben dias": {
+    "tm_id": "258004",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/258004-1701680985.jpg?lm=1"
+  },
+  "rayan cherki": {
+    "tm_id": "607223",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/607223-1696418932.jpg?lm=1"
+  },
+  "josko gvardiol": {
+    "tm_id": "475959",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/475959-1701681016.jpg?lm=1"
+  },
+  "antoine semenyo": {
+    "tm_id": "583255",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/583255-1695298811.jpg?lm=1"
+  },
+  "marc guehi": {
+    "tm_id": "392757",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/392757-1695298215.jpg?lm=1"
+  },
+  "elliot anderson": {
+    "tm_id": "567576",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/567576-1695297912.jpg?lm=1"
+  },
+  "jeremy doku": {
+    "tm_id": "486049",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/486049-1701681154.jpg?lm=1"
+  },
+  "phil foden": {
+    "tm_id": "406635",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/406635-1701681088.jpg?lm=1"
+  },
+  "nico o'reilly": {
+    "tm_id": "743413",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/743413-1725534822.jpg?lm=1"
+  },
+  "matheus nunes": {
+    "tm_id": "601883",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/601883-1701681185.jpg?lm=1"
+  },
+  "jack grealish": {
+    "tm_id": "203460",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/203460-1701681214.jpg?lm=1"
+  },
+  "omar marmoush": {
+    "tm_id": "445939",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/445939-1711457644.jpg?lm=1"
+  },
+  "abdukodir khusanov": {
+    "tm_id": "763079",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/763079-1737375621.jpg?lm=1"
+  },
+  "nico gonzalez": {
+    "tm_id": "466805",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/466805-1695645512.jpg?lm=1"
+  },
+  "rayan ait-nouri": {
+    "tm_id": "578391",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/578391-1695299124.jpg?lm=1"
+  },
+  "mateo kovacic": {
+    "tm_id": "51471",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/51471-1701681245.jpg?lm=1"
+  },
+  "geronimo rulli": {
+    "tm_id": "229604",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/229604-1696419355.jpg?lm=1"
+  },
+  "savinho": {
+    "tm_id": "743591",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/743591-1721899842.jpg?lm=1"
+  },
+  "rico lewis": {
+    "tm_id": "701057",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/701057-1701681278.jpg?lm=1"
+  },
+  "vitor reis": {
+    "tm_id": "1053954",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1053954-1737455211.jpg?lm=1"
+  },
+  "claudio echeverri": {
+    "tm_id": "937971",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/937971-1706612314.jpg?lm=1"
+  },
+  "juma bah": {
+    "tm_id": "1289223",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1289223-1732018512.jpg?lm=1"
+  },
+  "issa kabore": {
+    "tm_id": "649452",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/649452-1695298541.jpg?lm=1"
+  },
+  "ousmane dembele": {
+    "tm_id": "288230",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/288230-1695817665.jpg?lm=1"
+  },
+  "nuno mendes": {
+    "tm_id": "616341",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/616341-1695817712.jpg?lm=1"
+  },
+  "willian pacho": {
+    "tm_id": "661171",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/661171-1723207145.jpg?lm=1"
+  },
+  "joao neves": {
+    "tm_id": "670681",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/670681-1723207088.jpg?lm=1"
+  },
+  "achraf hakimi": {
+    "tm_id": "398073",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/398073-1695817748.jpg?lm=1"
+  },
+  "marquinhos": {
+    "tm_id": "181767",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/181767-1695817782.jpg?lm=1"
+  },
+  "fabian ruiz": {
+    "tm_id": "350219",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/350219-1695817816.jpg?lm=1"
+  },
+  "desire doue": {
+    "tm_id": "914562",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/914562-1724064118.jpg?lm=1"
+  },
+  "bradley barcola": {
+    "tm_id": "708265",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/708265-1695817852.jpg?lm=1"
+  },
+  "ferran torres": {
+    "tm_id": "398184",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/398184-1713527198.jpg?lm=1"
+  },
+  "warren zaire-emery": {
+    "tm_id": "810092",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/810092-1695817888.jpg?lm=1"
+  },
+  "matvey safonov": {
+    "tm_id": "318470",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/318470-1718365112.jpg?lm=1"
+  },
+  "lucas hernandez": {
+    "tm_id": "281963",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/281963-1695817924.jpg?lm=1"
+  },
+  "maghnes akliouche": {
+    "tm_id": "745200",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/745200-1696419112.jpg?lm=1"
+  },
+  "lucas chevalier": {
+    "tm_id": "463600",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/463600-1696419044.jpg?lm=1"
+  },
+  "lucas digne": {
+    "tm_id": "126664",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/126664-1695297612.jpg?lm=1"
+  },
+  "illia zabarnyi": {
+    "tm_id": "659089",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/659089-1695298845.jpg?lm=1"
+  },
+  "senny mayulu": {
+    "tm_id": "923831",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/923831-1725535112.jpg?lm=1"
+  },
+  "lucas beraldo": {
+    "tm_id": "872171",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/872171-1704712518.jpg?lm=1"
+  },
+  "mika godts": {
+    "tm_id": "743536",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/743536-1712056412.jpg?lm=1"
+  },
+  "ibrahim mbaye": {
+    "tm_id": "1176866",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1176866-1725535166.jpg?lm=1"
+  },
+  "harry kane": {
+    "tm_id": "132098",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/132098-1711457412.jpg?lm=1"
+  },
+  "michael olise": {
+    "tm_id": "566723",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/566723-1721899912.jpg?lm=1"
+  },
+  "joshua kimmich": {
+    "tm_id": "161056",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/161056-1711457448.jpg?lm=1"
+  },
+  "luis diaz": {
+    "tm_id": "480692",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/480692-1701680928.jpg?lm=1"
+  },
+  "dayot upamecano": {
+    "tm_id": "344695",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/344695-1711457485.jpg?lm=1"
+  },
+  "jonathan tah": {
+    "tm_id": "196357",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/196357-1711457712.jpg?lm=1"
+  },
+  "jamal musiala": {
+    "tm_id": "580195",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/580195-1711457522.jpg?lm=1"
+  },
+  "konrad laimer": {
+    "tm_id": "223967",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/223967-1711457558.jpg?lm=1"
+  },
+  "ismael saibari": {
+    "tm_id": "555074",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/555074-1695816812.jpg?lm=1"
+  },
+  "aleksandar pavlovic": {
+    "tm_id": "792380",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/792380-1711457592.jpg?lm=1"
+  },
+  "serge gnabry": {
+    "tm_id": "159471",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/159471-1711457628.jpg?lm=1"
+  },
+  "kim min-jae": {
+    "tm_id": "503482",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/503482-1711457662.jpg?lm=1"
+  },
+  "alphonso davies": {
+    "tm_id": "424204",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/424204-1711457698.jpg?lm=1"
+  },
+  "joao palhinha": {
+    "tm_id": "257455",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/257455-1721899954.jpg?lm=1"
+  },
+  "nathaniel brown": {
+    "tm_id": "604347",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/604347-1725534612.jpg?lm=1"
+  },
+  "manuel neuer": {
+    "tm_id": "17259",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/17259-1711457375.jpg?lm=1"
+  },
+  "josip stanisic": {
+    "tm_id": "483046",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/483046-1711457745.jpg?lm=1"
+  },
+  "jonas urbig": {
+    "tm_id": "604330",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/604330-1725534512.jpg?lm=1"
+  },
+  "tom bischof": {
+    "tm_id": "724739",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/724739-1711457812.jpg?lm=1"
+  },
+  "hiroki ito": {
+    "tm_id": "353892",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/353892-1721899988.jpg?lm=1"
+  },
+  "bryan zaragoza": {
+    "tm_id": "713672",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/713672-1707312412.jpg?lm=1"
+  },
+  "lennart karl": {
+    "tm_id": "1118156",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1118156-1739532112.jpg?lm=1"
+  },
+  "sacha boey": {
+    "tm_id": "475413",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/475413-1707312355.jpg?lm=1"
+  },
+  "arijon ibrahimovic": {
+    "tm_id": "724734",
+    "photo_url": "https://img.a.transfermarkt.technology/portrait/header/724734-1695816312.jpg?lm=1"
+  }
+};
+const tmLivePhotoCache = new Map();
+
+function getTransfermarktPhotoEntry(name){
+  const key = norm(name);
+  if(!key) return null;
+  if(TRANSFERMARKT_PHOTOS_DB[key]) return TRANSFERMARKT_PHOTOS_DB[key];
+  const compact = key.replace(/[^a-z0-9]/g, '');
+  for(const [k, v] of Object.entries(TRANSFERMARKT_PHOTOS_DB)){
+    if(k.replace(/[^a-z0-9]/g, '') === compact) return v;
+  }
+  return null;
+}
+
+async function resolveLiveTransfermarktPhoto(name, tmIdHint = ''){
+  const cacheKey = norm(name) || String(tmIdHint);
+  if(!cacheKey) return null;
+  if(tmLivePhotoCache.has(cacheKey)) return tmLivePhotoCache.get(cacheKey);
+  const entry = getTransfermarktPhotoEntry(name);
+  const tmId = String(tmIdHint || entry?.tm_id || '').trim();
+  let resolvedUrl = null;
+  try {
+    if(tmId){
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 3200);
+      const res = await fetch('https://transfermarkt-api.fly.dev/players/' + encodeURIComponent(tmId) + '/profile', { signal: ctrl.signal });
+      clearTimeout(t);
+      if(res.ok){
+        const data = await res.json();
+        const cand = data?.imageUrl || data?.image || data?.photo || data?.portrait;
+        if(cand && /^https:\/\//i.test(cand)) resolvedUrl = cand;
+      }
+    }
+    if(!resolvedUrl && name){
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 3200);
+      const res = await fetch('https://transfermarkt-api.fly.dev/players/search/' + encodeURIComponent(name) + '?page_number=1', { signal: ctrl.signal });
+      clearTimeout(t);
+      if(res.ok){
+        const data = await res.json();
+        const arr = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []);
+        if(arr.length){
+          const best = (tmId ? arr.find(x => String(x.id) === tmId) : null) || arr.find(x => norm(x.name) === norm(name)) || arr[0];
+          const cand = best?.imageUrl || best?.image || best?.photo;
+          if(cand && /^https:\/\//i.test(cand)) resolvedUrl = cand;
+        }
+      }
+    }
+  } catch(_) {}
+  if(!resolvedUrl && entry?.photo_url) resolvedUrl = entry.photo_url;
+  tmLivePhotoCache.set(cacheKey, resolvedUrl);
+  return resolvedUrl;
+}
+
+async function handlePlayerImgError(imgEl, playerName, initials){
+  if(!imgEl || imgEl.dataset.tmRetried === '1'){
+    if(imgEl) imgEl.outerHTML = `<div class='pavatar'>${initials}</div>`;
+    return;
+  }
+  imgEl.dataset.tmRetried = '1';
+  const liveUrl = await resolveLiveTransfermarktPhoto(playerName);
+  if(liveUrl && liveUrl !== imgEl.src){
+    imgEl.src = liveUrl;
+  } else {
+    imgEl.outerHTML = `<div class='pavatar'>${initials}</div>`;
+  }
+}
+
 function playerAvatar(p){
   const initials = esc((p?.name || 'AT').slice(0, 2).toUpperCase());
-  if(p?.photo_url) return `<img class="pavatar" src="${esc(p.photo_url)}" alt="${esc(p?.name || '')}" onerror="this.outerHTML='<div class=\'pavatar\'>${initials}</div>'">`;
+  const tmEntry = getTransfermarktPhotoEntry(p?.name);
+  const srcUrl = p?.photo_url || tmEntry?.photo_url || '';
+  if(srcUrl) return `<img class="pavatar" src="${esc(srcUrl)}" alt="${esc(p?.name || '')}" loading="lazy" referrerpolicy="no-referrer" onerror="handlePlayerImgError(this, '${esc(p?.name || '')}', '${initials}')">`;
   return `<div class="pavatar">${initials}</div>`;
 }
 function crest(c, large = false){
@@ -1962,6 +2494,7 @@ function render(){
   // Aba Patrocinadores & Contratos por Clube
   $('addSponsorBtn').classList.toggle('hidden', !isAdmin());
   if($('syncRostersClubBtn')) $('syncRostersClubBtn').classList.toggle('hidden', !isAdmin());
+  if($('syncTmPhotosClubBtn')) $('syncTmPhotosClubBtn').classList.toggle('hidden', !isAdmin());
   if($('tmSyncMktBtn')) $('tmSyncMktBtn').classList.toggle('hidden', !isAdmin());
   if($('runPayrollBtn')) $('runPayrollBtn').classList.toggle('hidden', !isAdmin());
   const spClubSel = $('sponsorTargetClub');
@@ -5576,161 +6109,207 @@ const OFFICIAL_ROSTERS = [
         "position": "GOL",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "108390",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/108390-1713526597.jpg?lm=1"
       },
       {
         "name": "Jude Bellingham",
         "position": "MEI",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "581678",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/581678-1713526378.jpg?lm=1"
       },
       {
         "name": "Vini Jr.",
         "position": "PE",
         "overall": 89,
         "market_value": 10000000,
-        "release_clause": 40000000
+        "release_clause": 40000000,
+        "tm_id": "371998",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/371998-1713526305.jpg?lm=1"
       },
       {
         "name": "Federico Valverde",
         "position": "MC",
         "overall": 87,
         "market_value": 7500000,
-        "release_clause": 30000000
+        "release_clause": 30000000,
+        "tm_id": "369081",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/369081-1713526466.jpg?lm=1"
       },
       {
         "name": "Cucurella",
         "position": "LE",
         "overall": 86,
         "market_value": 6500000,
-        "release_clause": 26000000
+        "release_clause": 26000000,
+        "tm_id": "284857",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/284857-1683297323.jpg?lm=1"
       },
       {
         "name": "Trent Alexander-Arnold",
         "position": "LD",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "314353",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/314353-1701680958.jpg?lm=1"
       },
       {
         "name": "Aurélien Tchouaméni",
         "position": "VOL",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "413112",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/413112-1713526515.jpg?lm=1"
       },
       {
         "name": "Yan Diomande",
         "position": "PE",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "1166559",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1166559-1741775219.jpg?lm=1"
       },
       {
         "name": "Éder Militão",
         "position": "ZAG",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "401530",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/401530-1713526646.jpg?lm=1"
       },
       {
         "name": "Bernardo Silva",
         "position": "MEI",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "241641",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/241641-1701681125.jpg?lm=1"
       },
       {
         "name": "Rodrygo",
         "position": "PD",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "412363",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/412363-1713526342.jpg?lm=1"
       },
       {
         "name": "Ibrahima Konaté",
         "position": "ZAG",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "357119",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/357119-1701680899.jpg?lm=1"
       },
       {
         "name": "Denzel Dumfries",
         "position": "LD",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "321528",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/321528-1695816502.jpg?lm=1"
       },
       {
         "name": "Antonio Rüdiger",
         "position": "ZAG",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "86202",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/86202-1713526689.jpg?lm=1"
       },
       {
         "name": "Arda Güler",
         "position": "MEI",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "861410",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/861410-1713526425.jpg?lm=1"
       },
       {
         "name": "Eduardo Camavinga",
         "position": "MC",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "640428",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/640428-1713526554.jpg?lm=1"
       },
       {
         "name": "Álvaro Carreras",
         "position": "LE",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "709964",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/709964-1712056091.jpg?lm=1"
       },
       {
         "name": "Dean Huijsen",
         "position": "ZAG",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "890290",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/890290-1706784785.jpg?lm=1"
       },
       {
         "name": "Brahim Díaz",
         "position": "MEI",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "314678",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/314678-1713526398.jpg?lm=1"
       },
       {
         "name": "Ferland Mendy",
         "position": "LE",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "291417",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/291417-1713526729.jpg?lm=1"
       },
       {
         "name": "Andriy Lunin",
         "position": "GOL",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "404839",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/404839-1713526619.jpg?lm=1"
       },
       {
         "name": "Endrick",
         "position": "ATA",
         "overall": 79,
         "market_value": 2100000,
-        "release_clause": 8400000
+        "release_clause": 8400000,
+        "tm_id": "971570",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/971570-1721899714.jpg?lm=1"
       },
       {
         "name": "Raúl Asencio",
         "position": "ZAG",
         "overall": 78,
         "market_value": 1900000,
-        "release_clause": 7600000
+        "release_clause": 7600000,
+        "tm_id": "935230",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/935230-1731495736.jpg?lm=1"
       }
     ]
   },
@@ -5742,161 +6321,207 @@ const OFFICIAL_ROSTERS = [
         "position": "PD",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "937958",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/937958-1713527180.jpg?lm=1"
       },
       {
         "name": "Rodri",
         "position": "VOL",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "357565",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/357565-1701681048.jpg?lm=1"
       },
       {
         "name": "Pedri",
         "position": "MC",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "683840",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/683840-1713527078.jpg?lm=1"
       },
       {
         "name": "Raphinha",
         "position": "PE",
         "overall": 88,
         "market_value": 8500000,
-        "release_clause": 34000000
+        "release_clause": 34000000,
+        "tm_id": "411295",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/411295-1713527147.jpg?lm=1"
       },
       {
         "name": "Pau Cubarsí",
         "position": "ZAG",
         "overall": 86,
         "market_value": 6500000,
-        "release_clause": 26000000
+        "release_clause": 26000000,
+        "tm_id": "962110",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/962110-1713527351.jpg?lm=1"
       },
       {
         "name": "Joan García",
         "position": "GOL",
         "overall": 86,
         "market_value": 6500000,
-        "release_clause": 26000000
+        "release_clause": 26000000,
+        "tm_id": "561613",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/561613-1725011346.jpg?lm=1"
       },
       {
         "name": "Frenkie de Jong",
         "position": "MC",
         "overall": 86,
         "market_value": 6500000,
-        "release_clause": 26000000
+        "release_clause": 26000000,
+        "tm_id": "326330",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/326330-1713527038.jpg?lm=1"
       },
       {
         "name": "Fermín López",
         "position": "MEI",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "636703",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/636703-1713527112.jpg?lm=1"
       },
       {
         "name": "Eric García",
         "position": "ZAG",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "466794",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/466794-1694435362.jpg?lm=1"
       },
       {
         "name": "Jules Koundé",
         "position": "LD",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "411975",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/411975-1713527268.jpg?lm=1"
       },
       {
         "name": "Dani Olmo",
         "position": "MEI",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "293385",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/293385-1723206932.jpg?lm=1"
       },
       {
         "name": "João Cancelo",
         "position": "LD",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "182712",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/182712-1713527312.jpg?lm=1"
       },
       {
         "name": "Gavi",
         "position": "MC",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "646740",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/646740-1713527002.jpg?lm=1"
       },
       {
         "name": "Anthony Gordon",
         "position": "PE",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "503733",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/503733-1695297954.jpg?lm=1"
       },
       {
         "name": "Alejandro Balde",
         "position": "LE",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "636688",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/636688-1713527225.jpg?lm=1"
       },
       {
         "name": "Karim Adeyemi",
         "position": "PD",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "496094",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/496094-1711457885.jpg?lm=1"
       },
       {
         "name": "Wojciech Szczęsny",
         "position": "GOL",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "44058",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/44058-1727947692.jpg?lm=1"
       },
       {
         "name": "Gerard Martín",
         "position": "LE",
         "overall": 79,
         "market_value": 2100000,
-        "release_clause": 8400000
+        "release_clause": 8400000,
+        "tm_id": "808312",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/808312-1725368356.jpg?lm=1"
       },
       {
         "name": "Andreas Christensen",
         "position": "ZAG",
         "overall": 79,
         "market_value": 2100000,
-        "release_clause": 8400000
+        "release_clause": 8400000,
+        "tm_id": "196948",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/196948-1713527386.jpg?lm=1"
       },
       {
         "name": "Marc Bernal",
         "position": "VOL",
         "overall": 78,
         "market_value": 1900000,
-        "release_clause": 7600000
+        "release_clause": 7600000,
+        "tm_id": "1011185",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1011185-1725368411.jpg?lm=1"
       },
       {
         "name": "Marc Casadó",
         "position": "VOL",
         "overall": 78,
         "market_value": 1900000,
-        "release_clause": 7600000
+        "release_clause": 7600000,
+        "tm_id": "636695",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/636695-1725368295.jpg?lm=1"
       },
       {
         "name": "Roony Bardghji",
         "position": "PD",
         "overall": 74,
         "market_value": 1300000,
-        "release_clause": 5200000
+        "release_clause": 5200000,
+        "tm_id": "792331",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/792331-1696420735.jpg?lm=1"
       },
       {
         "name": "Héctor Fort",
         "position": "LD",
         "overall": 72,
         "market_value": 1000000,
-        "release_clause": 4000000
+        "release_clause": 4000000,
+        "tm_id": "937955",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/937955-1713527421.jpg?lm=1"
       }
     ]
   },
@@ -5908,168 +6533,216 @@ const OFFICIAL_ROSTERS = [
         "position": "GOL",
         "overall": 89,
         "market_value": 10000000,
-        "release_clause": 40000000
+        "release_clause": 40000000,
+        "tm_id": "315858",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/315858-1695817629.jpg?lm=1"
       },
       {
         "name": "Rúben Dias",
         "position": "ZAG",
         "overall": 87,
         "market_value": 7500000,
-        "release_clause": 30000000
+        "release_clause": 30000000,
+        "tm_id": "258004",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/258004-1701680985.jpg?lm=1"
       },
       {
         "name": "Rayan Cherki",
         "position": "MEI",
         "overall": 86,
         "market_value": 6500000,
-        "release_clause": 26000000
+        "release_clause": 26000000,
+        "tm_id": "607223",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/607223-1696418932.jpg?lm=1"
       },
       {
         "name": "Joško Gvardiol",
         "position": "ZAG",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "475959",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/475959-1701681016.jpg?lm=1"
       },
       {
         "name": "Antoine Semenyo",
         "position": "PD",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "583255",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/583255-1695298811.jpg?lm=1"
       },
       {
         "name": "Marc Guéhi",
         "position": "ZAG",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "392757",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/392757-1695298215.jpg?lm=1"
       },
       {
         "name": "Elliot Anderson",
         "position": "MC",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "567576",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/567576-1695297912.jpg?lm=1"
       },
       {
         "name": "Jérémy Doku",
         "position": "PE",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "486049",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/486049-1701681154.jpg?lm=1"
       },
       {
         "name": "Phil Foden",
         "position": "MEI",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "406635",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/406635-1701681088.jpg?lm=1"
       },
       {
         "name": "Nico O'Reilly",
         "position": "MC",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "743413",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/743413-1725534822.jpg?lm=1"
       },
       {
         "name": "Matheus Nunes",
         "position": "MC",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "601883",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/601883-1701681185.jpg?lm=1"
       },
       {
         "name": "Jack Grealish",
         "position": "PE",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "203460",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/203460-1701681214.jpg?lm=1"
       },
       {
         "name": "Omar Marmoush",
         "position": "ATA",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "445939",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/445939-1711457644.jpg?lm=1"
       },
       {
         "name": "Abdukodir Khusanov",
         "position": "ZAG",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "763079",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/763079-1737375621.jpg?lm=1"
       },
       {
         "name": "Nico González",
         "position": "VOL",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "466805",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/466805-1695645512.jpg?lm=1"
       },
       {
         "name": "Rayan Aït-Nouri",
         "position": "LE",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "578391",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/578391-1695299124.jpg?lm=1"
       },
       {
         "name": "Mateo Kovačić",
         "position": "MC",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "51471",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/51471-1701681245.jpg?lm=1"
       },
       {
         "name": "Gerónimo Rulli",
         "position": "GOL",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "229604",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/229604-1696419355.jpg?lm=1"
       },
       {
         "name": "Savinho",
         "position": "PD",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "743591",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/743591-1721899842.jpg?lm=1"
       },
       {
         "name": "Rico Lewis",
         "position": "LD",
         "overall": 77,
         "market_value": 1800000,
-        "release_clause": 7200000
+        "release_clause": 7200000,
+        "tm_id": "701057",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/701057-1701681278.jpg?lm=1"
       },
       {
         "name": "Vitor Reis",
         "position": "ZAG",
         "overall": 76,
         "market_value": 1800000,
-        "release_clause": 7200000
+        "release_clause": 7200000,
+        "tm_id": "1053954",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1053954-1737455211.jpg?lm=1"
       },
       {
         "name": "Claudio Echeverri",
         "position": "MEI",
         "overall": 73,
         "market_value": 1300000,
-        "release_clause": 5200000
+        "release_clause": 5200000,
+        "tm_id": "937971",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/937971-1706612314.jpg?lm=1"
       },
       {
         "name": "Juma Bah",
         "position": "ZAG",
         "overall": 73,
         "market_value": 1300000,
-        "release_clause": 5200000
+        "release_clause": 5200000,
+        "tm_id": "1289223",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1289223-1732018512.jpg?lm=1"
       },
       {
         "name": "Issa Kaboré",
         "position": "LD",
         "overall": 72,
         "market_value": 1000000,
-        "release_clause": 4000000
+        "release_clause": 4000000,
+        "tm_id": "649452",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/649452-1695298541.jpg?lm=1"
       }
     ]
   },
@@ -6081,147 +6754,189 @@ const OFFICIAL_ROSTERS = [
         "position": "PD",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "288230",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/288230-1695817665.jpg?lm=1"
       },
       {
         "name": "Nuno Mendes",
         "position": "LE",
         "overall": 89,
         "market_value": 10000000,
-        "release_clause": 40000000
+        "release_clause": 40000000,
+        "tm_id": "616341",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/616341-1695817712.jpg?lm=1"
       },
       {
         "name": "Willian Pacho",
         "position": "ZAG",
         "overall": 89,
         "market_value": 10000000,
-        "release_clause": 40000000
+        "release_clause": 40000000,
+        "tm_id": "661171",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/661171-1723207145.jpg?lm=1"
       },
       {
         "name": "João Neves",
         "position": "MC",
         "overall": 88,
         "market_value": 8500000,
-        "release_clause": 34000000
+        "release_clause": 34000000,
+        "tm_id": "670681",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/670681-1723207088.jpg?lm=1"
       },
       {
         "name": "Achraf Hakimi",
         "position": "LD",
         "overall": 88,
         "market_value": 8500000,
-        "release_clause": 34000000
+        "release_clause": 34000000,
+        "tm_id": "398073",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/398073-1695817748.jpg?lm=1"
       },
       {
         "name": "Marquinhos",
         "position": "ZAG",
         "overall": 87,
         "market_value": 7500000,
-        "release_clause": 30000000
+        "release_clause": 30000000,
+        "tm_id": "181767",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/181767-1695817782.jpg?lm=1"
       },
       {
         "name": "Fabián Ruiz",
         "position": "MC",
         "overall": 86,
         "market_value": 6500000,
-        "release_clause": 26000000
+        "release_clause": 26000000,
+        "tm_id": "350219",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/350219-1695817816.jpg?lm=1"
       },
       {
         "name": "Désiré Doué",
         "position": "MEI",
         "overall": 86,
         "market_value": 6500000,
-        "release_clause": 26000000
+        "release_clause": 26000000,
+        "tm_id": "914562",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/914562-1724064118.jpg?lm=1"
       },
       {
         "name": "Bradley Barcola",
         "position": "PE",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "708265",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/708265-1695817852.jpg?lm=1"
       },
       {
         "name": "Ferran Torres",
         "position": "ATA",
         "overall": 84,
         "market_value": 4500000,
-        "release_clause": 18000000
+        "release_clause": 18000000,
+        "tm_id": "398184",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/398184-1713527198.jpg?lm=1"
       },
       {
         "name": "Warren Zaïre-Emery",
         "position": "MC",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "810092",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/810092-1695817888.jpg?lm=1"
       },
       {
         "name": "Matvey Safonov",
         "position": "GOL",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "318470",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/318470-1718365112.jpg?lm=1"
       },
       {
         "name": "Lucas Hernández",
         "position": "ZAG",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "281963",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/281963-1695817924.jpg?lm=1"
       },
       {
         "name": "Maghnes Akliouche",
         "position": "MEI",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "745200",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/745200-1696419112.jpg?lm=1"
       },
       {
         "name": "Lucas Chevalier",
         "position": "GOL",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "463600",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/463600-1696419044.jpg?lm=1"
       },
       {
         "name": "Lucas Digne",
         "position": "LE",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "126664",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/126664-1695297612.jpg?lm=1"
       },
       {
         "name": "Illia Zabarnyi",
         "position": "ZAG",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "659089",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/659089-1695298845.jpg?lm=1"
       },
       {
         "name": "Senny Mayulu",
         "position": "MC",
         "overall": 79,
         "market_value": 2100000,
-        "release_clause": 8400000
+        "release_clause": 8400000,
+        "tm_id": "923831",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/923831-1725535112.jpg?lm=1"
       },
       {
         "name": "Lucas Beraldo",
         "position": "ZAG",
         "overall": 79,
         "market_value": 2100000,
-        "release_clause": 8400000
+        "release_clause": 8400000,
+        "tm_id": "872171",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/872171-1704712518.jpg?lm=1"
       },
       {
         "name": "Mika Godts",
         "position": "PE",
         "overall": 78,
         "market_value": 1900000,
-        "release_clause": 7600000
+        "release_clause": 7600000,
+        "tm_id": "743536",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/743536-1712056412.jpg?lm=1"
       },
       {
         "name": "Ibrahim Mbaye",
         "position": "PD",
         "overall": 76,
         "market_value": 1800000,
-        "release_clause": 7200000
+        "release_clause": 7200000,
+        "tm_id": "1176866",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1176866-1725535166.jpg?lm=1"
       }
     ]
   },
@@ -6233,168 +6948,216 @@ const OFFICIAL_ROSTERS = [
         "position": "ATA",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "132098",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/132098-1711457412.jpg?lm=1"
       },
       {
         "name": "Michael Olise",
         "position": "PD",
         "overall": 90,
         "market_value": 12000000,
-        "release_clause": 48000000
+        "release_clause": 48000000,
+        "tm_id": "566723",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/566723-1721899912.jpg?lm=1"
       },
       {
         "name": "Joshua Kimmich",
         "position": "VOL",
         "overall": 88,
         "market_value": 8500000,
-        "release_clause": 34000000
+        "release_clause": 34000000,
+        "tm_id": "161056",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/161056-1711457448.jpg?lm=1"
       },
       {
         "name": "Luis Díaz",
         "position": "PE",
         "overall": 88,
         "market_value": 8500000,
-        "release_clause": 34000000
+        "release_clause": 34000000,
+        "tm_id": "480692",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/480692-1701680928.jpg?lm=1"
       },
       {
         "name": "Dayot Upamecano",
         "position": "ZAG",
         "overall": 87,
         "market_value": 7500000,
-        "release_clause": 30000000
+        "release_clause": 30000000,
+        "tm_id": "344695",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/344695-1711457485.jpg?lm=1"
       },
       {
         "name": "Jonathan Tah",
         "position": "ZAG",
         "overall": 87,
         "market_value": 7500000,
-        "release_clause": 30000000
+        "release_clause": 30000000,
+        "tm_id": "196357",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/196357-1711457712.jpg?lm=1"
       },
       {
         "name": "Jamal Musiala",
         "position": "MEI",
         "overall": 87,
         "market_value": 7500000,
-        "release_clause": 30000000
+        "release_clause": 30000000,
+        "tm_id": "580195",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/580195-1711457522.jpg?lm=1"
       },
       {
         "name": "Konrad Laimer",
         "position": "MC",
         "overall": 85,
         "market_value": 5500000,
-        "release_clause": 22000000
+        "release_clause": 22000000,
+        "tm_id": "223967",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/223967-1711457558.jpg?lm=1"
       },
       {
         "name": "Ismael Saibari",
         "position": "MEI",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "555074",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/555074-1695816812.jpg?lm=1"
       },
       {
         "name": "Aleksandar Pavlović",
         "position": "VOL",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "792380",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/792380-1711457592.jpg?lm=1"
       },
       {
         "name": "Serge Gnabry",
         "position": "PD",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "159471",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/159471-1711457628.jpg?lm=1"
       },
       {
         "name": "Kim Min-Jae",
         "position": "ZAG",
         "overall": 83,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "503482",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/503482-1711457662.jpg?lm=1"
       },
       {
         "name": "Alphonso Davies",
         "position": "LE",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "424204",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/424204-1711457698.jpg?lm=1"
       },
       {
         "name": "João Palhinha",
         "position": "VOL",
         "overall": 82,
         "market_value": 3500000,
-        "release_clause": 14000000
+        "release_clause": 14000000,
+        "tm_id": "257455",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/257455-1721899954.jpg?lm=1"
       },
       {
         "name": "Nathaniel Brown",
         "position": "LE",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "604347",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/604347-1725534612.jpg?lm=1"
       },
       {
         "name": "Manuel Neuer",
         "position": "GOL",
         "overall": 81,
         "market_value": 2800000,
-        "release_clause": 11200000
+        "release_clause": 11200000,
+        "tm_id": "17259",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/17259-1711457375.jpg?lm=1"
       },
       {
         "name": "Josip Stanišić",
         "position": "LD",
         "overall": 80,
         "market_value": 2400000,
-        "release_clause": 9600000
+        "release_clause": 9600000,
+        "tm_id": "483046",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/483046-1711457745.jpg?lm=1"
       },
       {
         "name": "Jonas Urbig",
         "position": "GOL",
         "overall": 79,
         "market_value": 2100000,
-        "release_clause": 8400000
+        "release_clause": 8400000,
+        "tm_id": "604330",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/604330-1725534512.jpg?lm=1"
       },
       {
         "name": "Tom Bischof",
         "position": "MC",
         "overall": 79,
         "market_value": 2100000,
-        "release_clause": 8400000
+        "release_clause": 8400000,
+        "tm_id": "724739",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/724739-1711457812.jpg?lm=1"
       },
       {
         "name": "Hiroki Ito",
         "position": "ZAG",
         "overall": 78,
         "market_value": 1900000,
-        "release_clause": 7600000
+        "release_clause": 7600000,
+        "tm_id": "353892",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/353892-1721899988.jpg?lm=1"
       },
       {
         "name": "Bryan Zaragoza",
         "position": "PE",
         "overall": 77,
         "market_value": 1800000,
-        "release_clause": 7200000
+        "release_clause": 7200000,
+        "tm_id": "713672",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/713672-1707312412.jpg?lm=1"
       },
       {
         "name": "Lennart Karl",
         "position": "MEI",
         "overall": 77,
         "market_value": 1800000,
-        "release_clause": 7200000
+        "release_clause": 7200000,
+        "tm_id": "1118156",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/1118156-1739532112.jpg?lm=1"
       },
       {
         "name": "Sacha Boey",
         "position": "LD",
         "overall": 75,
         "market_value": 1800000,
-        "release_clause": 7200000
+        "release_clause": 7200000,
+        "tm_id": "475413",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/475413-1707312355.jpg?lm=1"
       },
       {
         "name": "Arijon Ibrahimović",
         "position": "MEI",
         "overall": 75,
         "market_value": 1800000,
-        "release_clause": 7200000
+        "release_clause": 7200000,
+        "tm_id": "724734",
+        "photo_url": "https://img.a.transfermarkt.technology/portrait/header/724734-1695816312.jpg?lm=1"
       }
     ]
   }
@@ -6455,15 +7218,20 @@ async function applyOfficialRosters(){
       for(const p of entry.players){
         const pNorm = norm(p.name);
         const existingPlayer = dbPlayers.find(dp => norm(dp.name) === pNorm);
+        const hasCustomUpload = String(existingPlayer?.photo_url || '').startsWith('data:image/');
+        const nextPhotoUrl = p.photo_url || (existingPlayer?.photo_url || null);
         if(existingPlayer){
-          if(existingPlayer.club_id !== clubRow.id || Number(existingPlayer.overall) !== Number(p.overall) || existingPlayer.position !== p.position){
-            const { error: upErr } = await sb.from('players').update({
+          const needPhotoUpdate = Boolean(p.photo_url) && !hasCustomUpload && existingPlayer.photo_url !== p.photo_url;
+          if(existingPlayer.club_id !== clubRow.id || Number(existingPlayer.overall) !== Number(p.overall) || existingPlayer.position !== p.position || needPhotoUpdate){
+            const updatePayload = {
               club_id: clubRow.id,
               position: p.position,
               overall: p.overall,
               market_value: p.market_value,
               release_clause: p.release_clause
-            }).eq('id', existingPlayer.id);
+            };
+            if(!hasCustomUpload && nextPhotoUrl) updatePayload.photo_url = nextPhotoUrl;
+            const { error: upErr } = await sb.from('players').update(updatePayload).eq('id', existingPlayer.id);
             if(!upErr) updatedCount++;
           }
         } else {
@@ -6476,7 +7244,7 @@ async function applyOfficialRosters(){
             overall: p.overall,
             market_value: p.market_value,
             release_clause: p.release_clause,
-            photo_url: null
+            photo_url: p.photo_url || null
           });
         }
       }
@@ -7018,6 +7786,63 @@ async function applyTransfermarktSync(){ return runLocked('tm-sync-apply', async
   }
 }); }
 
+
+async function syncTransfermarktPhotos5Clubs(){
+  return runLocked('sync-tm-photos-5clubs', async () => {
+    if(!isAdmin()) return toast('Apenas o ADM pode atualizar as fotos dos elencos.');
+    if(!league?.id) return toast('Nenhuma liga ativa encontrada.');
+
+    const targetAliases = ['real madrid', 'madrid', 'barcelona', 'fc barcelona', 'barca', 'psg', 'paris saint-germain', 'paris saint germain', 'paris', 'bayer', 'bayern', 'bayern munchen', 'bayern de munique', 'manchester city', 'man city', 'city'];
+    const targetClubRows = clubs.filter(c => {
+      const cn = norm(c.name);
+      return targetAliases.some(alias => cn === alias || cn.includes(alias));
+    });
+
+    if(!targetClubRows.length){
+      return toast('Nenhum dos 5 clubes (Real Madrid, Barcelona, PSG, Bayern/Bayer, Manchester City) foi encontrado na liga.');
+    }
+
+    const targetClubIds = new Set(targetClubRows.map(c => c.id));
+    const clubPlayers = players.filter(p => targetClubIds.has(p.club_id));
+    if(!clubPlayers.length){
+      return toast('Nenhum atleta encontrado nesses 5 clubes. Clique primeiro em "Aplicar Elencos Oficiais".');
+    }
+
+    if(!confirm(`Atualizar as fotos oficiais do Transfermarkt para os ${clubPlayers.length} jogadores de ${targetClubRows.map(c => c.name).join(', ')}?`)) return;
+
+    toast(`Sincronizando fotos do Transfermarkt (0/${clubPlayers.length})...`);
+    let updated = 0;
+
+    for(let i = 0; i < clubPlayers.length; i++){
+      const p = clubPlayers[i];
+      const entry = getTransfermarktPhotoEntry(p.name);
+      let finalPhoto = await resolveLiveTransfermarktPhoto(p.name, entry?.tm_id || '');
+      if(!finalPhoto && entry?.photo_url) finalPhoto = entry.photo_url;
+
+      if(finalPhoto && finalPhoto !== p.photo_url){
+        const { error } = await sb.from('players').update({ photo_url: finalPhoto }).eq('id', p.id);
+        if(!error) updated++;
+      }
+
+      if((i + 1) % 15 === 0 || i === clubPlayers.length - 1){
+        toast(`Atualizando fotos Transfermarkt (${i + 1}/${clubPlayers.length})...`);
+      }
+    }
+
+    try {
+      await sb.from('league_news').insert({
+        league_id: league.id,
+        category: 'ELENCOS',
+        title: '📸 Fotos Transfermarkt Atualizadas!',
+        body: `${updated} foto(s) de jogadores de Real Madrid, Barcelona, PSG, Bayern e Manchester City foram atualizadas com retratos do Transfermarkt.`
+      });
+    } catch(_) {}
+
+    await loadAll();
+    toast(`✅ Concluído! ${updated} foto(s) atualizadas no banco de dados.`);
+  });
+}
+
 async function lookupSinglePlayerTransfermarkt(){
   const name = $('pName')?.value.trim();
   if(!name) return toast('Digite o nome do jogador antes de consultar o Transfermarkt.');
@@ -7025,16 +7850,24 @@ async function lookupSinglePlayerTransfermarkt(){
   if(btn){ btn.disabled = true; btn.textContent = 'Buscando...'; }
   try {
     await fetchEurBrlRate();
-    const eur = await queryLiveTransfermarktEur(name);
+    const [eur, livePhoto] = await Promise.all([
+      queryLiveTransfermarktEur(name),
+      resolveLiveTransfermarktPhoto(name)
+    ]);
+    if(livePhoto && $('pPhotoUrl')){
+      $('pPhotoUrl').value = livePhoto;
+    }
     if(!eur){
-      if($('pTmHint')) $('pTmHint').innerHTML = `<span class="danger-txt">Atleta não encontrado na base Transfermarkt. Informe o valor manualmente.</span>`;
-      return toast('Atleta não encontrado no Transfermarkt.');
+      if($('pTmHint')) $('pTmHint').innerHTML = livePhoto
+        ? `<span class="accent">Foto do Transfermarkt carregada! Informe o valor de mercado manualmente.</span>`
+        : `<span class="danger-txt">Atleta não encontrado na base Transfermarkt. Informe o valor manualmente.</span>`;
+      return toast(livePhoto ? 'Foto do Transfermarkt encontrada!' : 'Atleta não encontrado no Transfermarkt.');
     }
     const converted = convertEurToLeagueValue(eur, 'brl_real');
     $('pValue').value = converted;
     autoCalcClause();
     if($('pTmHint')){
-      $('pTmHint').innerHTML = `<span class="accent">Transfermarkt: <b>${fmtEur(eur)}</b> × R$ ${tmEurBrlRate.toFixed(2)} = <b>${money(converted)}</b> • Salário (0,05%): <b class="cyan">${money(calcSalary(converted))}</b></span>`;
+      $('pTmHint').innerHTML = `<span class="accent">Transfermarkt: <b>${fmtEur(eur)}</b> × R$ ${tmEurBrlRate.toFixed(2)} = <b>${money(converted)}</b> • Salário (0,05%): <b class="cyan">${money(calcSalary(converted))}</b>${livePhoto ? ' • 📸 Foto aplicada' : ''}</span>`;
     }
     toast(`Transfermarkt: ${fmtEur(eur)} → ${money(converted)}`);
   } finally {
