@@ -1369,7 +1369,7 @@ tr:last-child td{border:0}
 
 <!-- MODAL: CADASTRAR / EDITAR JOGADOR -->
 <div class="modalbg" id="playerModal"><div class="modal"><h3 id="playerModalTitle">Cadastrar Jogador</h3><input type="hidden" id="editPlayerId">
- <div class="field"><label>Foto do Atleta (Galeria do celular ou Link)</label>
+ <div class="field"><label>Foto do Atleta (somente a foto pode ser alterada pelo responsável do clube)</label>
   <input type="file" id="pPhotoFile" accept="image/*" onchange="handlePhotoFile(this)">
   <input id="pPhotoUrl" placeholder="Ou cole o link da foto (opcional)">
  </div>
@@ -2627,7 +2627,7 @@ function render(){
         ${canShield ? `<button class="btn secondary sm" style="flex:1" onclick="openShieldModal('${p.id}')">🛡️ Blindar (1:4)</button>` : ''}
         ${canBuyOrNegotiate ? `<button class="btn gold sm" style="flex:1" onclick="openBuyoutModal('${p.id}')">⚡ Pagar Multa</button>` : ''}
         ${canBuyOrNegotiate && p.club_id ? `<button class="btn secondary sm" style="flex:1" onclick="openOfferModal('${p.id}')">⇄ Negociar</button>` : ''}
-        ${(isAdmin() || canShield) ? `<button class="btn secondary sm" onclick="openPlayerModal('${p.id}')" title="${isAdmin() ? 'Editar atleta' : 'Alterar foto do atleta'}">${isAdmin() ? '✏️' : '📷'}</button>` : ''}
+        ${canEditPlayerPhoto(p) ? `<button class="btn secondary sm" onclick="openPlayerModal('${p.id}')" title="${isAdmin() ? 'Editar atleta' : 'Alterar somente a foto do atleta'}">${isAdmin() ? '✏️' : '📷'}</button>` : ''}
       </div>
     </div>`;
   }).join('') || `<div class="empty">${(playerQuery || selectedClub !== 'ALL') ? 'Nenhum atleta encontrado para esse filtro.' : 'Nenhum atleta cadastrado.'}</div>`;
@@ -2955,7 +2955,7 @@ function openClubSquadModal(clubId){
       return `<div>
         <div class="pos-group-title"><span>${grpTitle}</span><span>${list.length}</span></div>
         ${list.map(p => {
-          const canEditPhoto = canManageClub(c.id);
+          const canEditPhoto = canEditPlayerPhoto(p);
           return `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><div style="display:flex;align-items:center;gap:6px">${canEditPhoto ? `<button type="button" class="btn secondary sm" onclick="closeModal('clubSquadModal');openPlayerModal('${p.id}')" title="Alterar foto do atleta">📷</button>` : ''}<span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div></div>`;
         }).join('')}
       </div>`;
@@ -4334,8 +4334,11 @@ function isTargetFiveClub(clubName){
 }
 
 function canEditPlayerPhoto(player){
-  if(!player) return isAdmin();
-  return isAdmin() || (Boolean(player.club_id) && canManageClub(player.club_id));
+  // O ADM mantém acesso administrativo; usuários comuns só alteram fotos
+  // de atletas vinculados a um clube cujo owner_user_id seja o usuário logado.
+  if(!user?.id || !player?.id || !player.club_id) return false;
+  if(isAdmin()) return true;
+  return clubs.some(c => c.id === player.club_id && c.owner_user_id === user.id);
 }
 
 async function syncTransfermarktPhotos5Clubs(){
@@ -4446,6 +4449,7 @@ async function savePlayer(){
       .from('players')
       .update({ photo_url: photo || null })
       .eq('id', id)
+      .eq('league_id', league.id)
       .eq('club_id', existing.club_id);
     if(error) return toast('Não foi possível salvar a foto: ' + error.message);
     closeModal('playerModal');
