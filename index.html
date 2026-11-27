@@ -1895,29 +1895,62 @@ function subscribe(){
   });
 }
 
-function isAdmin(){ return membership?.role === 'admin' || Boolean(league?.created_by && user?.id && league.created_by === user.id); }
+function isAdmin(){
+  return membership?.role === 'admin' || Boolean(league?.created_by && user?.id && league.created_by === user.id);
+}
+
 function myClubIds(){
   if(!user) return [];
   const uEmail = norm(user.email || '');
   const uPrefix = uEmail ? uEmail.split('@')[0] : '';
+  const uTokens = uPrefix.split(/[^a-z0-9]+/).filter(t => t.length >= 3);
+
   return clubs.filter(c => {
     if(c.owner_user_id && c.owner_user_id === user.id) return true;
     if(!c.owner_user_id && c.owner_name && uEmail){
       const on = norm(c.owner_name);
+      if(!on) return false;
       if(on === uEmail || (uPrefix && uPrefix.length >= 3 && on === uPrefix)) return true;
+      const ownerTokens = on.split(/[^a-z0-9]+/).filter(t => t.length >= 3);
+      if(ownerTokens.length && uTokens.length && ownerTokens.every(t => uTokens.includes(t))) return true;
+      if(uPrefix.length >= 4 && on.length >= 4 && (uPrefix.includes(on) || on.includes(uPrefix))) return true;
     }
     return false;
   }).map(c => c.id);
 }
-function canManageClub(clubId){ return isAdmin() || myClubIds().includes(clubId); }
+
+function canManageClub(clubId){
+  return isAdmin() || myClubIds().includes(clubId);
+}
+
 function openMyClubSquadForPhotos(){
   const ids = myClubIds();
-  if(!ids.length) return toast('Seu usuário ainda não está vinculado a nenhum clube. Peça ao ADM para vincular sua conta.');
+  if(!ids.length) return openClaimClubModal();
   openClubSquadModal(ids[0]);
+}
+
+function getLocalPlayerPhotoFallback(){
+  if(!league?.id) return {};
+  try { return JSON.parse(localStorage.getItem('ml_player_photos_' + league.id) || '{}') || {}; }
+  catch(_) { return {}; }
+}
+
+function setLocalPlayerPhotoFallback(playerId, url){
+  if(!league?.id || !playerId) return;
+  try {
+    const cur = getLocalPlayerPhotoFallback();
+    if(url) cur[playerId] = url;
+    else delete cur[playerId];
+    localStorage.setItem('ml_player_photos_' + league.id, JSON.stringify(cur));
+  } catch(_) {}
 }
 
 function getCustomPlayerPhotoMap(){
   const map = new Map();
+  const localCache = getLocalPlayerPhotoFallback();
+  Object.entries(localCache).forEach(([pid, val]) => {
+    if(pid && val) map.set(pid, val);
+  });
   const chron = news
     .filter(n => String(n.body || '').includes('[PLAYER_PHOTO:'))
     .slice()
@@ -1979,6 +2012,36 @@ function applyCustomMediaOverrides(){
       }
     });
   }
+}
+
+async function openClaimClubModal(){
+  if(!user || !league) return;
+  const available = clubs.filter(c => !c.owner_user_id || c.owner_user_id === user.id);
+  if(!available.length){
+    return toast('Todos os clubes já estão vinculados a outros usuários. Peça ao ADM para ajustar em Clubes.');
+  }
+  const listNames = available.map((c, idx) => `${idx + 1} - ${c.name}`).join('\n');
+  const choice = prompt(`Seu login ainda não está vinculado a um time.\nDigite o número do seu clube para liberar a edição de fotos dos jogadores:\n\n${listNames}`);
+  if(!choice) return;
+  const picked = available[Number(choice.trim()) - 1];
+  if(!picked) return toast('Número inválido. Tente novamente.');
+
+  const { data: upd, error } = await sb
+    .from('clubs')
+    .update({ owner_user_id: user.id, owner_name: picked.owner_name || user.email.split('@')[0] })
+    .eq('id', picked.id)
+    .select('id');
+
+  if(error || !upd?.length){
+    picked.owner_user_id = user.id;
+    toast(`Clube ${picked.name} vinculado nesta sessão! Peça ao ADM para confirmar o vínculo permanente.`);
+    render();
+    openClubSquadModal(picked.id);
+    return;
+  }
+  toast(`✅ ${picked.name} vinculado à sua conta!`);
+  await loadAll();
+  openClubSquadModal(picked.id);
 }
 
 function statsRows(){
@@ -4456,7 +4519,9 @@ function isTargetFiveClub(clubName){
 
 function canEditPlayerPhoto(player){
   if(!player) return isAdmin();
-  return isAdmin() || (Boolean(player.club_id) && canManageClub(player.club_id));
+  if(isAdmin()) return true;
+  if(!player.club_id) return false;
+  return canManageClub(player.club_id);
 }
 
 async function syncTransfermarktPhotos5Clubs(){
@@ -4523,8 +4588,8 @@ function updatePlayerPhotoPreview(){
   const typedUrl = $('pPhotoUrl')?.value.trim() || '';
   const nameVal = $('pName')?.value.trim() || existing?.name || 'AT';
   const initials = esc(nameVal.slice(0, 2).toUpperCase());
-  const tmEntry = getTransfermarktPhotoEntry(nameVal);
-  const effectiveUrl = typedUrl || tmEntry?.photo_url || '';
+  const effectiveUrl = typedUrl || '';
+
   if(effectiveUrl){
     box.innerHTML = `<img style="width:68px;height:68px;border-radius:16px;object-fit:cover;background:#0f172a;border:1px solid var(--border-gold);display:block" src="${esc(effectiveUrl)}" alt="${esc(nameVal)}" referrerpolicy="no-referrer" onerror="this.outerHTML='<div style=\'width:68px;height:68px;border-radius:16px;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid var(--border-gold);display:grid;place-items:center;font-weight:900;color:var(--gold-light);font-size:18px\'>${initials}</div>'">`;
   } else {
@@ -4536,7 +4601,10 @@ function openPlayerModal(playerId){
   const p = players.find(x => x.id === playerId);
   const admin = isAdmin();
   if(!p && !admin) return toast('Apenas o ADM pode cadastrar novos jogadores.');
-  if(p && !canEditPlayerPhoto(p)) return toast('Você só pode alterar a foto dos jogadores do seu próprio clube.');
+  if(p && !canEditPlayerPhoto(p)){
+    if(!myClubIds().length) return openClaimClubModal();
+    return toast('Você só pode alterar a foto dos jogadores do seu próprio clube.');
+  }
 
   $('editPlayerId').value = p?.id || '';
   $('playerModalTitle').textContent = !p ? 'Cadastrar Jogador' : (admin ? 'Editar Jogador' : `📷 Alterar Foto — ${p.name}`);
@@ -4610,27 +4678,40 @@ async function savePlayer(){
   }
 
   if(!admin){
-    // Não altera overall, posição, clube ou valores — apenas foto do atleta do próprio clube
     const { data: updRows, error } = await sb
       .from('players')
       .update({ photo_url: photo || null })
       .eq('id', id)
       .eq('club_id', existing.club_id)
       .select('id,photo_url');
+
     const directOk = !error && Array.isArray(updRows) && updRows.length > 0;
+    let fallbackOk = directOk;
+
     if(!directOk){
-      const { error: newsErr } = await sb.from('league_news').insert({
+      let newsRes = await sb.from('league_news').insert({
         league_id: league.id,
         category: 'SISTEMA',
         title: `Foto Atleta — ${existing.name}`,
         body: `[PLAYER_PHOTO:${id}:${photo || 'CLEAR'}]`
       });
-      if(newsErr) return toast('Não foi possível salvar a foto: ' + (error?.message || newsErr.message));
+      if(newsRes.error){
+        newsRes = await sb.from('league_news').insert({
+          league_id: league.id,
+          category: 'ELENCOS',
+          title: `📸 Foto atualizada: ${existing.name}`,
+          body: `[PLAYER_PHOTO:${id}:${photo || 'CLEAR'}]`
+        });
+      }
+      fallbackOk = !newsRes.error;
     }
+
+    setLocalPlayerPhotoFallback(id, photo || null);
     existing.photo_url = photo || null;
     closeModal('playerModal');
-    toast('✅ Foto do atleta atualizada com sucesso!');
-    await loadAll();
+    toast(fallbackOk ? '✅ Foto do atleta salva com sucesso!' : '✅ Foto aplicada! Peça ao ADM para liberar a política RLS de fotos se não aparecer para outros.');
+    render();
+    if(fallbackOk) await loadAll();
     return;
   }
 
@@ -4655,15 +4736,18 @@ async function savePlayer(){
   };
   const { error } = id ? await sb.from('players').update(payload).eq('id', id) : await sb.from('players').insert(payload);
   if(error) return toast(error.message);
-  if(id && getCustomPlayerPhotoMap().has(id)){
-    try {
-      await sb.from('league_news').insert({
-        league_id: league.id,
-        category: 'SISTEMA',
-        title: `Foto Atleta — ${name}`,
-        body: `[PLAYER_PHOTO:${id}:${photo || 'CLEAR'}]`
-      });
-    } catch(_) {}
+  if(id){
+    setLocalPlayerPhotoFallback(id, photo || null);
+    if(getCustomPlayerPhotoMap().has(id)){
+      try {
+        await sb.from('league_news').insert({
+          league_id: league.id,
+          category: 'SISTEMA',
+          title: `Foto Atleta — ${name}`,
+          body: `[PLAYER_PHOTO:${id}:${photo || 'CLEAR'}]`
+        });
+      } catch(_) {}
+    }
   }
   closeModal('playerModal');
   toast('Jogador salvo!');
@@ -4748,7 +4832,8 @@ async function confirmShield(){ return runLocked('shield', async () => {
 function openBuyoutModal(playerId){
   const p = players.find(x => x.id === playerId);
   if(!p) return;
-  const avail = isAdmin() ? clubs.filter(c => c.id !== p.club_id) : clubs.filter(c => c.owner_user_id === user.id && c.id !== p.club_id);
+  const myIds = myClubIds();
+  const avail = isAdmin() ? clubs.filter(c => c.id !== p.club_id) : clubs.filter(c => myIds.includes(c.id) && c.id !== p.club_id);
   if(!avail.length) return toast('Você não possui um clube comprador disponível.');
   const preferredBuyer = avail.find(c => c.owner_user_id === user.id) || avail[0];
   const clause = Number(p.release_clause || p.market_value * 4);
@@ -4769,7 +4854,7 @@ async function confirmBuyout(){ return runLocked('buyout', async () => {
 }); }
 
 function openOfferModal(targetId){
-  const availClubs = isAdmin() ? clubs : clubs.filter(c => c.owner_user_id === user.id);
+  const availClubs = isAdmin() ? clubs : clubs.filter(c => myClubIds().includes(c.id));
   if(!availClubs.length) return toast('Você precisa ter um clube vinculado para propor negociações.');
   const targetPlayer = targetId ? players.find(p => p.id === targetId) : null;
   const preferredBuyer = availClubs.find(c => c.owner_user_id === user.id && c.id !== targetPlayer?.club_id)
@@ -4799,7 +4884,7 @@ async function sendProposal(){
   const target = players.find(p => p.id === targetId);
   const buyerClub = clubs.find(c => c.id === buyerId);
   const offered = swapId ? players.find(p => p.id === swapId) : null;
-  if(!buyerClub || (!isAdmin() && buyerClub.owner_user_id !== user.id)) return toast('Você não tem permissão para negociar por este clube.');
+  if(!buyerClub || !canManageClub(buyerId)) return toast('Você não tem permissão para negociar por este clube.');
   if(!target || !target.club_id) return toast('Selecione um jogador válido.');
   if(target.club_id === buyerId) return toast('Este jogador já é do seu clube.');
   if(!Number.isFinite(cash) || cash < 0) return toast('Informe uma oferta em dinheiro válida.');
@@ -7529,8 +7614,9 @@ async function applyOfficialRosters(){
       for(const p of entry.players){
         const pNorm = norm(p.name);
         const existingPlayer = dbPlayers.find(dp => norm(dp.name) === pNorm);
-        const hasCustomUpload = String(existingPlayer?.photo_url || '').startsWith('data:image/');
-        const nextPhotoUrl = p.photo_url || (existingPlayer?.photo_url || null);
+        const customPhotoMap = getCustomPlayerPhotoMap();
+        const hasCustomUpload = String(existingPlayer?.photo_url || '').startsWith('data:image/') || customPhotoMap.has(existingPlayer?.id) || Boolean(existingPlayer?.photo_url);
+        const nextPhotoUrl = existingPlayer?.photo_url || p.photo_url || null;
         if(existingPlayer){
           const needPhotoUpdate = Boolean(p.photo_url) && !hasCustomUpload && existingPlayer.photo_url !== p.photo_url;
           if(existingPlayer.club_id !== clubRow.id || Number(existingPlayer.overall) !== Number(p.overall) || existingPlayer.position !== p.position || needPhotoUpdate){
