@@ -2094,7 +2094,7 @@ function render(){
         ${canShield ? `<button class="btn secondary sm" style="flex:1" onclick="openShieldModal('${p.id}')">🛡️ Blindar (1:4)</button>` : ''}
         ${canBuyOrNegotiate ? `<button class="btn gold sm" style="flex:1" onclick="openBuyoutModal('${p.id}')">⚡ Pagar Multa</button>` : ''}
         ${canBuyOrNegotiate && p.club_id ? `<button class="btn secondary sm" style="flex:1" onclick="openOfferModal('${p.id}')">⇄ Negociar</button>` : ''}
-        ${isAdmin() ? `<button class="btn secondary sm" onclick="openPlayerModal('${p.id}')">✏️</button>` : ''}
+        ${(isAdmin() || canShield) ? `<button class="btn secondary sm" onclick="openPlayerModal('${p.id}')" title="${isAdmin() ? 'Editar atleta' : 'Alterar foto do atleta'}">${isAdmin() ? '✏️' : '📷'}</button>` : ''}
       </div>
     </div>`;
   }).join('') || `<div class="empty">${(playerQuery || selectedClub !== 'ALL') ? 'Nenhum atleta encontrado para esse filtro.' : 'Nenhum atleta cadastrado.'}</div>`;
@@ -2421,7 +2421,10 @@ function openClubSquadModal(clubId){
       const grpTitle = POSITION_LABELS[pos] || pos;
       return `<div>
         <div class="pos-group-title"><span>${grpTitle}</span><span>${list.length}</span></div>
-        ${list.map(p => `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div>`).join('')}
+        ${list.map(p => {
+          const canEditPhoto = canManageClub(c.id);
+          return `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><div style="display:flex;align-items:center;gap:6px">${canEditPhoto ? `<button type="button" class="btn secondary sm" onclick="closeModal('clubSquadModal');openPlayerModal('${p.id}')" title="Alterar foto do atleta">📷</button>` : ''}<span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div></div>`;
+        }).join('')}
       </div>`;
     }).join('');
   }
@@ -3749,6 +3752,11 @@ async function saveClub(){
   closeModal('clubModal'); toast('Clube salvo com sucesso!'); await loadAll();
 }
 
+function canEditPlayerPhoto(player){
+  if(!player) return isAdmin();
+  return isAdmin() || (Boolean(player.club_id) && canManageClub(player.club_id));
+}
+
 function handlePhotoFile(input){
   const file = input.files?.[0];
   if(!file) return;
@@ -3759,13 +3767,20 @@ function handlePhotoFile(input){
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 140; canvas.height = 140;
+      canvas.width = 112; canvas.height = 112;
       const ctx = canvas.getContext('2d');
       const min = Math.min(img.width, img.height);
-      ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, 140, 140);
-      $('pPhotoUrl').value = canvas.toDataURL('image/jpeg', 0.75);
-      toast('Foto carregada e otimizada!');
+      ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, 112, 112);
+      const webp = canvas.toDataURL('image/webp', 0.72);
+      const finalUrl = webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.75);
+      if(finalUrl.length > 45000){
+        input.value = '';
+        return toast('A imagem ficou muito pesada após compressão. Escolha outra foto.');
+      }
+      $('pPhotoUrl').value = finalUrl;
+      toast('Foto do atleta carregada e otimizada!');
     };
+    img.onerror = () => { input.value = ''; toast('Não foi possível processar esta imagem.'); };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
@@ -3780,10 +3795,14 @@ function autoCalcClause(){
   if($('pSalary')) $('pSalary').value = money(calcSalary(v));
 }
 function openPlayerModal(playerId){
-  if(!isAdmin()) return toast('Apenas o ADM pode cadastrar ou editar jogadores.');
   const p = players.find(x => x.id === playerId);
+  const admin = isAdmin();
+  if(!p && !admin) return toast('Apenas o ADM pode cadastrar novos jogadores.');
+  if(p && !canEditPlayerPhoto(p)) return toast('Você só pode alterar a foto dos jogadores do seu próprio clube.');
+
   $('editPlayerId').value = p?.id || '';
-  $('playerModalTitle').textContent = p ? 'Editar Jogador' : 'Cadastrar Jogador';
+  $('playerModalTitle').textContent = !p ? 'Cadastrar Jogador' : (admin ? 'Editar Jogador' : `Foto do Atleta — ${p.name}`);
+  if($('pPhotoFile')) $('pPhotoFile').value = '';
   $('pPhotoUrl').value = p?.photo_url || '';
   $('pName').value = p?.name || '';
   $('pPos').value = p?.position || 'ATA';
@@ -3792,9 +3811,17 @@ function openPlayerModal(playerId){
   $('pValue').value = mv;
   if($('pSalary')) $('pSalary').value = money(calcSalary(mv));
   $('pClause').value = p?.release_clause || (mv * 4);
-  if($('pTmHint')) $('pTmHint').textContent = '';
+  if($('pTmHint')) $('pTmHint').textContent = admin ? '' : 'Modo Clube: você pode enviar uma foto da galeria ou colar um link HTTPS.';
   $('pClub').innerHTML = '<option value="">Mercado Livre</option>' + clubs.map(c => `<option value="${c.id}" ${p?.club_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
-  $('delPlayerBtn').classList.toggle('hidden', !p);
+
+  $('pName').disabled = !admin;
+  $('pPos').disabled = !admin;
+  $('pOvr').disabled = !admin;
+  $('pValue').disabled = !admin;
+  $('pClause').disabled = !admin;
+  $('pClub').disabled = !admin;
+  if($('tmSingleLookupBtn')) $('tmSingleLookupBtn').classList.toggle('hidden', !admin);
+  $('delPlayerBtn').classList.toggle('hidden', !p || !admin);
   openModal('playerModal');
 }
 
@@ -3808,14 +3835,42 @@ async function deletePlayer(){
 }
 
 async function savePlayer(){
-  if(!isAdmin()) return toast('Apenas o ADM pode cadastrar ou editar jogadores.');
-  const id = $('editPlayerId').value, name = $('pName').value.trim(), ovr = Number($('pOvr').value);
-  const val = Number($('pValue').value), clauseInput = $('pClause').value;
+  const id = $('editPlayerId').value;
+  const admin = isAdmin();
+  const existing = id ? players.find(x => x.id === id) : null;
+
+  if(!id && !admin) return toast('Apenas o ADM pode cadastrar novos jogadores.');
+  if(id && !existing) return toast('Jogador não encontrado.');
+  if(existing && !canEditPlayerPhoto(existing)) return toast('Você não tem permissão para editar este jogador.');
+
+  const photo = $('pPhotoUrl').value.trim();
+  if(photo && !/^https:\/\//i.test(photo) && !/^data:image\/(jpeg|png|webp);base64,/i.test(photo)){
+    return toast('A foto deve usar um link HTTPS ou uma imagem válida.');
+  }
+  if(photo.length > 45000){
+    return toast('A imagem excede o limite permitido (45 KB). Envie pela galeria para comprimir.');
+  }
+
+  if(!admin){
+    const { error } = await sb.from('players')
+      .update({ photo_url: photo || null })
+      .eq('id', id)
+      .eq('club_id', existing.club_id);
+    if(error) return toast('Não foi possível salvar a foto: ' + error.message);
+    closeModal('playerModal');
+    toast('Foto do atleta atualizada com sucesso!');
+    await loadAll();
+    return;
+  }
+
+  const name = $('pName').value.trim();
+  const ovr = Number($('pOvr').value);
+  const val = Number($('pValue').value);
+  const clauseInput = $('pClause').value;
   const clause = clauseInput === '' ? val * 4 : Number(clauseInput);
   if(!name || !Number.isInteger(ovr) || ovr < 1 || ovr > 99) return toast('Preencha o nome e um overall inteiro entre 1 e 99.');
   if(!Number.isFinite(val) || val < 0 || !Number.isFinite(clause) || clause < 0) return toast('Valor de mercado e multa devem ser números válidos e não negativos.');
-  const photo = $('pPhotoUrl').value.trim();
-  if(photo && !/^https:\/\//i.test(photo) && !/^data:image\/(jpeg|png|webp);base64,/i.test(photo)) return toast('A foto deve usar um link HTTPS ou uma imagem válida.');
+
   const payload = { league_id: league.id, season_id: season?.id, club_id: $('pClub').value || null, name, position: $('pPos').value, overall: ovr, market_value: val, release_clause: clause, photo_url: photo || null };
   const { error } = id ? await sb.from('players').update(payload).eq('id', id) : await sb.from('players').insert(payload);
   if(error) return toast(error.message);
@@ -3973,7 +4028,7 @@ function calcMatchClubFinance(m, clubId){
   const multaAmarelo = yellowCount * yellowRate;
   const multaVermelho = redCount * redRate;
 
-  const wageTag = `[MATCH_WAGES:${m.season_id}:${m.id}:${clubId}]`;
+  const wageTag = `[MATCH_WAGES:${m.season_id}:${m.id}:${clubId}:`;
   const wageEntry = ledger.find(l => l.club_id === clubId && String(l.description || '').includes(wageTag));
   const folhaSalarial = wageEntry
     ? Math.round(Number(wageEntry.amount) || 0)
@@ -4676,7 +4731,7 @@ async function auditAndFixLeagueFinances(){
         const r = evs.filter(e => e.event_type === 'red_card').length;
         expectedMatchIncome += (g * goalRate) + (a * assistRate);
 
-        const wageTag = `[MATCH_WAGES:${season.id}:${m.id}:${c.id}]`;
+        const wageTag = `[MATCH_WAGES:${season.id}:${m.id}:${c.id}:`;
         const wageEntry = ledger.find(l => l.club_id === c.id && String(l.description || '').includes(wageTag));
         const wageVal = wageEntry
           ? Math.round(Number(wageEntry.amount) || 0)
