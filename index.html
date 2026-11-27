@@ -3666,6 +3666,12 @@ function evaluateSponsorMission(mission, clubId, rowsCache){
   };
 }
 
+function getSponsorGoalBonus(clubId, sponsorId, bonusAmount, seasonId = season?.id){
+  const base = Math.max(0, Number(bonusAmount) || 0);
+  const rate = getSponsorContractRate(clubId, sponsorId, seasonId);
+  return Math.max(0, Math.round((base * rate) / 2));
+}
+
 function renderClubSponsorsHtml(clubId, compact = false){
   if(!season) return '';
   const chosenIds = getClubSeasonSponsorIds(clubId, season.id);
@@ -3678,7 +3684,7 @@ function renderClubSponsorsHtml(clubId, compact = false){
     const sp = sponsors.find(s => s.id === spId);
     if(!sp) return '';
     const goals = getSponsorGoals(sp);
-    const goalBonus = Math.round((Number(sp.bonus_amount) || 0) * getSponsorContractRate(clubId, sp.id, season.id) / 2);
+    const goalBonus = getSponsorGoalBonus(clubId, sp.id, sp.bonus_amount, season.id);
     return `<div class="club-sponsor-slot">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:8px;min-width:0">
@@ -3713,50 +3719,76 @@ function renderClubSponsorsHtml(clubId, compact = false){
 }
 
 
-// Gestão contratual por clube: reajuste individual baseado no desempenho da temporada anterior.
-function sponsorContractRate(clubId, sponsorId){
-  const clubObj = clubs.find(c => c.id === clubId);
-  if(clubObj && norm(clubObj.name) === 'real cabanas fc'){
-    return { rate: 1, achieved: 0, previousSponsor: false, label: 'Contrato padrão (100% do valor-base)' };
+function findPreviousSeasonFor(targetSeasonId){
+  const ordered = seasons
+    .slice()
+    .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+  if(targetSeasonId){
+    const idx = ordered.findIndex(s => s.id === targetSeasonId);
+    if(idx > 0){
+      for(let i = idx - 1; i >= 0; i--){
+        if(ordered[i].status !== 'active') return ordered[i];
+      }
+      return ordered[idx - 1];
+    }
   }
-  const previous = seasons.filter(x => x.id !== season?.id && x.status === 'archived')
-    .sort((a,b) => new Date(b.ended_at || b.created_at) - new Date(a.ended_at || a.created_at))[0];
-  if(!previous) return { rate: 1, achieved: 0, previousSponsor: false, label: 'Contrato inicial' };
+  return seasons
+    .filter(x => x.id !== targetSeasonId && x.status === 'archived')
+    .sort((a, b) => new Date(b.ended_at || b.created_at || 0) - new Date(a.ended_at || a.created_at || 0))[0] || null;
+}
+
+function evaluateSeasonSponsorOutcomes(targetSeason, clubId, sponsorObj){
+  if(!targetSeason || !sponsorObj) return [];
+  const prevSeason = season;
+  const prevMatches = matches;
+  const prevEvents = matchEvents;
+  try {
+    season = targetSeason;
+    const rows = statsRows();
+    return getSponsorGoals(sponsorObj).map(g => evaluateSponsorMission(g, clubId, rows).achieved);
+  } finally {
+    season = prevSeason;
+    matches = prevMatches;
+    matchEvents = prevEvents;
+  }
+}
+
+// Gestão contratual por clube: reajuste individual baseado no desempenho da temporada anterior.
+function sponsorContractRate(clubId, sponsorId, targetSeasonId = season?.id){
+  const previous = findPreviousSeasonFor(targetSeasonId);
+  if(!previous) return { rate: 1, achieved: 0, previousSponsor: false, label: 'Contrato inicial (100%)' };
   const previousIds = getClubSeasonSponsorIds(clubId, previous.id);
   const sameSponsor = previousIds.includes(sponsorId);
   if(sameSponsor){
     const sp = sponsors.find(x => x.id === sponsorId);
-    if(!sp) return { rate: 1, achieved: 0, previousSponsor: true, label: 'Renovação' };
-    const oldSeason = season;
-    let achieved = 0;
-    try {
-      season = previous;
-      achieved = getSponsorGoals(sp).filter(g => evaluateSponsorMission(g, clubId, statsRows()).achieved).length;
-    } finally {
-      season = oldSeason;
-    }
-    const rate = achieved === 2 ? 1.15 : (achieved === 1 ? 1.05 : .80);
-    return { rate, achieved, previousSponsor: true,
-      label: achieved === 2 ? 'Renovação premiada +15%' : achieved === 1 ? 'Renovação +5%' : 'Renovação com redução de 20%' };
+    if(!sp) return { rate: 1, achieved: 0, previousSponsor: true, label: 'Renovação (100%)' };
+    const outcomes = evaluateSeasonSponsorOutcomes(previous, clubId, sp);
+    const achieved = outcomes.filter(Boolean).length;
+    const rate = achieved === 2 ? 1.15 : (achieved === 1 ? 1.05 : 0.80);
+    return {
+      rate, achieved, previousSponsor: true,
+      label: achieved === 2
+        ? 'Renovação premiada (+15%)'
+        : achieved === 1
+          ? 'Renovação aprovada (+5%)'
+          : 'Renovação com redução (-20%)'
+    };
   }
-  // Ao trocar de marca, o abatimento depende do aproveitamento global dos contratos anteriores.
   let totalGoals = 0, totalAchieved = 0;
-  const oldSeason = season;
-  try {
-    season = previous;
-    previousIds.forEach(id => {
-      const oldSponsor = sponsors.find(x => x.id === id);
-      if(!oldSponsor) return;
-      const outcomes = getSponsorGoals(oldSponsor).map(g => evaluateSponsorMission(g, clubId, statsRows()).achieved);
-      totalGoals += outcomes.length;
-      totalAchieved += outcomes.filter(Boolean).length;
-    });
-  } finally {
-    season = oldSeason;
-  }
-  const poorPerformance = totalGoals > 0 && totalAchieved / totalGoals < .5;
-  return { rate: poorPerformance ? .80 : 1, achieved: totalAchieved, previousSponsor: false,
-    label: poorPerformance ? 'Novo contrato: desconto de 20% por metas não cumpridas' : 'Novo contrato: valor padrão' };
+  previousIds.forEach(id => {
+    const oldSponsor = sponsors.find(x => x.id === id);
+    if(!oldSponsor) return;
+    const outcomes = evaluateSeasonSponsorOutcomes(previous, clubId, oldSponsor);
+    totalGoals += outcomes.length;
+    totalAchieved += outcomes.filter(Boolean).length;
+  });
+  const poorPerformance = totalGoals > 0 && (totalAchieved / totalGoals) < 0.5;
+  return {
+    rate: poorPerformance ? 0.80 : 1,
+    achieved: totalAchieved,
+    previousSponsor: false,
+    label: poorPerformance ? 'Novo contrato: redução de 20%' : 'Novo contrato: valor padrão (100%)'
+  };
 }
 function getSponsorContractRate(clubId, sponsorId, seasonId){
   const tag = `[SPONSOR_RATE:${seasonId}:${clubId}:${sponsorId}:`;
@@ -3827,9 +3859,7 @@ async function processSponsorPayouts(){
             paidSponsorCache.add(payoutKey);
             continue;
           }
-          const contractRate = getSponsorContractRate(c.id, sp.id, season.id);
-          const adjustedBonus = Math.round(totalBonus * contractRate);
-          const payoutVal = idx === 0 ? Math.floor(adjustedBonus / 2) : (adjustedBonus - Math.floor(adjustedBonus / 2));
+          const payoutVal = getSponsorGoalBonus(c.id, sp.id, totalBonus, season.id);
           if(payoutVal <= 0) continue;
           paidSponsorCache.add(payoutKey);
           const desc = `Bônus Patrocínio (${sp.name} — ${g.name}) ${payoutKey}`;
@@ -7960,6 +7990,28 @@ async function installMasterLigaApp(){
     return;
   }
   toast('Para instalar no celular, abra este link no navegador (Chrome/Safari) e toque em "Adicionar à tela inicial".');
+}
+
+// Diagnóstico técnico sênior: verifica integridade de dados, caixas e patrocinadores na liga
+function runLeagueIntegrityCheck(){
+  if(!league) return { ok: false, reason: 'Nenhuma liga carregada' };
+  const cashAudit = clubs.map(c => recalcularCaixaClube(c.id)).filter(Boolean);
+  const cashDrift = cashAudit.filter(r => Math.abs(r.diferenca) >= 1);
+  const invalidMatches = matches.filter(m => !m.home_club_id || !m.away_club_id || m.home_club_id === m.away_club_id);
+  const orphanPlayers = players.filter(p => p.club_id && !clubs.some(c => c.id === p.club_id));
+  const report = {
+    leagueId: league.id,
+    seasonId: season?.id || null,
+    clubsCount: clubs.length,
+    playersCount: players.length,
+    matchesCount: matches.length,
+    cashDriftCount: cashDrift.length,
+    cashDrift,
+    invalidMatchesCount: invalidMatches.length,
+    orphanPlayersCount: orphanPlayers.length
+  };
+  console.info('[MasterLiga 2.0 • Integrity Check]', report);
+  return report;
 }
 
 (async function init(){
