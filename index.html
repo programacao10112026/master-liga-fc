@@ -1137,7 +1137,7 @@ tr:last-child td{border:0}
 
    <!-- CLUBES & ELENCOS -->
    <section class="section" id="clubs">
-    <div class="cardhead"><div><h2>Clubes & Elencos</h2><div class="sub">Gerencie caixa disponível, elenco e blindagem de atletas.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn secondary sm" onclick="sincronizarRecalcularTodosCaixas()">🔄 Sincronizar / Recalcular Caixa</button><button class="btn cyan sm hidden" id="syncTmPhotosClubBtn" onclick="syncTransfermarktPhotos5Clubs()">📸 Fotos Transfermarkt (5 Clubes)</button><button class="btn gold sm hidden" id="syncRostersClubBtn" onclick="applyOfficialRosters()">🔄 Aplicar Elencos Oficiais</button><button class="btn sm" onclick="openClubModal()">+ Novo Clube</button></div></div>
+    <div class="cardhead"><div><h2>Clubes & Elencos</h2><div class="sub">Gerencie caixa disponível, elenco e blindagem de atletas.</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn cyan sm hidden" id="myClubPhotosBtn" onclick="openMyClubSquadForPhotos()">📷 Fotos do Meu Elenco</button><button class="btn secondary sm" onclick="sincronizarRecalcularTodosCaixas()">🔄 Sincronizar / Recalcular Caixa</button><button class="btn cyan sm hidden" id="syncTmPhotosClubBtn" onclick="syncTransfermarktPhotos5Clubs()">📸 Fotos Transfermarkt (5 Clubes)</button><button class="btn gold sm hidden" id="syncRostersClubBtn" onclick="applyOfficialRosters()">🔄 Aplicar Elencos Oficiais</button><button class="btn sm" onclick="openClubModal()">+ Novo Clube</button></div></div>
     <div class="searchbar"><span>⌕</span><input id="clubSearch" type="search" placeholder="Buscar clube ou manager..." autocomplete="off" aria-label="Buscar clubes"></div>
     <div class="searchmeta" id="clubSearchMeta">Todos os clubes da liga</div>
     <div class="grid three" id="clubCards"></div>
@@ -1362,35 +1362,46 @@ tr:last-child td{border:0}
  </div>
  <div class="field"><label>Nome do Clube</label><input id="cName" placeholder="Ex.: Corinthians" oninput="updateClubLogoPreview()"></div>
  <div class="field"><label>Nome do Manager</label><input id="cOwner" placeholder="Ex.: Antônio"></div>
- <div class="field"><label>Vincular Conta de Usuário (para notificações)</label><select id="cUser"></select></div>
+ <div class="field"><label>Vincular Conta de Usuário (Manager do Clube — fotos, blindagem e propostas)</label><select id="cUser"></select></div>
  <div class="field"><label>Valor de Transferência Disponível / Caixa (R$)</label><input id="cBudget" type="number" value="10000000"></div>
  <div class="modalfoot"><button class="btn danger hidden" id="delClubBtn" style="margin-right:auto" onclick="deleteClub()">Excluir</button><button class="btn secondary" onclick="closeModal('clubModal')">Cancelar</button><button class="btn" onclick="saveClub()">Salvar Clube</button></div>
 </div></div>
 
 <!-- MODAL: CADASTRAR / EDITAR JOGADOR -->
 <div class="modalbg" id="playerModal"><div class="modal"><h3 id="playerModalTitle">Cadastrar Jogador</h3><input type="hidden" id="editPlayerId">
- <div class="field"><label>Foto do Atleta (somente a foto pode ser alterada pelo responsável do clube)</label>
-  <input type="file" id="pPhotoFile" accept="image/*" onchange="handlePhotoFile(this)">
-  <input id="pPhotoUrl" placeholder="Ou cole o link da foto (opcional)">
- </div>
- <div class="field"><label>Nome do Jogador</label>
-  <div style="display:flex;gap:6px">
-   <input id="pName" placeholder="Ex.: Yuri Alberto" style="flex:1">
-   <button type="button" class="btn gold sm" id="tmSingleLookupBtn" onclick="lookupSinglePlayerTransfermarkt()" title="Buscar valor atualizado no Transfermarkt">📊 Transfermarkt</button>
+ <div class="field"><label>Foto do Atleta (Galeria do celular ou Link)</label>
+  <div style="display:flex;align-items:center;gap:12px">
+   <div id="pPhotoPreview" style="flex-shrink:0"></div>
+   <div style="flex:1;min-width:0;display:grid;gap:6px">
+    <input type="file" id="pPhotoFile" accept="image/*" onchange="handlePhotoFile(this)">
+    <div style="display:flex;gap:6px">
+     <input id="pPhotoUrl" placeholder="Ou cole o link da foto (opcional)" oninput="updatePlayerPhotoPreview()" style="flex:1">
+     <button type="button" class="btn secondary sm" onclick="$('pPhotoUrl').value='';$('pPhotoFile').value='';updatePlayerPhotoPreview()">Limpar</button>
+    </div>
+   </div>
   </div>
  </div>
- <div class="grid two">
-  <div class="field"><label>Posição</label><select id="pPos"><option>ATA</option><option>PE</option><option>PD</option><option>MEI</option><option>MC</option><option>VOL</option><option>LE</option><option>LD</option><option>ZAG</option><option>GOL</option></select></div>
-  <div class="field"><label>Overall (1 a 99)</label><input id="pOvr" type="number" min="1" max="99" value="82"></div>
+ <div id="pClubManagerSummary" class="card hidden" style="background:rgba(5,9,18,0.85);margin-bottom:10px;padding:11px;border-color:rgba(56,189,248,0.28)"></div>
+ <div id="pAdminFieldsWrap">
+  <div class="field"><label>Nome do Jogador</label>
+   <div style="display:flex;gap:6px">
+    <input id="pName" placeholder="Ex.: Yuri Alberto" style="flex:1">
+    <button type="button" class="btn gold sm" id="tmSingleLookupBtn" onclick="lookupSinglePlayerTransfermarkt()" title="Buscar valor atualizado no Transfermarkt">📊 Transfermarkt</button>
+   </div>
+  </div>
+  <div class="grid two">
+   <div class="field"><label>Posição</label><select id="pPos"><option>ATA</option><option>PE</option><option>PD</option><option>MEI</option><option>MC</option><option>VOL</option><option>LE</option><option>LD</option><option>ZAG</option><option>GOL</option></select></div>
+   <div class="field"><label>Overall (1 a 99)</label><input id="pOvr" type="number" min="1" max="99" value="82"></div>
+  </div>
+  <div class="grid three">
+   <div class="field"><label>Valor de Mercado (R$)</label><input id="pValue" type="number" value="1000000" oninput="autoCalcClause()"></div>
+   <div class="field"><label>Salário (0,05% / jogo)</label><input id="pSalary" type="text" value="R$ 500" readonly style="color:var(--cyan);font-weight:800"></div>
+   <div class="field"><label>Multa Rescisória (4x)</label><input id="pClause" type="number" value="4000000"></div>
+  </div>
+  <div class="field"><label>Clube Atual</label><select id="pClub"></select></div>
  </div>
- <div class="grid three">
-  <div class="field"><label>Valor de Mercado (R$)</label><input id="pValue" type="number" value="1000000" oninput="autoCalcClause()"></div>
-  <div class="field"><label>Salário (0,05% / jogo)</label><input id="pSalary" type="text" value="R$ 500" readonly style="color:var(--cyan);font-weight:800"></div>
-  <div class="field"><label>Multa Rescisória (4x)</label><input id="pClause" type="number" value="4000000"></div>
- </div>
- <div id="pTmHint" class="sub" style="margin:-6px 0 10px;font-size:11px"></div>
- <div class="field"><label>Clube Atual</label><select id="pClub"></select></div>
- <div class="modalfoot"><button class="btn danger hidden" id="delPlayerBtn" style="margin-right:auto" onclick="deletePlayer()">Excluir</button><button class="btn secondary" onclick="closeModal('playerModal')">Cancelar</button><button class="btn" onclick="savePlayer()">Salvar Jogador</button></div>
+ <div id="pTmHint" class="sub" style="margin:-4px 0 10px;font-size:11px"></div>
+ <div class="modalfoot"><button class="btn danger hidden" id="delPlayerBtn" style="margin-right:auto" onclick="deletePlayer()">Excluir</button><button class="btn secondary" onclick="closeModal('playerModal')">Cancelar</button><button class="btn" id="savePlayerBtn" onclick="savePlayer()">Salvar Jogador</button></div>
 </div></div>
 
 <!-- MODAL: SINCRONIZAR VALORES DE MERCADO COM TRANSFERMARKT -->
@@ -1867,6 +1878,7 @@ async function loadAll(){
   members = q[9].data || [];
   news = [...(q[10].data || []), ...(q[12].data || [])].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   sponsors = q[11].data || [];
+  applyCustomMediaOverrides();
   render();
   $('noLeague').classList.add('hidden');
   $('leagueContent').classList.remove('hidden');
@@ -1884,8 +1896,90 @@ function subscribe(){
 }
 
 function isAdmin(){ return membership?.role === 'admin' || Boolean(league?.created_by && user?.id && league.created_by === user.id); }
-function myClubIds(){ return clubs.filter(c => c.owner_user_id === user.id).map(c => c.id); }
+function myClubIds(){
+  if(!user) return [];
+  const uEmail = norm(user.email || '');
+  const uPrefix = uEmail ? uEmail.split('@')[0] : '';
+  return clubs.filter(c => {
+    if(c.owner_user_id && c.owner_user_id === user.id) return true;
+    if(!c.owner_user_id && c.owner_name && uEmail){
+      const on = norm(c.owner_name);
+      if(on === uEmail || (uPrefix && uPrefix.length >= 3 && on === uPrefix)) return true;
+    }
+    return false;
+  }).map(c => c.id);
+}
 function canManageClub(clubId){ return isAdmin() || myClubIds().includes(clubId); }
+function openMyClubSquadForPhotos(){
+  const ids = myClubIds();
+  if(!ids.length) return toast('Seu usuário ainda não está vinculado a nenhum clube. Peça ao ADM para vincular sua conta.');
+  openClubSquadModal(ids[0]);
+}
+
+function getCustomPlayerPhotoMap(){
+  const map = new Map();
+  const chron = news
+    .filter(n => String(n.body || '').includes('[PLAYER_PHOTO:'))
+    .slice()
+    .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+  chron.forEach(n => {
+    const m = String(n.body || '').match(/\[PLAYER_PHOTO:([^:\]]+):([^\]]+)\]/);
+    if(m){
+      const pid = m[1].trim();
+      const val = m[2].trim();
+      map.set(pid, val === 'CLEAR' ? null : val);
+    }
+  });
+  return map;
+}
+
+function getCustomClubLogoMap(){
+  const map = new Map();
+  const chron = news
+    .filter(n => String(n.body || '').includes('[CLUB_LOGO:'))
+    .slice()
+    .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+  chron.forEach(n => {
+    const m = String(n.body || '').match(/\[CLUB_LOGO:([^:\]]+):([^\]]+)\]/);
+    if(m){
+      const cid = m[1].trim();
+      const val = m[2].trim();
+      map.set(cid, val === 'CLEAR' ? null : val);
+    }
+  });
+  return map;
+}
+
+function applyCustomMediaOverrides(){
+  const pMap = getCustomPlayerPhotoMap();
+  if(pMap.size){
+    players.forEach(p => {
+      if(pMap.has(p.id)){
+        const overrideUrl = pMap.get(p.id);
+        if(p.photo_url !== overrideUrl){
+          p.photo_url = overrideUrl;
+          if(isAdmin() && sb){
+            sb.from('players').update({ photo_url: overrideUrl }).eq('id', p.id).then(() => {}).catch(() => {});
+          }
+        }
+      }
+    });
+  }
+  const cMap = getCustomClubLogoMap();
+  if(cMap.size){
+    clubs.forEach(c => {
+      if(cMap.has(c.id)){
+        const overrideLogo = cMap.get(c.id);
+        if(c.logo_url !== overrideLogo){
+          c.logo_url = overrideLogo;
+          if(isAdmin() && sb){
+            sb.from('clubs').update({ logo_url: overrideLogo }).eq('id', c.id).then(() => {}).catch(() => {});
+          }
+        }
+      }
+    });
+  }
+}
 
 function statsRows(){
   const played = matches.filter(m => m.season_id === season?.id && m.status === 'played' && m.home_goals !== null);
@@ -2474,7 +2568,7 @@ function render(){
   $('notifBadge').textContent = pendingProps.length;
   $('notifBadge').classList.toggle('hidden', pendingProps.length === 0);
 
-  const cleanNewsText = txt => String(txt || '').replace(/\s*\[(?:SPONSOR_SIGN|SPONSOR_UNSIGN|SPONSOR_RATE|ROUND_DATES|MATCH_FLAGS|GOAL_TIMING|SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|MATCH_BONUS|REVERSAL|AUDIT_FIX[^\]]*):[^\]]+\]/g, '').trim();
+  const cleanNewsText = txt => String(txt || '').replace(/\s*\[(?:SPONSOR_SIGN|SPONSOR_UNSIGN|SPONSOR_RATE|ROUND_DATES|MATCH_FLAGS|GOAL_TIMING|SPONSOR_PAYOUT|MATCH_WAGES|MATCH_BILHETERIA|MATCH_BONUS|REVERSAL|PLAYER_PHOTO|CLUB_LOGO|AUDIT_FIX[^\]]*):[^\]]+\]/g, '').trim();
   const visibleNews = news.filter(n => String(n.category || '').toUpperCase() !== 'SISTEMA');
   if(visibleNews.length){
     $('tickerTitle').textContent = `${visibleNews[0].title} — ${cleanNewsText(visibleNews[0].body)}`;
@@ -2496,6 +2590,7 @@ function render(){
   if($('syncRostersClubBtn')) $('syncRostersClubBtn').classList.toggle('hidden', !isAdmin());
   if($('syncTmPhotosClubBtn')) $('syncTmPhotosClubBtn').classList.toggle('hidden', !isAdmin());
   if($('tmSyncMktBtn')) $('tmSyncMktBtn').classList.toggle('hidden', !isAdmin());
+  if($('myClubPhotosBtn')) $('myClubPhotosBtn').classList.toggle('hidden', myClubIds().length === 0);
   if($('runPayrollBtn')) $('runPayrollBtn').classList.toggle('hidden', !isAdmin());
   const spClubSel = $('sponsorTargetClub');
   const manageableClubs = isAdmin() ? clubs : clubs.filter(c => c.owner_user_id === user.id);
@@ -2627,7 +2722,7 @@ function render(){
         ${canShield ? `<button class="btn secondary sm" style="flex:1" onclick="openShieldModal('${p.id}')">🛡️ Blindar (1:4)</button>` : ''}
         ${canBuyOrNegotiate ? `<button class="btn gold sm" style="flex:1" onclick="openBuyoutModal('${p.id}')">⚡ Pagar Multa</button>` : ''}
         ${canBuyOrNegotiate && p.club_id ? `<button class="btn secondary sm" style="flex:1" onclick="openOfferModal('${p.id}')">⇄ Negociar</button>` : ''}
-        ${canEditPlayerPhoto(p) ? `<button class="btn secondary sm" onclick="openPlayerModal('${p.id}')" title="${isAdmin() ? 'Editar atleta' : 'Alterar somente a foto do atleta'}">${isAdmin() ? '✏️' : '📷'}</button>` : ''}
+        ${canEditPlayerPhoto(p) ? `<button class="btn secondary sm" onclick="openPlayerModal('${p.id}')" title="${isAdmin() ? 'Editar atleta' : 'Alterar foto do atleta'}">${isAdmin() ? '✏️' : '📷 Alterar Foto'}</button>` : ''}
       </div>
     </div>`;
   }).join('') || `<div class="empty">${(playerQuery || selectedClub !== 'ALL') ? 'Nenhum atleta encontrado para esse filtro.' : 'Nenhum atleta cadastrado.'}</div>`;
@@ -2658,12 +2753,17 @@ function render(){
   if($('clubSearchMeta')) $('clubSearchMeta').textContent = `${visibleClubs.length} de ${clubs.length} clubes • Toque na imagem para ver o plantel por posição`;
   const clubCardsEl = $('clubCards');
   clubCardsEl.className = 'clubs-image-grid';
+  const ownedIds = myClubIds();
   clubCardsEl.innerHTML = visibleClubs.map(c => {
     const initials = esc((c?.name || 'CL').split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase());
+    const isMine = ownedIds.includes(c.id);
     const mediaHtml = c?.logo_url
       ? `<img src="${esc(c.logo_url)}" alt="${esc(c.name || 'Clube')}" onerror="this.outerHTML='<div class=\'club-img-fallback\'>${initials}</div>'">`
       : `<div class="club-img-fallback">${initials}</div>`;
-    return `<button type="button" class="club-img-tile" onclick="openClubSquadModal('${c.id}')" title="${esc(c.name)}" aria-label="${esc(c.name)}">${mediaHtml}</button>`;
+    const myBadge = isMine
+      ? `<span style="position:absolute;bottom:6px;left:6px;right:6px;background:rgba(5,9,19,0.88);border:1px solid var(--border-gold);color:var(--gold-light);font-size:9px;font-weight:800;padding:2px 5px;border-radius:7px;text-align:center;letter-spacing:.3px">📷 MEU CLUBE</span>`
+      : '';
+    return `<button type="button" class="club-img-tile" style="${isMine ? 'border-color:var(--gold);box-shadow:0 0 18px rgba(245,158,11,0.22)' : ''}" onclick="openClubSquadModal('${c.id}')" title="${esc(c.name)}${isMine ? ' (Seu Clube — toque para alterar fotos)' : ''}" aria-label="${esc(c.name)}">${mediaHtml}${myBadge}</button>`;
   }).join('') || `<div class="empty" style="grid-column:1/-1">${clubQuery ? 'Nenhum clube encontrado para essa busca.' : 'Cadastre os clubes da liga.'}</div>`;
 
   // Filtros de Rodada, Datas das Rodadas e Clube em Jogos & Resultados
@@ -2949,14 +3049,23 @@ function openClubSquadModal(clubId){
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
     });
 
-    $('sqPlayersByPos').innerHTML = orderedKeys.map(pos => {
+    const adminUser = isAdmin();
+    const canEditThisClub = canManageClub(c.id);
+    const managerBanner = (!adminUser && canEditThisClub)
+      ? `<div class="newsitem" style="margin-bottom:8px;padding:9px 11px;border-color:rgba(56,189,248,0.35)"><span class="tag cyan">📸 FOTOS DO ELENCO</span><p style="margin-top:4px;font-size:11px">Toque em <b>📷 Alterar Foto</b> ao lado de qualquer atleta do seu clube para enviar uma foto da galeria ou colar um link. Overall e valores permanecem bloqueados.</p></div>`
+      : '';
+    $('sqPlayersByPos').innerHTML = managerBanner + orderedKeys.map(pos => {
       const list = groups.get(pos);
       const grpTitle = POSITION_LABELS[pos] || pos;
       return `<div>
         <div class="pos-group-title"><span>${grpTitle}</span><span>${list.length}</span></div>
         ${list.map(p => {
-          const canEditPhoto = canEditPlayerPhoto(p);
-          return `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><div style="display:flex;align-items:center;gap:6px">${canEditPhoto ? `<button type="button" class="btn secondary sm" onclick="closeModal('clubSquadModal');openPlayerModal('${p.id}')" title="Alterar foto do atleta">📷</button>` : ''}<span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div></div>`;
+          const photoBtn = canEditThisClub
+            ? (adminUser
+              ? `<button type="button" class="btn secondary sm" onclick="closeModal('clubSquadModal');openPlayerModal('${p.id}')" title="Editar atleta ou foto">✏️</button>`
+              : `<button type="button" class="btn secondary sm" onclick="closeModal('clubSquadModal');openPlayerModal('${p.id}')" title="Alterar foto do atleta">📷 Alterar Foto</button>`)
+            : '';
+          return `<div class="fixture"><div class="pmeta">${playerAvatar(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.position)} • Salário: <b class="cyan">${money(calcSalary(p.market_value))}</b> • Multa: ${money(p.release_clause || p.market_value * 4)}</span></div></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0">${photoBtn}<span class="ovr ${p.overall >= 85 ? 'gold' : ''}">${p.overall}</span></div></div>`;
         }).join('')}
       </div>`;
     }).join('');
@@ -4280,8 +4389,20 @@ async function saveClub(){
   if(logo && !/^https:\/\//i.test(logo) && !/^data:image\/(jpeg|png|webp);base64,/i.test(logo)) return toast('A foto deve usar um link HTTPS ou uma imagem válida.');
 
   if(!admin){
-    const { error } = await sb.from('clubs').update({ logo_url: logo || null }).eq('id', id);
-    if(error) return toast(error.message);
+    const { data: updClub, error } = await sb.from('clubs').update({ logo_url: logo || null }).eq('id', id).select('id,logo_url');
+    const directOk = !error && Array.isArray(updClub) && updClub.length > 0;
+    if(!directOk){
+      const clubObj = clubs.find(x => x.id === id);
+      const { error: newsErr } = await sb.from('league_news').insert({
+        league_id: league.id,
+        category: 'SISTEMA',
+        title: `Escudo Clube — ${clubObj?.name || id}`,
+        body: `[CLUB_LOGO:${id}:${logo || 'CLEAR'}]`
+      });
+      if(newsErr) return toast('Não foi possível salvar o escudo: ' + (error?.message || newsErr.message));
+    }
+    const localClub = clubs.find(x => x.id === id);
+    if(localClub) localClub.logo_url = logo || null;
     closeModal('clubModal'); toast('Foto / escudo do clube atualizado!'); await loadAll();
     return;
   }
@@ -4334,11 +4455,8 @@ function isTargetFiveClub(clubName){
 }
 
 function canEditPlayerPhoto(player){
-  // O ADM mantém acesso administrativo; usuários comuns só alteram fotos
-  // de atletas vinculados a um clube cujo owner_user_id seja o usuário logado.
-  if(!user?.id || !player?.id || !player.club_id) return false;
-  if(isAdmin()) return true;
-  return clubs.some(c => c.id === player.club_id && c.owner_user_id === user.id);
+  if(!player) return isAdmin();
+  return isAdmin() || (Boolean(player.club_id) && canManageClub(player.club_id));
 }
 
 async function syncTransfermarktPhotos5Clubs(){
@@ -4368,7 +4486,8 @@ async function syncTransfermarktPhotos5Clubs(){
       let finalPhoto = await resolveLiveTransfermarktPhoto(p.name, entry?.tm_id || '');
       if(!finalPhoto && entry?.photo_url) finalPhoto = entry.photo_url;
 
-      if(finalPhoto && finalPhoto !== p.photo_url){
+      const hasCustomUpload = String(p.photo_url || '').startsWith('data:image/') || getCustomPlayerPhotoMap().has(p.id);
+      if(finalPhoto && !hasCustomUpload && finalPhoto !== p.photo_url){
         const { error } = await sb
           .from('players')
           .update({ photo_url: finalPhoto })
@@ -4396,6 +4515,23 @@ async function syncTransfermarktPhotos5Clubs(){
   });
 }
 
+function updatePlayerPhotoPreview(){
+  const box = $('pPhotoPreview');
+  if(!box) return;
+  const pid = $('editPlayerId')?.value;
+  const existing = pid ? players.find(x => x.id === pid) : null;
+  const typedUrl = $('pPhotoUrl')?.value.trim() || '';
+  const nameVal = $('pName')?.value.trim() || existing?.name || 'AT';
+  const initials = esc(nameVal.slice(0, 2).toUpperCase());
+  const tmEntry = getTransfermarktPhotoEntry(nameVal);
+  const effectiveUrl = typedUrl || tmEntry?.photo_url || '';
+  if(effectiveUrl){
+    box.innerHTML = `<img style="width:68px;height:68px;border-radius:16px;object-fit:cover;background:#0f172a;border:1px solid var(--border-gold);display:block" src="${esc(effectiveUrl)}" alt="${esc(nameVal)}" referrerpolicy="no-referrer" onerror="this.outerHTML='<div style=\'width:68px;height:68px;border-radius:16px;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid var(--border-gold);display:grid;place-items:center;font-weight:900;color:var(--gold-light);font-size:18px\'>${initials}</div>'">`;
+  } else {
+    box.innerHTML = `<div style="width:68px;height:68px;border-radius:16px;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid var(--border-gold);display:grid;place-items:center;font-weight:900;color:var(--gold-light);font-size:18px">${initials}</div>`;
+  }
+}
+
 function openPlayerModal(playerId){
   const p = players.find(x => x.id === playerId);
   const admin = isAdmin();
@@ -4403,7 +4539,7 @@ function openPlayerModal(playerId){
   if(p && !canEditPlayerPhoto(p)) return toast('Você só pode alterar a foto dos jogadores do seu próprio clube.');
 
   $('editPlayerId').value = p?.id || '';
-  $('playerModalTitle').textContent = !p ? 'Cadastrar Jogador' : (admin ? 'Editar Jogador' : `Foto do Atleta — ${p.name}`);
+  $('playerModalTitle').textContent = !p ? 'Cadastrar Jogador' : (admin ? 'Editar Jogador' : `📷 Alterar Foto — ${p.name}`);
   if($('pPhotoFile')) $('pPhotoFile').value = '';
   $('pPhotoUrl').value = p?.photo_url || '';
   $('pName').value = p?.name || '';
@@ -4413,7 +4549,6 @@ function openPlayerModal(playerId){
   $('pValue').value = mv;
   if($('pSalary')) $('pSalary').value = money(calcSalary(mv));
   $('pClause').value = p?.release_clause || (mv * 4);
-  if($('pTmHint')) $('pTmHint').textContent = admin ? '' : 'Modo Clube: envie uma foto da galeria ou cole um link HTTPS.';
   $('pClub').innerHTML = '<option value="">Mercado Livre</option>' + clubs.map(c => `<option value="${c.id}" ${p?.club_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   $('pName').disabled = !admin;
@@ -4422,8 +4557,38 @@ function openPlayerModal(playerId){
   $('pValue').disabled = !admin;
   $('pClause').disabled = !admin;
   $('pClub').disabled = !admin;
+
+  if($('pAdminFieldsWrap')) $('pAdminFieldsWrap').classList.toggle('hidden', !admin);
+  const summaryBox = $('pClubManagerSummary');
+  if(summaryBox){
+    if(!admin && p){
+      const clubObj = clubs.find(c => c.id === p.club_id);
+      const clauseVal = Number(p.release_clause || mv * 4);
+      summaryBox.classList.remove('hidden');
+      summaryBox.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+          <div>
+            <b style="font-size:14px;color:#fff">${esc(p.name)}</b>
+            <div class="sub">${esc(p.position)} • ${esc(clubObj?.name || 'Seu Clube')}</div>
+          </div>
+          <span class="ovr ${p.overall >= 85 ? 'gold' : ''}" title="Overall bloqueado para edição">${p.overall} 🔒</span>
+        </div>
+        <div class="moneygrid three-cols">
+          <div><span>PASSE</span><strong>${money(mv)}</strong></div>
+          <div><span>SALÁRIO (0,05%)</span><strong class="cyan">${money(calcSalary(mv))}</strong></div>
+          <div><span>MULTA</span><strong class="gold">${money(clauseVal)}</strong></div>
+        </div>`;
+    } else {
+      summaryBox.classList.add('hidden');
+      summaryBox.innerHTML = '';
+    }
+  }
+
+  if($('pTmHint')) $('pTmHint').textContent = admin ? '' : 'Escolha uma foto da galeria do celular ou cole um link HTTPS. Overall e dados do atleta ficam bloqueados.';
+  if($('savePlayerBtn')) $('savePlayerBtn').textContent = admin ? 'Salvar Jogador' : '💾 Salvar Foto';
   if($('tmSingleLookupBtn')) $('tmSingleLookupBtn').classList.toggle('hidden', !admin);
   $('delPlayerBtn').classList.toggle('hidden', !p || !admin);
+  updatePlayerPhotoPreview();
   openModal('playerModal');
 }
 
@@ -4445,15 +4610,26 @@ async function savePlayer(){
   }
 
   if(!admin){
-    const { error } = await sb
+    // Não altera overall, posição, clube ou valores — apenas foto do atleta do próprio clube
+    const { data: updRows, error } = await sb
       .from('players')
       .update({ photo_url: photo || null })
       .eq('id', id)
-      .eq('league_id', league.id)
-      .eq('club_id', existing.club_id);
-    if(error) return toast('Não foi possível salvar a foto: ' + error.message);
+      .eq('club_id', existing.club_id)
+      .select('id,photo_url');
+    const directOk = !error && Array.isArray(updRows) && updRows.length > 0;
+    if(!directOk){
+      const { error: newsErr } = await sb.from('league_news').insert({
+        league_id: league.id,
+        category: 'SISTEMA',
+        title: `Foto Atleta — ${existing.name}`,
+        body: `[PLAYER_PHOTO:${id}:${photo || 'CLEAR'}]`
+      });
+      if(newsErr) return toast('Não foi possível salvar a foto: ' + (error?.message || newsErr.message));
+    }
+    existing.photo_url = photo || null;
     closeModal('playerModal');
-    toast('Foto do atleta atualizada com sucesso!');
+    toast('✅ Foto do atleta atualizada com sucesso!');
     await loadAll();
     return;
   }
@@ -4479,6 +4655,16 @@ async function savePlayer(){
   };
   const { error } = id ? await sb.from('players').update(payload).eq('id', id) : await sb.from('players').insert(payload);
   if(error) return toast(error.message);
+  if(id && getCustomPlayerPhotoMap().has(id)){
+    try {
+      await sb.from('league_news').insert({
+        league_id: league.id,
+        category: 'SISTEMA',
+        title: `Foto Atleta — ${name}`,
+        body: `[PLAYER_PHOTO:${id}:${photo || 'CLEAR'}]`
+      });
+    } catch(_) {}
+  }
   closeModal('playerModal');
   toast('Jogador salvo!');
   await loadAll();
@@ -4505,6 +4691,7 @@ function handlePhotoFile(input){
         return toast('A imagem ficou muito pesada após compressão. Escolha outra foto.');
       }
       $('pPhotoUrl').value = finalUrl;
+      updatePlayerPhotoPreview();
       toast('Foto do atleta carregada e otimizada!');
     };
     img.onerror = () => { input.value = ''; toast('Não foi possível processar esta imagem.'); };
@@ -7926,6 +8113,7 @@ async function lookupSinglePlayerTransfermarkt(){
     ]);
     if(livePhoto && $('pPhotoUrl')){
       $('pPhotoUrl').value = livePhoto;
+      updatePlayerPhotoPreview();
     }
     if(!eur){
       if($('pTmHint')) $('pTmHint').innerHTML = livePhoto
